@@ -1,7 +1,7 @@
 package sepia
 
 trait PipelineLike extends Dsl {
-	class Dim(val max: Rep[Int]) {
+	class Dim(val max: Rep[Int], val name: String) {
 		private var value: Option[Rep[Int]] = None
 
 		def v: Rep[Int] = value match {

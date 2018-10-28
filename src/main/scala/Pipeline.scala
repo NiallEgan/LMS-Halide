@@ -5,8 +5,8 @@ trait Pipeline extends PipelineLike with ScheduleOps {
 
 	class Func(f: (Rep[Int], Rep[Int]) => Rep[Int],
 			   dom: (Int, Int)) extends PipelineStage(f, dom) {
-		val x: Dim = new Dim(dom._1)
-		val y: Dim = new Dim(dom._2)
+		val x: Dim = new Dim(dom._1, "x")
+		val y: Dim = new Dim(dom._2, "y")
 
 		private var inlined = true
 

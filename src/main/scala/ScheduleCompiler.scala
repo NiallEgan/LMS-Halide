@@ -1,8 +1,8 @@
 package sepia
 
-trait ScheduleCompiler extends Ast with PipelineLike {
-	def evalSched(node: ScheduleNode): Rep[Unit] = node match {
-      case LoopNode(variable, stage, children, loopType) =>
+trait ScheduleCompiler extends PipelineLike {
+	def evalSched(node: ScheduleNode[PipelineStage, Dim]): Rep[Unit] = node match {
+      case LoopNode(variable, stage, loopType, children) =>
         loopType match {
           /* Here we generate a for loop for 'variable', finding its upper bound from stage.
              The value of the variable (a rep of an int or an actual int)
@@ -29,8 +29,8 @@ trait ScheduleCompiler extends Ast with PipelineLike {
       }
 
  	  case StorageNode(stage, children) => {
- 	 	stage.buffer = Some(New2DArray[Int](stage.y.max, stage.x.max))
- 	 	for (child <- children) evalSched(child)
+   	 	stage.buffer = Some(New2DArray[Int](stage.y.max, stage.x.max))
+   	 	for (child <- children) evalSched(child)
  	  }
 
       case RootNode(children) => {

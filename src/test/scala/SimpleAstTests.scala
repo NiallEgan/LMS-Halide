@@ -34,7 +34,18 @@ trait CompilerInstance extends Pipeline
 class CompilerSpec extends FlatSpec {
 	"The grad program" should "return the default tree" in {
 	 	val gradProg = 
-	 		new GradProg with CompilerInstance 
+	 		new GradProg with CompilerInstance with TestAstOps
 	 	gradProg.compile()
+	 	val correctAst: ScheduleNode[String, String] =
+	 		new RootNode(List(
+	 			new StorageNode("f",List(
+	 				new LoopNode("y", "f", Sequential, List(
+	 					new LoopNode("x", "f", Sequential, List(
+	 						new ComputeNode("f", List())
+	 					))
+	 				))
+	 			))
+	 		))
+	 	assertResult(gradProg.scheduleRep)(correctAst)
 	}
 }
