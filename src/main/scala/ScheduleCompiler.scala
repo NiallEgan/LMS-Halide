@@ -1,6 +1,6 @@
 package sepia
 
-trait ScheduleCompiler extends PipelineLike {
+trait ScheduleCompiler extends CompilerFuncOps {
 	def evalSched(node: ScheduleNode[PipelineStage, Dim]): Rep[Unit] = node match {
       case LoopNode(variable, stage, loopType, children) =>
         loopType match {
@@ -23,8 +23,8 @@ trait ScheduleCompiler extends PipelineLike {
         /* At a compute node, we compute f.stage and store it.
           TODO: if we computed f in a previous iteration, we need to skip over
           it */
-        val v: Rep[Int] = stage.compute()
-        stage.storeInBuffer(v)
+        val v: Rep[Int] = compute(stage)
+        storeInBuffer(v)
         for (child <- children) evalSched(child)
       }
 

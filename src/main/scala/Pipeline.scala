@@ -16,18 +16,18 @@ trait Pipeline extends PipelineLike with ScheduleOps {
 
 		def apply(x: Rep[Int], y: Rep[Int]) = {
 			 if (inlined) f(x, y)
-      		 else buffer match {
-      		 	case Some(b) => b(y, x)
-      		 	case None => throw new InvalidSchedule("No buffer allocated at application time")
-      		 }
-      	}
+  		 else buffer match {
+  		 	case Some(b) => b(y, x)
+  		 	case None => throw new InvalidSchedule("No buffer allocated at application time")
+  		 }
+    }
 
-      	def compute() = f(x.v, y.v)
+  	def compute() = f(x.v, y.v)
 
-      	def storeInBuffer(v: Rep[Int]) = buffer match {
-      		case Some(b) => b(y.v, x.v) = v
-      		case None => throw new InvalidSchedule("No buffer allocated at storage time")
-      	}
+  	def storeInBuffer(v: Rep[Int]) = buffer match {
+  		case Some(b) => b(y.v, x.v) = v
+  		case None => throw new InvalidSchedule("No buffer allocated at storage time")
+  	}
 	}
 
 	class FOps(f: (Rep[Int], Rep[Int]) => Rep[Int]) {
@@ -43,7 +43,7 @@ trait Pipeline extends PipelineLike with ScheduleOps {
 	def prog(): Rep[Unit]
 
 	def sched(): Schedule = schedule match {
-		case Some(s) => s 
+		case Some(s) => s
 		case None => throw new Exception("No schedule tree generated")
 	}
 }
