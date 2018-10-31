@@ -1,49 +1,33 @@
 package sepia
 
-trait Pipeline extends PipelineLike with ScheduleOps {
+trait Pipeline extends SimpleFuncOps {
+	// The trait the user mixes in to create their program
+	def prog(): Rep[Unit]
+	class FuncOps(f: (Rep[Int], Rep[Int]) => Rep[Int]) {
+		def withDomain(dom: (Int, Int)) = toFunc(f, dom)
+	}
+	implicit def toFuncOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FuncOps = {
+		new FuncOps(f)
+	}
+
+	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func
+}
+
+trait PipelineWithSchedManipulations extends Pipeline with ScheduleOps {
+	// This trait is mixed in with a specific program and it adds
+	// schedule manipulations, which can then be passed to a compiler
 	private var schedule: Option[Schedule] = None
-
-	class Func(f: (Rep[Int], Rep[Int]) => Rep[Int],
-			   dom: (Int, Int)) extends PipelineStage(f, dom) {
-		val x: Dim = new Dim(dom._1, "x")
-		val y: Dim = new Dim(dom._2, "y")
-
-		private var inlined = true
-
-		schedule = Some(newSimpleSched(this))
-
-		var buffer: Option[Rep[Array[Array[Int]]]] = None
-
-		def apply(x: Rep[Int], y: Rep[Int]) = {
-			 if (inlined) f(x, y)
-      		 else buffer match {
-      		 	case Some(b) => b(y, x)
-      		 	case None => throw new InvalidSchedule("No buffer allocated at application time")
-      		 }
-      	}
-
-      	def compute() = f(x.v, y.v)
-
-      	def storeInBuffer(v: Rep[Int]) = buffer match {
-      		case Some(b) => b(y.v, x.v) = v
-      		case None => throw new InvalidSchedule("No buffer allocated at storage time")
-      	}
-	}
-
-	class FOps(f: (Rep[Int], Rep[Int]) => Rep[Int]) {
-		def withDomain(dom: (Int, Int)): Func = {
-			new Func(f, dom)
-		}
-	}
-
-	implicit def fToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
-		new FOps(f)
-	}
 
 	def prog(): Rep[Unit]
 
+	override def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
+		val func: Func = mkFunc(f, dom)
+		schedule = Some(newSimpleSched(func))
+		func
+	}
+
 	def sched(): Schedule = schedule match {
-		case Some(s) => s 
+		case Some(s) => s
 		case None => throw new Exception("No schedule tree generated")
 	}
 }

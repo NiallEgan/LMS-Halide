@@ -1,12 +1,9 @@
 package sepia
 
-trait ScheduleCompiler extends PipelineLike {
-	def evalSched(node: ScheduleNode[PipelineStage, Dim]): Rep[Unit] = node match {
+trait ScheduleCompiler extends CompilerFuncOps {
+	def evalSched(node: ScheduleNode[Func, Dim]): Rep[Unit] = node match {
       case LoopNode(variable, stage, loopType, children) =>
         loopType match {
-          /* Here we generate a for loop for 'variable', finding its upper bound from stage.
-             The value of the variable (a rep of an int or an actual int)
-             gets added to the env */
           case Sequential =>
             for (i <- (0 until variable.max): Rep[Range]) {
               variable.v_=(i)
@@ -29,7 +26,7 @@ trait ScheduleCompiler extends PipelineLike {
       }
 
  	  case StorageNode(stage, children) => {
-   	 	stage.buffer = Some(New2DArray[Int](stage.y.max, stage.x.max))
+			stage.allocateNewBuffer()
    	 	for (child <- children) evalSched(child)
  	  }
 
