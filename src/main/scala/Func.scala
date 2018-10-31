@@ -11,41 +11,63 @@ trait SimpleFuncOps extends Dsl {
     def apply(x: Rep[Int], y: Rep[Int]) =
       funcApply(f, x, y)
   }
+
   implicit def funcToFuncOps(f: Func) = new FuncOps(f)
 
   def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int]
 
-  implicit def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func
+  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func
 }
 
 trait CompilerFuncOps extends SimpleFuncOps {
   // The api that is presented to the DSL compiler
 
-  def compute(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int]
-  def storeInBuffer(x: Rep[Int], y: Rep[Int],
-                    v: Rep[Int], b: Rep[Array[Array[Int]]]): Rep[Unit]
-  def allocateBuffer(f: Func, x_dim: Rep[Int], y_dim: Rep[Int]): Rep[Unit]
+  class Dim(val max: Rep[Int], val name: String) {
+		private var value: Option[Rep[Int]] = None
 
-}
+		def v: Rep[Int] = value match {
+			case Some(x) => x
+			case None => throw new InvalidSchedule("Unbound variable")
+		}
 
-trait CompilerFuncOpsImplementation extends CompilerFuncOps {
-  class CompilerFunc(val f: (Rep[Int], Rep[Int]) => Rep[Int]) {
-    val inlined = true
+		// TODO: Why is this not working with _= syntax?
+		def v_=(new_val: Rep[Int]) = {
+			value = Some(new_val)
+		}
+	}
+
+  class CompilerFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
+         dom: (Int, Int)) {
+    val x: Dim = new Dim(dom._1, "x")
+    val y: Dim = new Dim(dom._2, "y")
+
+    var inlined = true
+
+    //schedule = Some(newSimpleSched(this))
+
     var buffer: Option[Rep[Array[Array[Int]]]] = None
+
+    def apply(x: Rep[Int], y: Rep[Int]) = {
+       if (inlined) f(x, y)
+       else buffer match {
+        case Some(b) => b(y, x)
+        case None => throw new InvalidSchedule("No buffer allocated at application time")
+       }
+    }
+
+    def compute() = f(x.v, y.v)
+
+    def storeInBuffer(v: Rep[Int]) = buffer match {
+      case Some(b) => b(y.v, x.v) = v
+      case None => throw new InvalidSchedule("No buffer allocated at storage time")
+    }
+
+    def allocateNewBuffer() {
+      buffer = Some(New2DArray[Int](y.max, x.max))
+    }
   }
 
   type Func = CompilerFunc
-
-  override implicit def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]) =
-    new CompilerFunc(f)
-
-  override def compute(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int] =
-    f.f(x, y)
-
-  override def storeInBuffer(x: Rep[Int], y: Rep[Int],
-                             v: Rep[Int],
-                             b: Rep[Array[Array[Int]]]): Rep[Unit] =
-    b(x, y) = v
 
   override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int] =
     if (f.inlined) f(x, y)
@@ -54,22 +76,22 @@ trait CompilerFuncOpsImplementation extends CompilerFuncOps {
      case None => throw new InvalidSchedule("No buffer allocated at application time")
   }
 
-  override def allocateBuffer(f: Func, x_dim: Rep[Int], y_dim: Rep[Int]) =
-    f.buffer = Some(New2DArray[Int](x_dim, y_dim))
+  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func = {
+    new CompilerFunc(f, (5, 5))
+  }
 
 }
 
-trait FuncExpr extends SimpleFuncOps with Exp {
+trait FuncExpr extends SimpleFuncOps with BaseExp {
   // This trait produces nodes for function application.
   // It is used in the pre interperation analysis of the
   // pipeline
   type Func = (Rep[Int], Rep[Int]) => Rep[Int]
 
-  override implicit def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]) =
-    f
+  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]) = f
 
   case class FuncApplication(f: Func, x: Rep[Int], y: Rep[Int])
-    extends Def[Rep[Int]]
+    extends Def[Int]
 
   override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]) =
     FuncApplication(f, x, y)

@@ -4,16 +4,16 @@ import sepia._
 
 trait GradProg extends TestPipeline {
 	override def prog(): Rep[Unit] = {
-		val f = 
-		((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 5)
+		val f =
+		(x: Rep[Int], y: Rep[Int]) => x + y //  withDomain (5, 5)
 
 		// This is for testing purposes only
 		registerStage("f", f)
 	}
 }
 
-trait CompilerInstance extends Pipeline
-		with ScheduleCompiler with DslExp with AstOps {
+trait CompilerInstance extends ScheduleCompiler with Pipeline
+		with DslExp with AstOps {
 	self =>
     val codegen = new DslGenC {
       val IR: self.type = self
@@ -26,14 +26,14 @@ trait CompilerInstance extends Pipeline
 	def compile() {
 		prog()
 		println(sched)
-		codegen.emitSource(ev, "pipeline", 
+		codegen.emitSource(ev, "pipeline",
 			new java.io.PrintWriter(System.out))
 	}
 }
 
 class CompilerSpec extends FlatSpec {
 	"The grad program" should "return the default tree" in {
-	 	val gradProg = 
+	 	val gradProg =
 	 		new GradProg with CompilerInstance with TestAstOps
 	 	gradProg.compile()
 	 	val correctAst: ScheduleNode[String, String] =

@@ -1,8 +1,8 @@
 package sepia
 
 trait ScheduleOps {
-	this: PipelineLike =>
-	type Schedule 
+	this: SimpleFuncOps =>
+	type Schedule
 
-	def newSimpleSched(stage: PipelineStage): Schedule
+	def newSimpleSched(stage: Func): Schedule
 }
