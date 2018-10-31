@@ -6,7 +6,7 @@ import lms.common._
 
 trait Array2DOps extends Base {
   object New2DArray {
-    def apply[T:Typ](n: Rep[Int], m: Rep[Int]) = array2DObjNew[T](m, n)
+    def apply[T:Typ](m: Rep[Int], n: Rep[Int]) = array2DObjNew[T](m, n)
   }
 
 

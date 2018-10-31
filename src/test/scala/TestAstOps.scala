@@ -1,7 +1,7 @@
 import sepia._
 
 trait TestAstOps extends AstOps {
-	this: CompilerFuncOps with TestPipeline =>
+	this: CompilerFuncOps with TestPipeline with PipelineWithSchedManipulations =>
 
 	private def toStringRep(node: ScheduleNode[Func, Dim]): ScheduleNode[String, String] = {
 		node match {

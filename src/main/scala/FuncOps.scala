@@ -16,7 +16,8 @@ trait SimpleFuncOps extends Dsl {
 
   def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int]
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func
+  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
+             dom: (Int, Int)): Func
 }
 
 trait CompilerFuncOps extends SimpleFuncOps {
@@ -43,14 +44,12 @@ trait CompilerFuncOps extends SimpleFuncOps {
 
     var inlined = true
 
-    //schedule = Some(newSimpleSched(this))
-
     var buffer: Option[Rep[Array[Array[Int]]]] = None
 
     def apply(x: Rep[Int], y: Rep[Int]) = {
        if (inlined) f(x, y)
        else buffer match {
-        case Some(b) => b(y, x)
+        case Some(b) => b(x, y)
         case None => throw new InvalidSchedule("No buffer allocated at application time")
        }
     }
@@ -58,12 +57,12 @@ trait CompilerFuncOps extends SimpleFuncOps {
     def compute() = f(x.v, y.v)
 
     def storeInBuffer(v: Rep[Int]) = buffer match {
-      case Some(b) => b(y.v, x.v) = v
+      case Some(b) => b(x.v, y.v) = v
       case None => throw new InvalidSchedule("No buffer allocated at storage time")
     }
 
     def allocateNewBuffer() {
-      buffer = Some(New2DArray[Int](y.max, x.max))
+      buffer = Some(New2DArray[Int](x.max, y.max))
     }
   }
 
@@ -76,19 +75,19 @@ trait CompilerFuncOps extends SimpleFuncOps {
      case None => throw new InvalidSchedule("No buffer allocated at application time")
   }
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func = {
-    new CompilerFunc(f, (5, 5))
+  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
+    new CompilerFunc(f, dom)
   }
 
 }
 
-trait FuncExpr extends SimpleFuncOps with BaseExp {
+trait FuncExp extends SimpleFuncOps with BaseExp {
   // This trait produces nodes for function application.
   // It is used in the pre interperation analysis of the
   // pipeline
   type Func = (Rep[Int], Rep[Int]) => Rep[Int]
 
-  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int]) = f
+  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)) = f
 
   case class FuncApplication(f: Func, x: Rep[Int], y: Rep[Int])
     extends Def[Int]
