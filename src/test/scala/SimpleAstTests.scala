@@ -3,7 +3,7 @@ import org.scalatest.FlatSpec
 import sepia._
 
 trait GradProg extends TestPipeline {
-	override def prog(): Rep[Unit] = {
+	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y / 2) withDomain (5, 3)
 
@@ -20,13 +20,12 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def ev(in: Rep[Unit]) {
+	def ev(in: Rep[Array[Array[Int]]]) {
+		prog(in)
 		evalSched(sched)
 	}
 
 	def compile() {
-		prog()
-		println(sched)
 		codegen.emitSource(ev, "pipeline",
 			new java.io.PrintWriter(System.out))
 	}

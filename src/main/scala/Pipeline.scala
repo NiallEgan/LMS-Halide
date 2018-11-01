@@ -2,7 +2,8 @@ package sepia
 
 trait Pipeline extends SimpleFuncOps {
 	// The trait the user mixes in to create their program
-	def prog(): Rep[Unit]
+	def prog(in: Rep[Array[Array[Int]]]): Rep[Unit]
+
 	class FuncOps(f: (Rep[Int], Rep[Int]) => Rep[Int]) {
 		def withDomain(dom: (Int, Int)) = toFunc(f, dom)
 	}
@@ -18,7 +19,6 @@ trait PipelineWithSchedManipulations extends Pipeline with ScheduleOps {
 	// schedule manipulations, which can then be passed to a compiler
 	private var schedule: Option[Schedule] = None
 
-	def prog(): Rep[Unit]
 
 	override def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
 		val func: Func = mkFunc(f, dom)

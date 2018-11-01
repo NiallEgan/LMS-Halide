@@ -70,4 +70,9 @@ trait CGenArray2DOps extends CGenBase {
       case _ => super.emitNode(sym, rhs)
     }
   }
+
+  override def remap[A](m: Typ[A]) = m.toString match {
+    case "Array[Array[Int]]" => "int*" // TODO: Change codegen so we can have int ** here
+    case _ => super.remap(m)
+  }
 }
