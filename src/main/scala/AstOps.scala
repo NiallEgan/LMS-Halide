@@ -11,11 +11,11 @@ trait AstOps extends ScheduleOps {
 		// etc
 
 		val cn: ComputeNode[Func, Dim] = new ComputeNode[Func, Dim](stage, List())
-	    val xLoop: LoopNode[Func, Dim] = new LoopNode[Func, Dim](stage.x, stage,
-	    									Sequential, List(cn))
-	    val yLoop: LoopNode[Func, Dim] = new LoopNode[Func, Dim](stage.y, stage,
-	    									Sequential, List(xLoop))
-	    val sn: StorageNode[Func, Dim] = new StorageNode[Func, Dim](stage, List(yLoop))
-	    new RootNode[Func, Dim](List(sn))
+    val xLoop: LoopNode[Func, Dim] = new LoopNode[Func, Dim](stage.x, stage,
+    									Sequential, List(cn))
+    val yLoop: LoopNode[Func, Dim] = new LoopNode[Func, Dim](stage.y, stage,
+    									Sequential, List(xLoop))
+    val sn: StorageNode[Func, Dim] = new StorageNode[Func, Dim](stage, List(yLoop))
+    new RootNode[Func, Dim](List(sn))
 	}
 }

@@ -2,12 +2,28 @@ package sepia
 
 import scala.collection.mutable.ListBuffer
 
+case class Bound(val lb: Int, val ub: Int) {
+	def join(other: Bound): Bound = {
+		val newLb = if (lb < other.lb) lb else other.lb
+		val newUb = if (ub > other.ub) ub else other.ub
+		new Bound(newLb, newUb)
+	}
+
+	//override def toString(): String = (lb, ub).toString
+}
+
+object Bound {
+	// TODO: Why doesn't Int.min, Int.max work here?
+	val intMin = -1000000000
+	val intMax = 1000000000
+	val zero = Bound(intMax, intMin)
+}
+
 trait PipelineAnalysis extends FuncExp with DslExp
-										with SymbolicArray2DOpsExp with Pipeline {
+										with SymbolicOpsExp with Pipeline {
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
 
-	////
 	def treeTraversal[T](f: List[T] => T, m: Exp[_] => T,
                        node: Def[_]): T = node match {
       case ObjDoubleParseDouble(x)      => f(List(x).map(m))
@@ -56,11 +72,8 @@ trait PipelineAnalysis extends FuncExp with DslExp
       case LongBinaryAnd(x,y)           => f(List(x, y).map(m))
       case LongToInt(x)                 => f(List(x).map(m))
       case LongShiftRightUnsigned(x,y)  => f(List(x, y).map(m))
+			case SymbolicInt(_) 								=> f(List().map(m))
   }
-
-
-
-
 
 	val funcs: ListBuffer[(Rep[Int], Rep[Int]) => Rep[Int]] = new ListBuffer()
 
@@ -69,20 +82,7 @@ trait PipelineAnalysis extends FuncExp with DslExp
 		mkFunc(f, dom)
 	}
 
-	class Bound(val lb: Int, val ub: Int) {
-		def join(other: Bound): Bound = {
-			val newLb = if (lb < other.lb) lb else other.lb
-			val newUb = if (ub > other.ub) ub else other.ub
-			new Bound(newLb, newUb)
-		}
-	}
 
-	object Bound {
-		// TODO: Why doesn't Int.min, Int.max work here?
-		val intMin = -1000000000
-		val intMax = 1000000000
-		val zero = new Bound(intMax, intMin)
-	}
 
 	def mergeBoundsMaps(b1: Map[Func, (Bound, Bound)],
 											b2: Map[Func, (Bound, Bound)]): Map[Func, (Bound, Bound)] = {
@@ -97,59 +97,54 @@ trait PipelineAnalysis extends FuncExp with DslExp
 		}
 	}
 
+	def extractBound(expr: Exp[_], dim: String) = expr match {
+		case Def(v) => v match {
+			case IntPlus(Def(SymbolicInt(dim)), Const(k)) => Bound(k, k)
+			case IntPlus(Const(k), Def(SymbolicInt(dim))) => Bound(k, k)
+			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k)
+			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k)
+			case SymbolicInt(dim) => Bound(0, 0)
+			case _ => throw new InvalidAlgorithm(f"Error: Invalid x input to function, $v")
+		}
+		case Const(_) => Bound(0, 0)
+	}
+
+
 	def analyseInputTransformations(xExpr: Exp[_],
 																	yExpr: Exp[_]): (Bound, Bound) = {
 	// For now, we just analyse additive constants on x / y coordinates.
 	// Do we need anything else?
-	val xTransformation: Bound = xExpr match {
-		case Def(v) => v match {
-			case IntPlus(_, Const(k)) => new Bound(k, k)
-			case IntPlus(Const(k), _) => new Bound(k, k)
-			case _ => throw new InvalidAlgorithm(f"Error: Invalid x input to function")
-			}
-		case Const(_) => new Bound(0, 0)
-		}
 
-	// TODO: DRY
-	val yTransformation = yExpr match {
-		case Def(v) => v match {
-			case IntPlus(_, Const(k)) => new Bound(k, k)
-			case IntPlus(Const(k), _) => new Bound(k, k)
-			case _ => throw new InvalidAlgorithm(f"Error: Invalid y input to function")
-			}
-		case Const(_) => new Bound(0, 0)
-		}
+	val xTransformation: Bound = extractBound(xExpr, "x")
+	val yTransformation: Bound = extractBound(yExpr, "y")
 
 	(xTransformation, yTransformation)
 	}
 
-  def getFunctionInputTransformations(e: Exp[_]): Map[Func, (Bound, Bound)] = e match {
+  def getInputTransformations(e: Exp[_]): Map[Func, (Bound, Bound)] = e match {
     case Def(v) => v match {
-      case FuncApplication(func, xExpr, yExpr) =>
+    	case FuncApplication(func, xExpr, yExpr) =>  {
 				Map(func -> analyseInputTransformations(xExpr, yExpr))
+			}
       case x => {
 				treeTraversal[Map[Func, (Bound, Bound)]](
 					_.foldLeft(Map[Func, (Bound, Bound)]())(mergeBoundsMaps),
-					getFunctionInputTransformations _, x)
+					getInputTransformations _, x)
 			}
     }
     case Const(_) => Map()
   }
 
-	def analyse() = {
-		val x = newSymbolicArray(0, 0) // TODO: We want this to be recognizable from other arrays
+	def getInputBounds(): Map[Func, Map[Func, (Bound, Bound)]] = {
+		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
+		// f calls functions g1, g2 with (a, b) a bound on
+		// g1's input and (c, d) a bound on g2's input.
+		// TODO: Abstract into a better class?
+		val x = newSymbolic2DArray[Int]()
 		prog(x)
-		for (f <- funcs.toList) {
-      println(f)
-			println(f(0, 4)) // TODO: We want symbolic ints here.
-			f(0, 4) match {
-				case Def(v) => println(v)
-        // TODO: Traverse the graph. How? What are we looking for?
-        // We want to know about the operations performed on the inputs to the functions
-
-				case Const(v) => println(v)
-			}
-		}
-		println(globalDefsCache)
+		funcs.toList.foldLeft(Map[Func, Map[Func, (Bound, Bound)]]())
+								{(m, f) =>
+									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
+																										 newSymbolicInt("y"))))}
 	}
 }

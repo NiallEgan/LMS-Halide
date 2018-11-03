@@ -26,10 +26,6 @@ trait Array2DOps extends Base {
 
 }
 
-trait SymbolicArray2DOps extends Array2DOps {
-  def newSymbolicArray[T:Typ](m: Rep[Int], n: Rep[Int]): Rep[Array[Array[T]]]
-}
-
 trait Array2DOpsExp extends Array2DOps with EffectExp {
   implicit def array2DTyp[T:Typ]: Typ[Array[Array[T]]] = {
     implicit val ManifestTyp(m) = typ[T]
@@ -59,10 +55,6 @@ trait Array2DOpsExp extends Array2DOps with EffectExp {
     reflectWrite(x)(Array2DUpdate(x, n, m, y))
 }
 
-trait SymbolicArray2DOpsExp extends Array2DOpsExp with SymbolicArray2DOps
-    with PrimitiveOps{
-  override def newSymbolicArray[T:Typ](n: Rep[Int], m: Rep[Int]) = Array2DNew[T](n, m)
-}
 
 trait CGenArray2DOps extends CGenBase {
   val IR: Array2DOpsExp

@@ -3,19 +3,19 @@ import sepia._
 trait TestAstOps extends AstOps {
 	this: CompilerFuncOps with TestPipeline with PipelineWithSchedManipulations =>
 
-	private def toStringRep(node: ScheduleNode[Func, Dim]): ScheduleNode[String, String] = {
+	private def toString(node: ScheduleNode[Func, Dim]): ScheduleNode[String, String] = {
 		node match {
 			case RootNode(children) =>
-				new RootNode[String, String](children.map(toStringRep))
+				new RootNode[String, String](children.map(toString))
 			case ComputeNode(func, children) =>
-				new ComputeNode[String, String](getStage(func), children.map(toStringRep))
+				new ComputeNode[String, String](asString(func), children.map(toString))
 			case StorageNode(func, children) =>
-				new StorageNode[String, String](getStage(func), children.map(toStringRep))
+				new StorageNode[String, String](asString(func), children.map(toString))
 			case LoopNode(variable, func, loopType, children) =>
-				new LoopNode[String, String](variable.name, getStage(func), loopType,
-											 children.map(toStringRep))
+				new LoopNode[String, String](variable.name, asString(func), loopType,
+											 children.map(toString))
 		}
 	}
 
-	def scheduleRep(): ScheduleNode[String, String] = toStringRep(sched)
+	def scheduleRep(): ScheduleNode[String, String] = toString(sched)
 }
