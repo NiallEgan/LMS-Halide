@@ -55,6 +55,7 @@ trait Array2DOpsExp extends Array2DOps with EffectExp {
     reflectWrite(x)(Array2DUpdate(x, n, m, y))
 }
 
+
 trait CGenArray2DOps extends CGenBase {
   val IR: Array2DOpsExp
   import IR._
