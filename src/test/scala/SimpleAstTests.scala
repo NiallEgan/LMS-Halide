@@ -11,13 +11,13 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def ev(in: Rep[Array[Array[Int]]]) {
+	def ev(bounds: Map[Int, Map[Int, (Bound, Bound)]])(in: Rep[Array[Array[Int]]]) = {
 		prog(in)
-		evalSched(sched)
+		evalSched(sched, bounds)
 	}
 
-	def compile() {
-		codegen.emitSource(ev, "pipeline",
+	def compile(bounds: Map[Int, Map[Int, (Bound, Bound)]]) = {
+		codegen.emitSource(ev(bounds), "pipeline",
 			new java.io.PrintWriter(System.out))
 	}
 }
@@ -26,7 +26,10 @@ class CompilerSpec extends FlatSpec {
 	"The grad program" should "return the default tree" in {
 	 	val gradProg =
 	 		new GradProg with CompilerInstance with TestAstOps
-	 	gradProg.compile()
+
+		val gradProgAnalysis = new GradProg with TestPipelineAnalysis
+
+	 	gradProg.compile(gradProgAnalysis.getIdInputBounds)
 	 	val correctAst: ScheduleNode[String, String] =
 	 		new RootNode(List(
 	 			new StorageNode("f",List(
@@ -43,7 +46,10 @@ class CompilerSpec extends FlatSpec {
 	"The blurred grad program" should "return the default tree, with f inlined" in {
 		val gradProg =
 			new BlurredGradProg with CompilerInstance with TestAstOps
-		gradProg.compile()
+
+		val gradProgAnalysis = new BlurredGradProg with TestPipelineAnalysis
+
+		gradProg.compile(gradProgAnalysis.getIdInputBounds)
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
 				new StorageNode("g",List(

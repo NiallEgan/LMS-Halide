@@ -18,10 +18,11 @@ trait PipelineWithSchedManipulations extends Pipeline with ScheduleOps {
 	// This trait is mixed in with a specific program and it adds
 	// schedule manipulations, which can then be passed to a compiler
 	private var schedule: Option[Schedule] = None
-
+	private var id = 0
 
 	override def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
-		val func: Func = mkFunc(f, dom)
+		val func: Func = mkFunc(f, dom, id)
+		id += 1
 		schedule = Some(newSimpleSched(func))
 		func
 	}

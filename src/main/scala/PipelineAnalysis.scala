@@ -3,13 +3,14 @@ package sepia
 import scala.collection.mutable.ListBuffer
 
 case class Bound(val lb: Int, val ub: Int) {
+	// Inclusive bounds
 	def join(other: Bound): Bound = {
 		val newLb = if (lb < other.lb) lb else other.lb
 		val newUb = if (ub > other.ub) ub else other.ub
 		new Bound(newLb, newUb)
 	}
 
-	//override def toString(): String = (lb, ub).toString
+	def width(): Int = (ub - lb) + 1
 }
 
 object Bound {
@@ -75,14 +76,14 @@ trait PipelineAnalysis extends FuncExp with DslExp
 			case SymbolicInt(_) 								=> f(List().map(m))
   }
 
-	val funcs: ListBuffer[(Rep[Int], Rep[Int]) => Rep[Int]] = new ListBuffer()
+	var funcs: Map[(Rep[Int], Rep[Int]) => Rep[Int], Int] = Map()
+	private var id = 0
 
 	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
-		funcs += f
-		mkFunc(f, dom)
+		funcs += (f -> id)
+		id += 1
+		mkFunc(f, dom, id)
 	}
-
-
 
 	def mergeBoundsMaps(b1: Map[Func, (Bound, Bound)],
 											b2: Map[Func, (Bound, Bound)]): Map[Func, (Bound, Bound)] = {
@@ -142,9 +143,14 @@ trait PipelineAnalysis extends FuncExp with DslExp
 		// TODO: Abstract into a better class?
 		val x = newSymbolic2DArray[Int]()
 		prog(x)
-		funcs.toList.foldLeft(Map[Func, Map[Func, (Bound, Bound)]]())
+		funcs.keys.foldLeft(Map[Func, Map[Func, (Bound, Bound)]]())
 								{(m, f) =>
 									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
 																										 newSymbolicInt("y"))))}
+	}
+
+	def getIdInputBounds(): Map[Int, Map[Int, (Bound, Bound)]] = {
+		    getInputBounds.map{case (k, v) => funcs(k) ->
+		         v.map{case (k1, v2) => funcs(k1) -> v2}}
 	}
 }
