@@ -1,19 +1,58 @@
 package sepia
 
 trait ScheduleCompiler extends CompilerFuncOps {
+
+	def makeFlatBounds(idToFunc: Map[Int, Func],
+										 boundsGraph: Map[Int, Map[Int, (Bound, Bound)]]): Map[(Func, Dim), Bound] = {
+		// (f, x) -> Bound(a, b) means that x has bounds (a, b) when used in f
+		// N.B. x is bound to some function g
+		var bs: Map[(Func, Dim), Bound] = Map()
+		for (conId <- boundsGraph.keys) {
+			val consumer = idToFunc(conId)
+			for (prodId <- boundsGraph(conId).keys) {
+				val producer = idToFunc(prodId)
+				bs += (consumer, producer.x) -> boundsGraph(conId)(prodId)._1
+				bs += (consumer, producer.y) -> boundsGraph(conId)(prodId)._2
+			}
+		}
+
+		bs
+	}
+	def computeLoopBounds(variable: Dim, stage: Func, flatBounds: Map[(Func, Dim), Bound]): (Rep[Int], Rep[Int]) = {
+		val lowerBound =
+			if (stage.inlined) variable.min // TODO: Compte at root
+			else {
+				stage.computeAt match {
+					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
+					case Some(v) => v.v + flatBounds(v.f, variable).lb
+				}
+			}
+
+		val upperBound =
+			if (stage.inlined) variable.max
+			else {
+				stage.computeAt match {
+					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
+					case Some(v) => v.v + flatBounds(v.f, variable).ub
+				}
+			}
+
+		(lowerBound, upperBound)
+	}
 	def evalSched(node: ScheduleNode[Func, Dim],
-								bounds: Map[Int, Map[Int, (Bound, Bound)]]): Rep[Unit] = node match {
+								flatBounds: Map[(Func, Dim), Bound]): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
+			val (lb, ub) = computeLoopBounds(variable, stage, flatBounds)
       loopType match {
         case Sequential =>
-          for (i <- (0 until variable.max): Rep[Range]) {
+          for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, bounds)
+            for (child <- children) evalSched(child, flatBounds)
           }
         case Unrolled =>
-          for (i <- 0 until variable.max) {
+          for (i <- lb until ub) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, bounds)
+            for (child <- children) evalSched(child, flatBounds)
           }
       }
 
@@ -23,30 +62,32 @@ trait ScheduleCompiler extends CompilerFuncOps {
         it */
       val v: Rep[Int] = stage.compute()
       stage.storeInBuffer(v)
-      for (child <- children) evalSched(child, bounds)
+      for (child <- children) evalSched(child, flatBounds)
     }
 
  	  case StorageNode(stage, children) => {
 			stage.storeAt match {
 				case None => stage.allocateNewBuffer()
-				case Some(dim) => {
+				case Some(storeAtDim) => {
 					// TODO: For now, only support storing at one level up
-					val topConsumerFunctionId: Int = dim.f.id
-					val (xBound, yBound): (Bound, Bound) = bounds(topConsumerFunctionId)(stage.id)
-					if (dim.name == "x") {
+					val consumerFunction = storeAtDim.f
+					val xBound = flatBounds((consumerFunction, stage.x))
+					val yBound = flatBounds((consumerFunction, stage.y))
+
+					if (storeAtDim.name == "x") {
 						stage.allocateNewBuffer(stage.x.max, yBound.width)
-					} else if (dim.name == "y") {
+					} else if (storeAtDim.name == "y") {
 						stage.allocateNewBuffer(xBound.width, stage.y.max)
 					} else {
 						throw new RuntimeException("Error: Unknown variable name")
 					}
 				}
 			}
-   	 	for (child <- children) evalSched(child, bounds)
+   	 	for (child <- children) evalSched(child, flatBounds)
  	  }
 
     case RootNode(children) => {
-      for (child <- children) evalSched(child, bounds)
+      for (child <- children) evalSched(child, flatBounds)
     }
   }
 }

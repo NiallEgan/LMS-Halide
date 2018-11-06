@@ -23,7 +23,8 @@ trait SimpleFuncOps extends Dsl {
 trait CompilerFuncOps extends SimpleFuncOps {
   // The api that is presented to the DSL compiler
 
-  class Dim(val max: Rep[Int], val name: String, val f: Func) {
+  class Dim(val min: Rep[Int], val max: Rep[Int],
+            val name: String, val f: Func) {
 		private var value: Option[Rep[Int]] = None
 
 		def v: Rep[Int] = value match {
@@ -39,11 +40,13 @@ trait CompilerFuncOps extends SimpleFuncOps {
 
   class CompilerFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
                      dom: (Int, Int), val id: Int) {
-    val x: Dim = new Dim(dom._1, "x", this)
-    val y: Dim = new Dim(dom._2, "y", this)
+    // TODO: Non-zero domains
+    val x: Dim = new Dim(0, dom._1, "x", this)
+    val y: Dim = new Dim(0, dom._2, "y", this)
 
     var inlined = true
     var storeAt: Option[Dim] = None
+    var computeAt: Option[Dim] = None
     var buffer: Option[Rep[Array[Array[Int]]]] = None
 
     def apply(x: Rep[Int], y: Rep[Int]) = {

@@ -3,7 +3,7 @@ import scala.collection.mutable.ListBuffer
 
 import sepia._
 
-trait TestPipelineAnalysis extends PipelineAnalysis with TestPipeline {
+trait TestPipelineAnalysis extends PipelineForAnalysis with TestPipeline {
   def boundsAsStrings(): Map[String, Map[String, (Bound, Bound)]] = {
     val bounds = getInputBounds()
 

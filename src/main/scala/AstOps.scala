@@ -24,7 +24,7 @@ trait AstOps extends ScheduleOps {
 
 	private def insertNewLeftChild(sched: ScheduleNode[Func, Dim],
 																 fTree: ScheduleNode[Func, Dim],
-															 	 y: Dim) = match sched {
+															 	 y: Dim): Schedule = sched match {
 		// Inserts fTree at the loop for y in sched
 		case RootNode(children) => {
 			RootNode(children.map(insertNewLeftChild(sched, _, y)))
@@ -45,7 +45,7 @@ trait AstOps extends ScheduleOps {
 		}
 	}
 
-	private def treeMatch(f: Func)(sched: ScheduleNode[Func, Dim]) = {
+	private def treeMatch(f: Func, sched: ScheduleNode[Func, Dim]) = {
 		sched match {
 			case RootNode(_) => false
 			case ComputeNode(stage, _) => stage == f
@@ -54,29 +54,29 @@ trait AstOps extends ScheduleOps {
 		}
 	}
 
-	private def deleteTreeFor(sched: Schedule, f: Func) = {
+	private def deleteTreeFor(sched: Schedule, f: Func): Schedule = {
 		sched match {
 			case RootNode(children) => {
-				RootNode(children.filter(!treeMatch(f)).map(deleteTreeFor(_, f)))
+				RootNode(children.filter(!treeMatch(f, _)).map(deleteTreeFor(_, f)))
 			}
 			case LoopNode(variable, stage, loopType, children) => {
 				LoopNode(variable, stage, loopType,
-								 children.filter(!treeMatch(f)).map(deleteTreeFor(_, f)))
+								 children.filter(!treeMatch(f, _)).map(deleteTreeFor(_, f)))
 			}
 			case StorageNode(stage, children) => {
 				StorageNode(stage,
-										children.filter(!treeMatch(f)).map(deleteTreeFor(_, f)))
+										children.filter(!treeMatch(f, _)).map(deleteTreeFor(_, f)))
 			}
 			case ComputeNode(stage, children) => {
 				ComputeNode(stage,
-										children.filter(!treeMatch(f)).map(deleteTreeFor(_, f)))
+										children.filter(!treeMatch(f, _)).map(deleteTreeFor(_, f)))
 			}
 		}
 	}
 
-	def oneOf[Option[T]](l: List[Option[T]]) = l match {
+	def oneOf[T](l: List[Option[T]]): Option[T] = l match {
 		case Nil => None
-		case Some(x)::xs => match oneOf[T](xs) {
+		case Some(x)::xs => oneOf[T](xs) match {
 			case None => Some(x)
 			case Some(_) => throw new InvalidSchedule("Too many computations")
 		}
@@ -85,37 +85,43 @@ trait AstOps extends ScheduleOps {
 
 	private def findTreeFor(sched: Schedule, f: Func): Option[Schedule] = {
 		sched match {
-			case RootNode(children) => oneOf[Schedule](children.map(_, f))
-			case LoopNode(_, stage, _, children)@l => {
+			case RootNode(children) => oneOf[Schedule](children.map(findTreeFor(_, f)))
+			case l@LoopNode(_, stage, _, children) => {
 				if (stage == f) Some(l)
-				else oneOf[Schedule](children.map(_, f))
+				else oneOf[Schedule](children.map(findTreeFor(_, f)))
 			}
-			case ComputeNode(stage, children)@c => {
+			case c@ComputeNode(stage, children) => {
 				if (stage == f) Some(c)
-				else oneOf[Schedule](children.map(_, f))
+				else oneOf[Schedule](children.map(findTreeFor(_, f)))
 			}
-			case StorageNode(stage, children)@s => {
+			case s@StorageNode(stage, children) => {
 				if (stage == f) Some(s)
-				else oneOf[Schedule](children.map(_, f))
+				else oneOf[Schedule](children.map(findTreeFor(_, f)))
 			}
 		}
 	}
 
-	def computefAtX(sched: Schedule, f: Func, y: Dim): Schedule = {
+	def computefAtX(sched: Schedule, producer: Func, consumer: Func, s: String): Schedule = {
 		// If f is inlined, create a new sched tree for it.
 		// Else, cut out the current f tree
+		val computeAtDim: Dim = if (s == "x") consumer.x
+														else if (s == "y") consumer.y
+														else throw new InvalidSchedule(f"Invalid computeAt var $s")
 		var newSched = sched
-		val fTree: ScheduleNode =
-			if (f.inlined) {
-				f.inlined = false
-				simpleFuncTree(f)
+		producer.computeAt = Some(computeAtDim)
+		val fTree: Schedule =
+			if (producer.inlined) {
+				producer.inlined = false
+				simpleFuncTree(producer)
 			} else {
-				val fTree = findTreeFor(sched, f)
-				newSched = deleteTreeFor(sched, f)
-				fTree
+				newSched = deleteTreeFor(sched, producer)
+				findTreeFor(sched, producer) match {
+					case Some(x) => x
+					case None => throw new RuntimeException(f"$producer not found in $sched")
+				}
 			}
 
 		// Move the part of the tree for f to be a child of yLoop
-		insertNewLeftChild(newSched, fTree, y)
+		insertNewLeftChild(newSched, fTree, computeAtDim)
 	}
 }

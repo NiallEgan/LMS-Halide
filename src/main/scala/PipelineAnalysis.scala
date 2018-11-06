@@ -20,7 +20,7 @@ object Bound {
 	val zero = Bound(intMax, intMin)
 }
 
-trait PipelineAnalysis extends FuncExp with DslExp
+trait PipelineForAnalysis extends FuncExp with DslExp
 										with SymbolicOpsExp with Pipeline {
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
@@ -149,8 +149,15 @@ trait PipelineAnalysis extends FuncExp with DslExp
 																										 newSymbolicInt("y"))))}
 	}
 
-	def getIdInputBounds(): Map[Int, Map[Int, (Bound, Bound)]] = {
-		    getInputBounds.map{case (k, v) => funcs(k) ->
-		         v.map{case (k1, v2) => funcs(k1) -> v2}}
+	def getBoundsGraph(): Map[Int, Map[Int, (Bound, Bound)]] = {
+	    getInputBounds.map{case (k, v) => funcs(k) ->
+	         v.map{case (k1, v2) => funcs(k1) -> v2}}
 	}
+
+	class UselessFuncOps(f: Func) extends FuncOps(f) {
+		// Just convert sched ops to no-ops in the analysis phase
+		override def computeAt(consumer: Func, s: String): Unit = return
+	}
+
+	override implicit def toFuncOps(f: Func) = new UselessFuncOps(f)
 }
