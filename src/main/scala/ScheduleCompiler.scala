@@ -24,7 +24,8 @@ trait ScheduleCompiler extends CompilerFuncOps {
 			else {
 				stage.computeAt match {
 					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
-					case Some(v) => v.v + flatBounds(v.f, variable).lb
+					// This only works for x and y...
+					case Some(v) => if(v.name == variable.name) v.v + flatBounds(v.f, variable).lb else variable.min
 				}
 			}
 
@@ -33,7 +34,8 @@ trait ScheduleCompiler extends CompilerFuncOps {
 			else {
 				stage.computeAt match {
 					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
-					case Some(v) => v.v + flatBounds(v.f, variable).ub
+					case Some(v) => if(v.name == variable.name) v.v + flatBounds(v.f, variable).ub + 1 else variable.max
+
 				}
 			}
 
@@ -70,6 +72,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 				case None => stage.allocateNewBuffer()
 				case Some(storeAtDim) => {
 					// TODO: For now, only support storing at one level up
+					//println()
 					val consumerFunction = storeAtDim.f
 					val xBound = flatBounds((consumerFunction, stage.x))
 					val yBound = flatBounds((consumerFunction, stage.y))

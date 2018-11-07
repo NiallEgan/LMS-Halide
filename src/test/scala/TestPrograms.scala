@@ -29,11 +29,11 @@ trait BlurredGradProg extends TestPipeline {
 trait BlurredGradProgComputeAt extends TestPipeline {
 	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 3)
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 5)
 
 		val g: Func =
 				((x: Rep[Int], y: Rep[Int]) =>
-					(f(x-1, y) + f(x, y-1) + f(x-1, y-1) + f(x, y)) / 4) withDomain (5, 3)
+					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (4, 4)
 
 		f.computeAt(g, "y")
 		// This is for testing purposes only

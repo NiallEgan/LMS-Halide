@@ -40,7 +40,7 @@ class CompilerSpec extends FlatSpec {
 	 				))
 	 			))
 	 		))
-	 	assertResult(gradProg.scheduleRep)(correctAst)
+			assertResult(correctAst)(gradProg.scheduleRep)
 	}
 
 	"The blurred grad program" should "return the default tree, with f inlined" in {
@@ -60,7 +60,7 @@ class CompilerSpec extends FlatSpec {
 					))
 				))
 			))
-		assertResult(gradProg.scheduleRep)(correctAst)
+			assertResult(correctAst)(gradProg.scheduleRep)
 	}
 
 	"The blurred grad prog with computeAt" should "deinline f and move it" in {
@@ -74,7 +74,7 @@ class CompilerSpec extends FlatSpec {
 				new StorageNode("g",List(
 					new LoopNode("y", "g", Sequential, List(
 						new StorageNode("f", List(
-							new LoopNode("y", "f", Sequential, List (
+							new LoopNode("y", "f", Sequential, List(
 								new LoopNode("x", "f", Sequential, List(
 									new ComputeNode("f", List())
 								))
@@ -87,6 +87,6 @@ class CompilerSpec extends FlatSpec {
 				))
 			))
 
-			assertResult(gradProg.scheduleRep)(correctAst)
+			assertResult(correctAst)(gradProg.scheduleRep)
 	}
 }

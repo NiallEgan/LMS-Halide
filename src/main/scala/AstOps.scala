@@ -22,25 +22,38 @@ trait AstOps extends ScheduleOps {
     new RootNode[Func, Dim](List(simpleFuncTree(stage)))
 	}
 
+	private def addChildren(t: ScheduleNode[Func, Dim],
+													children: List[ScheduleNode[Func, Dim]]) = t match {
+			case RootNode(otherChildren) => RootNode(otherChildren ++ children)
+			case ComputeNode(s, otherChildren) => ComputeNode(s, otherChildren ++ children)
+			case StorageNode(s, otherChildren) => StorageNode(s, otherChildren ++ children)
+			case LoopNode(v, s, loopType,  otherChildren) => LoopNode(v, s, loopType, otherChildren ++ children)
+
+	}
+
 	private def insertNewLeftChild(sched: ScheduleNode[Func, Dim],
 																 fTree: ScheduleNode[Func, Dim],
-															 	 y: Dim): Schedule = sched match {
+															 	 y: Dim): ScheduleNode[Func, Dim] = sched match {
 		// Inserts fTree at the loop for y in sched
 		case RootNode(children) => {
-			RootNode(children.map(insertNewLeftChild(sched, _, y)))
+			println(children)
+			println()
+			RootNode(children.map(insertNewLeftChild(_, fTree, y)))
 		}
 		case ComputeNode(stage, children) => {
-			ComputeNode(stage, children.map(insertNewLeftChild(sched, _, y)))
+			ComputeNode(stage, children.map(insertNewLeftChild(_, fTree, y)))
 		}
 		case StorageNode(stage, children) => {
-			StorageNode(stage, children.map(insertNewLeftChild(sched, _, y)))
+			println(children)
+			println()
+			StorageNode(stage, children.map(insertNewLeftChild(_, fTree, y)))
 		}
 		case LoopNode(variable, stage, loopType, children) => {
 			if (variable == y) {
-				LoopNode(variable, stage, loopType, fTree::children)
+				LoopNode(variable, stage, loopType, List(addChildren(fTree, children)))
 			} else {
 				LoopNode(variable, stage, loopType,
-								 children.map(insertNewLeftChild(sched, _, y)))
+								 children.map(insertNewLeftChild(_, fTree, y)))
 			}
 		}
 	}
@@ -109,6 +122,8 @@ trait AstOps extends ScheduleOps {
 														else throw new InvalidSchedule(f"Invalid computeAt var $s")
 		var newSched = sched
 		producer.computeAt = Some(computeAtDim)
+		producer.storeAt = Some(computeAtDim)
+
 		val fTree: Schedule =
 			if (producer.inlined) {
 				producer.inlined = false
