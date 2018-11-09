@@ -5,7 +5,8 @@ trait Pipeline extends SimpleFuncOps {
 	def prog(in: Rep[Array[Array[Int]]]): Rep[Unit]
 
 	class FOps(f: (Rep[Int], Rep[Int]) => Rep[Int]) {
-		def withDomain(dom: (Int, Int)) = toFunc(f, dom)
+		def withDomain(dom: (Int, Int)): Func = withNZDomain((0, dom._1), (0, dom._2))
+		def withNZDomain(dom: ((Int, Int), (Int, Int))): Func = toFunc(f, dom)
 	}
 	implicit def toFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
 		new FOps(f)
@@ -17,7 +18,7 @@ trait Pipeline extends SimpleFuncOps {
 
 	implicit def toFuncOps(f: Func): FuncOps
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func
+	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int))): Func
 }
 
 trait PipelineForCompiler extends Pipeline with ScheduleOps {
@@ -27,7 +28,7 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps {
 	private var id = 0
 	var idToFunc: Map[Int, Func] = Map()
 
-	override def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
+	override def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int))): Func = {
 		val func: Func = mkFunc(f, dom, id)
 		idToFunc += id -> func
 		id += 1

@@ -19,22 +19,30 @@ trait ScheduleCompiler extends CompilerFuncOps {
 		bs
 	}
 	def computeLoopBounds(variable: Dim, stage: Func, flatBounds: Map[(Func, Dim), Bound]): (Rep[Int], Rep[Int]) = {
-		val lowerBound =
+		val lowerBound: Rep[Int] =
 			if (stage.inlined) variable.min // TODO: Compte at root
 			else {
 				stage.computeAt match {
 					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
 					// This only works for x and y...
-					case Some(v) => if(v.name == variable.name) v.v + flatBounds(v.f, variable).lb else variable.min
+					case Some(v) => {
+						if(v.name == variable.name) v.v + flatBounds(v.f, variable).lb
+						else unit(variable.min)
+					}
 				}
 			}
 
-		val upperBound =
+		val upperBound: Rep[Int] =
 			if (stage.inlined) variable.max
 			else {
 				stage.computeAt match {
 					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
-					case Some(v) => if(v.name == variable.name) v.v + flatBounds(v.f, variable).ub + 1 else variable.max
+					case Some(v) => {
+						// If v.name == variable.name, then (at least when we're just dealing with x and y)
+						// We are at the loop that must start from the producer variable
+						if (v.name == variable.name) v.v + flatBounds(v.f, variable).ub + 1
+						else unit(variable.max)
+					}
 
 				}
 			}
@@ -72,7 +80,6 @@ trait ScheduleCompiler extends CompilerFuncOps {
 				case None => stage.allocateNewBuffer()
 				case Some(storeAtDim) => {
 					// TODO: For now, only support storing at one level up
-					//println()
 					val consumerFunction = storeAtDim.f
 					val xBound = flatBounds((consumerFunction, stage.x))
 					val yBound = flatBounds((consumerFunction, stage.y))

@@ -47,4 +47,15 @@ class AnalysisSpec extends FlatSpec {
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)
     }
+
+  "ThreeStageBoxBlur" should "have bounds of " in {
+    val threeStageBoxBlur = new ThreeStageBoxBlur with TestPipelineAnalysis
+    val bounds = threeStageBoxBlur.boundsAsStrings
+    assertResult(Bound(0, 0))(bounds("h")("g")._1)
+    assertResult(Bound(-1, 1))(bounds("h")("g")._2)
+    assertResult(Bound(-1, 1))(bounds("g")("f")._1)
+    assertResult(Bound(0, 0))(bounds("g")("f")._2)
+
+
+  }
 }

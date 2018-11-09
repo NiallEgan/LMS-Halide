@@ -89,4 +89,25 @@ class CompilerSpec extends FlatSpec {
 
 			assertResult(correctAst)(gradProg.scheduleRep)
 	}
+
+	"The three stage box blur program" should "return the default tree, with f & g inlined" in {
+		val gradProg =
+			new ThreeStageBoxBlur with CompilerInstance with TestAstOps
+
+		val gradProgAnalysis = new ThreeStageBoxBlur with TestPipelineAnalysis
+
+		println("Three stage box blur:")
+		gradProg.compile(gradProgAnalysis.getBoundsGraph)
+		val correctAst: ScheduleNode[String, String] =
+			new RootNode(List(
+				new StorageNode("h",List(
+					new LoopNode("y", "h", Sequential, List(
+						new LoopNode("x", "h", Sequential, List(
+							new ComputeNode("h", List())
+						))
+					))
+				))
+			))
+			assertResult(correctAst)(gradProg.scheduleRep)
+	}
 }

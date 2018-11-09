@@ -14,14 +14,11 @@ case class Bound(val lb: Int, val ub: Int) {
 }
 
 object Bound {
-	// TODO: Why doesn't Int.min, Int.max work here?
-	val intMin = -1000000000
-	val intMax = 1000000000
-	val zero = Bound(intMax, intMin)
+	val zero = Bound(Int.MaxValue, Int.MinValue)
 }
 
-trait PipelineForAnalysis extends FuncExp with DslExp
-										with SymbolicOpsExp with Pipeline {
+trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
+													with SymbolicFuncOpsExp with Pipeline {
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
 
@@ -79,7 +76,7 @@ trait PipelineForAnalysis extends FuncExp with DslExp
 	var funcs: Map[(Rep[Int], Rep[Int]) => Rep[Int], Int] = Map()
 	private var id = 0
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
+	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int))): Func = {
 		funcs += (f -> id)
 		id += 1
 		mkFunc(f, dom, id)
@@ -87,7 +84,9 @@ trait PipelineForAnalysis extends FuncExp with DslExp
 
 	def mergeBoundsMaps(b1: Map[Func, (Bound, Bound)],
 											b2: Map[Func, (Bound, Bound)]): Map[Func, (Bound, Bound)] = {
-		// TODO: Rewrite with scalaz?
+		// Given two maps for func -> bound, bound, will join the two maps together.
+		// If the two maps both have a bound for key k, will merge the bounds by taking
+		// the smallest of the min and the largest of the max.
 		b1 ++ b2.map{ case (k,v) => k -> {
 				val xb1 = v._1
 				val yb1 = v._2
@@ -127,6 +126,9 @@ trait PipelineForAnalysis extends FuncExp with DslExp
     	case FuncApplication(func, xExpr, yExpr) =>  {
 				Map(func -> analyseInputTransformations(xExpr, yExpr))
 			}
+			// This is for the special case when we're calling in...
+			// Is it necessary to match here on SymbolicArray?
+			case Array2DApply(_, _, _) => Map()
       case x => {
 				treeTraversal[Map[Func, (Bound, Bound)]](
 					_.foldLeft(Map[Func, (Bound, Bound)]())(mergeBoundsMaps),
@@ -140,13 +142,12 @@ trait PipelineForAnalysis extends FuncExp with DslExp
 		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
-		// TODO: Abstract into a better class?
 		val x = newSymbolic2DArray[Int]()
 		prog(x)
 		funcs.keys.foldLeft(Map[Func, Map[Func, (Bound, Bound)]]())
 								{(m, f) =>
 									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
-																										 newSymbolicInt("y"))))}
+																										  newSymbolicInt("y"))))}
 	}
 
 	def getBoundsGraph(): Map[Int, Map[Int, (Bound, Bound)]] = {

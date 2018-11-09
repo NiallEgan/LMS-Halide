@@ -56,4 +56,17 @@ trait FunkyBoundsProg extends TestPipeline {
 	}
 }
 
-// TODO: 3 stage pipeline tests
+trait ThreeStageBoxBlur extends TestPipeline {
+	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(5, 5)
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, 4), (0, 5))
+		val h: Func =
+			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, 4), (1, 4))
+
+		registerFunction("f", f)
+		registerFunction("g", g)
+		registerFunction("h", h)
+	}
+}

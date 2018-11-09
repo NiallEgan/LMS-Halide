@@ -4,7 +4,6 @@ import lms.common._
 
 trait SimpleFuncOps extends Dsl {
   // The api that is presented to the DSL user
-
   type Func
 
   class FuncOps(f: Func) {
@@ -17,13 +16,13 @@ trait SimpleFuncOps extends Dsl {
   def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int]
 
   def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
-             dom: (Int, Int), id: Int): Func
+             dom: ((Int, Int), (Int, Int)), id: Int): Func
 }
 
 trait CompilerFuncOps extends SimpleFuncOps {
   // The api that is presented to the DSL compiler
 
-  class Dim(val min: Rep[Int], val max: Rep[Int],
+  class Dim(val min: Int, val max: Int,
             val name: String, val f: Func) {
 		private var value: Option[Rep[Int]] = None
 
@@ -39,10 +38,9 @@ trait CompilerFuncOps extends SimpleFuncOps {
 	}
 
   class CompilerFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
-                     dom: (Int, Int), val id: Int) {
-    // TODO: Non-zero domains
-    val x: Dim = new Dim(0, dom._1, "x", this)
-    val y: Dim = new Dim(0, dom._2, "y", this)
+                     dom: ((Int, Int), (Int, Int)), val id: Int) {
+    val x: Dim = new Dim(dom._1._1, dom._1._2, "x", this)
+    val y: Dim = new Dim(dom._2._1, dom._2._2, "y", this)
 
     var inlined = true
     var storeAt: Option[Dim] = None
@@ -65,11 +63,10 @@ trait CompilerFuncOps extends SimpleFuncOps {
     }
 
     def allocateNewBuffer() {
-      // TODO: Should these be Reps?
       buffer = Some(New2DArray[Int](x.max, y.max))
     }
 
-    def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {
+    def allocateNewBuffer(m: Int, n: Int) {
       buffer = Some(New2DArray[Int](m, n))
     }
   }
@@ -83,24 +80,8 @@ trait CompilerFuncOps extends SimpleFuncOps {
      case None => throw new InvalidSchedule("No buffer allocated at application time")
   }
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int), id: Int): Func = {
+  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int)), id: Int): Func = {
     new CompilerFunc(f, dom, id)
   }
 
-}
-
-trait FuncExp extends SimpleFuncOps with BaseExp {
-  // This trait produces nodes for function application.
-  // It is used in the pre interperation analysis of the
-  // pipeline
-  type Func = (Rep[Int], Rep[Int]) => Rep[Int]
-
-  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
-                      dom: (Int, Int), id: Int) = f
-
-  case class FuncApplication(f: Func, x: Rep[Int], y: Rep[Int])
-    extends Def[Int]
-
-  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]) =
-    FuncApplication(f, x, y)
 }
