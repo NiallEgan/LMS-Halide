@@ -33,27 +33,23 @@ trait AstOps extends ScheduleOps {
 
 	private def insertNewLeftChild(sched: ScheduleNode[Func, Dim],
 																 fTree: ScheduleNode[Func, Dim],
-															 	 y: Dim): ScheduleNode[Func, Dim] = sched match {
+															 	 computeAtVar: Dim): ScheduleNode[Func, Dim] = sched match {
 		// Inserts fTree at the loop for y in sched
 		case RootNode(children) => {
-			println(children)
-			println()
-			RootNode(children.map(insertNewLeftChild(_, fTree, y)))
+			RootNode(children.map(insertNewLeftChild(_, fTree, computeAtVar)))
 		}
 		case ComputeNode(stage, children) => {
-			ComputeNode(stage, children.map(insertNewLeftChild(_, fTree, y)))
+			ComputeNode(stage, children.map(insertNewLeftChild(_, fTree, computeAtVar)))
 		}
 		case StorageNode(stage, children) => {
-			println(children)
-			println()
-			StorageNode(stage, children.map(insertNewLeftChild(_, fTree, y)))
+			StorageNode(stage, children.map(insertNewLeftChild(_, fTree, computeAtVar)))
 		}
 		case LoopNode(variable, stage, loopType, children) => {
-			if (variable == y) {
+			if (variable == computeAtVar) {
 				LoopNode(variable, stage, loopType, List(addChildren(fTree, children)))
 			} else {
 				LoopNode(variable, stage, loopType,
-								 children.map(insertNewLeftChild(_, fTree, y)))
+								 children.map(insertNewLeftChild(_, fTree, computeAtVar)))
 			}
 		}
 	}

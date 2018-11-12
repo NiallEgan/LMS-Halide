@@ -11,12 +11,12 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def ev(boundsGraph: Map[Int, Map[Int, (Bound, Bound)]])(in: Rep[Array[Array[Int]]]) = {
+	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])(in: Rep[Array[Array[Int]]]) = {
 		prog(in)
-		evalSched(sched, makeFlatBounds(idToFunc, boundsGraph))
+		evalSched(sched, boundsGraph)
 	}
 
-	def compile(boundsGraph: Map[Int, Map[Int, (Bound, Bound)]]) = {
+	def compile(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]) = {
 		codegen.emitSource(ev(boundsGraph), "pipeline",
 			new java.io.PrintWriter(System.out))
 	}
@@ -109,5 +109,33 @@ class CompilerSpec extends FlatSpec {
 				))
 			))
 			assertResult(correctAst)(gradProg.scheduleRep)
+	}
+
+	"The three stage blur with computeAt" should "inline g, but precompute f" in {
+		println("Three stage box blur with computeAt:")
+		val blurProg =
+			new ThreeStageBoxBlurWithComputeAt with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new ThreeStageBoxBlurWithComputeAt with TestPipelineAnalysis
+		blurProg.compile(blurProgAnalysis.getBoundsGraph)
+
+		val correctAst: ScheduleNode[String, String] =
+			new RootNode(List(
+				new StorageNode("h",List(
+					new LoopNode("y", "h", Sequential, List(
+						new StorageNode("f", List(
+							new LoopNode("y", "f", Sequential, List(
+								new LoopNode("x", "f", Sequential, List(
+									new ComputeNode("f", List())
+								))
+							)),
+							new LoopNode("x", "h", Sequential, List(
+								new ComputeNode("h", List())
+							))
+						))
+					))
+				))
+			))
+
+		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 }

@@ -1,32 +1,22 @@
 package sepia
 
+
 trait ScheduleCompiler extends CompilerFuncOps {
-
-	def makeFlatBounds(idToFunc: Map[Int, Func],
-										 boundsGraph: Map[Int, Map[Int, (Bound, Bound)]]): Map[(Func, Dim), Bound] = {
-		// (f, x) -> Bound(a, b) means that x has bounds (a, b) when used in f
-		// N.B. x is bound to some function g
-		var bs: Map[(Func, Dim), Bound] = Map()
-		for (conId <- boundsGraph.keys) {
-			val consumer = idToFunc(conId)
-			for (prodId <- boundsGraph(conId).keys) {
-				val producer = idToFunc(prodId)
-				bs += (consumer, producer.x) -> boundsGraph(conId)(prodId)._1
-				bs += (consumer, producer.y) -> boundsGraph(conId)(prodId)._2
-			}
-		}
-
-		bs
-	}
-	def computeLoopBounds(variable: Dim, stage: Func, flatBounds: Map[(Func, Dim), Bound]): (Rep[Int], Rep[Int]) = {
+	def computeLoopBounds(variable: Dim, stage: Func,
+												boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]): (Rep[Int], Rep[Int]) = {
 		val lowerBound: Rep[Int] =
-			if (stage.inlined) variable.min // TODO: Compte at root
+			if (stage.inlined) variable.min // TODO: Compute at root
 			else {
 				stage.computeAt match {
 					case None => throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable")
 					// This only works for x and y...
 					case Some(v) => {
-						if(v.name == variable.name) v.v + flatBounds(v.f, variable).lb
+						if(v.name == variable.name) {
+							 BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id, v.f.id, v.name) match {
+								case Some(bound) => v.v + bound.lb
+								case None => throw new InvalidSchedule(f"No bounds for ${v.name} found")
+							}
+						}
 						else unit(variable.min)
 					}
 				}
@@ -40,29 +30,35 @@ trait ScheduleCompiler extends CompilerFuncOps {
 					case Some(v) => {
 						// If v.name == variable.name, then (at least when we're just dealing with x and y)
 						// We are at the loop that must start from the producer variable
-						if (v.name == variable.name) v.v + flatBounds(v.f, variable).ub + 1
+						if (v.name == variable.name) {
+						 BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id, v.f.id, v.name) match {
+								case Some(bound) => v.v + bound.ub + 1
+								case None => throw new InvalidSchedule(f"No bounds for ${v.name} found")
+							}
+						}
 						else unit(variable.max)
 					}
-
 				}
 			}
 
 		(lowerBound, upperBound)
 	}
+
 	def evalSched(node: ScheduleNode[Func, Dim],
-								flatBounds: Map[(Func, Dim), Bound]): Rep[Unit] = node match {
+								boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
-			val (lb, ub) = computeLoopBounds(variable, stage, flatBounds)
+			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph)
+			variable.loopStartOffset_=(lb)
       loopType match {
         case Sequential =>
           for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, flatBounds)
+            for (child <- children) evalSched(child, boundsGraph)
           }
         case Unrolled =>
           for (i <- lb until ub) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, flatBounds)
+            for (child <- children) evalSched(child, boundsGraph)
           }
       }
 
@@ -72,7 +68,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
         it */
       val v: Rep[Int] = stage.compute()
       stage.storeInBuffer(v)
-      for (child <- children) evalSched(child, flatBounds)
+      for (child <- children) evalSched(child, boundsGraph)
     }
 
  	  case StorageNode(stage, children) => {
@@ -81,23 +77,29 @@ trait ScheduleCompiler extends CompilerFuncOps {
 				case Some(storeAtDim) => {
 					// TODO: For now, only support storing at one level up
 					val consumerFunction = storeAtDim.f
-					val xBound = flatBounds((consumerFunction, stage.x))
-					val yBound = flatBounds((consumerFunction, stage.y))
+					val xBound =
+						BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id,
+							consumerFunction.id, stage.x.name)
+							.getOrElse(throw new InvalidSchedule("Couldn't find bound for "))
+					val yBound =
+						BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id,
+							consumerFunction.id, stage.y.name)
+							.getOrElse(throw new InvalidSchedule("Couldn't find bound for "))
 
-					if (storeAtDim.name == "x") {
+					if (storeAtDim.name == "y") {
 						stage.allocateNewBuffer(stage.x.max, yBound.width)
-					} else if (storeAtDim.name == "y") {
+					} else if (storeAtDim.name == "x") {
 						stage.allocateNewBuffer(xBound.width, stage.y.max)
 					} else {
 						throw new RuntimeException("Error: Unknown variable name")
 					}
 				}
 			}
-   	 	for (child <- children) evalSched(child, flatBounds)
+   	 	for (child <- children) evalSched(child, boundsGraph)
  	  }
 
     case RootNode(children) => {
-      for (child <- children) evalSched(child, flatBounds)
+      for (child <- children) evalSched(child, boundsGraph)
     }
   }
 }

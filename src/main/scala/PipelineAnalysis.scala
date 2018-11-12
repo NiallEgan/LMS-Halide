@@ -7,7 +7,11 @@ case class Bound(val lb: Int, val ub: Int) {
 	def join(other: Bound): Bound = {
 		val newLb = if (lb < other.lb) lb else other.lb
 		val newUb = if (ub > other.ub) ub else other.ub
-		new Bound(newLb, newUb)
+	  Bound(newLb, newUb)
+	}
+
+	def add(other: Bound): Bound = {
+		Bound(lb + other.lb, ub + other.ub)
 	}
 
 	def width(): Int = (ub - lb) + 1
@@ -82,19 +86,21 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		mkFunc(f, dom, id)
 	}
 
-	def mergeBoundsMaps(b1: Map[Func, (Bound, Bound)],
-											b2: Map[Func, (Bound, Bound)]): Map[Func, (Bound, Bound)] = {
+	def mergeBoundsMaps(b1: Map[Func, Map[String, Bound]],
+											b2: Map[Func, Map[String, Bound]]): Map[Func, Map[String, Bound]] = {
 		// Given two maps for func -> bound, bound, will join the two maps together.
 		// If the two maps both have a bound for key k, will merge the bounds by taking
 		// the smallest of the min and the largest of the max.
-		b1 ++ b2.map{ case (k,v) => k -> {
-				val xb1 = v._1
-				val yb1 = v._2
-				val xb2 = b1.getOrElse(k, (Bound.zero, Bound.zero))._1
-				val yb2 = b1.getOrElse(k, (Bound.zero, Bound.zero))._2
-				(xb1 join xb2, yb1 join yb2)
-			}
+
+		def mergeSingleBoundSet(a: Map[String, Bound], b: Map[String, Bound]) = {
+			a ++ b.map { case (k, bBound) => k -> {
+					val aBound = a.getOrElse(k, Bound.zero)
+					aBound join bBound
+				}}
 		}
+
+		b1 ++ b2.map{ case (k,v) => k -> {
+				mergeSingleBoundSet(v, b1.getOrElse(k, Map())) }}
 	}
 
 	def extractBound(expr: Exp[_], dim: String) = expr match {
@@ -111,17 +117,17 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
 
 	def analyseInputTransformations(xExpr: Exp[_],
-																	yExpr: Exp[_]): (Bound, Bound) = {
+																	yExpr: Exp[_]): Map[String, Bound] = {
 	// For now, we just analyse additive constants on x / y coordinates.
 	// Do we need anything else?
 
-	val xTransformation: Bound = extractBound(xExpr, "x")
-	val yTransformation: Bound = extractBound(yExpr, "y")
+		val xTransformation: Bound = extractBound(xExpr, "x")
+		val yTransformation: Bound = extractBound(yExpr, "y")
 
-	(xTransformation, yTransformation)
+		Map("x" -> xTransformation, "y" -> yTransformation)
 	}
 
-  def getInputTransformations(e: Exp[_]): Map[Func, (Bound, Bound)] = e match {
+  def getInputTransformations(e: Exp[_]): Map[Func, Map[String, Bound]] = e match {
     case Def(v) => v match {
     	case FuncApplication(func, xExpr, yExpr) =>  {
 				Map(func -> analyseInputTransformations(xExpr, yExpr))
@@ -130,27 +136,27 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			// Is it necessary to match here on SymbolicArray?
 			case Array2DApply(_, _, _) => Map()
       case x => {
-				treeTraversal[Map[Func, (Bound, Bound)]](
-					_.foldLeft(Map[Func, (Bound, Bound)]())(mergeBoundsMaps),
+				treeTraversal[Map[Func, Map[String, Bound]]](
+					_.foldLeft(Map[Func, Map[String, Bound]]())(mergeBoundsMaps),
 					getInputTransformations _, x)
 			}
     }
     case Const(_) => Map()
   }
 
-	def getInputBounds(): Map[Func, Map[Func, (Bound, Bound)]] = {
+	def getInputBounds(): Map[Func, Map[Func, Map[String, Bound]]] = {
 		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
 		val x = newSymbolic2DArray[Int]()
 		prog(x)
-		funcs.keys.foldLeft(Map[Func, Map[Func, (Bound, Bound)]]())
+		funcs.keys.foldLeft(Map[Func, Map[Func, Map[String, Bound]]]())
 								{(m, f) =>
 									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
 																										  newSymbolicInt("y"))))}
 	}
 
-	def getBoundsGraph(): Map[Int, Map[Int, (Bound, Bound)]] = {
+	def getBoundsGraph(): Map[Int, Map[Int, Map[String, Bound]]] = {
 	    getInputBounds.map{case (k, v) => funcs(k) ->
 	         v.map{case (k1, v2) => funcs(k1) -> v2}}
 	}
