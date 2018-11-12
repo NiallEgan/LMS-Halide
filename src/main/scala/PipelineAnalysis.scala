@@ -3,24 +3,26 @@ package sepia
 import scala.collection.mutable.ListBuffer
 
 case class Bound(val lb: Int, val ub: Int) {
+	// Inclusive bounds
 	def join(other: Bound): Bound = {
 		val newLb = if (lb < other.lb) lb else other.lb
 		val newUb = if (ub > other.ub) ub else other.ub
-		new Bound(newLb, newUb)
+	  Bound(newLb, newUb)
 	}
 
-	//override def toString(): String = (lb, ub).toString
+	def add(other: Bound): Bound = {
+		Bound(lb + other.lb, ub + other.ub)
+	}
+
+	def width(): Int = (ub - lb) + 1
 }
 
 object Bound {
-	// TODO: Why doesn't Int.min, Int.max work here?
-	val intMin = -1000000000
-	val intMax = 1000000000
-	val zero = Bound(intMax, intMin)
+	val zero = Bound(Int.MaxValue, Int.MinValue)
 }
 
-trait PipelineAnalysis extends FuncExp with DslExp
-										with SymbolicOpsExp with Pipeline {
+trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
+													with SymbolicFuncOpsExp with Pipeline {
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
 
@@ -75,26 +77,30 @@ trait PipelineAnalysis extends FuncExp with DslExp
 			case SymbolicInt(_) 								=> f(List().map(m))
   }
 
-	val funcs: ListBuffer[(Rep[Int], Rep[Int]) => Rep[Int]] = new ListBuffer()
+	var funcs: Map[(Rep[Int], Rep[Int]) => Rep[Int], Int] = Map()
+	private var id = 0
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
-		funcs += f
-		mkFunc(f, dom)
+	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int))): Func = {
+		funcs += (f -> id)
+		id += 1
+		mkFunc(f, dom, id)
 	}
 
+	def mergeBoundsMaps(b1: Map[Func, Map[String, Bound]],
+											b2: Map[Func, Map[String, Bound]]): Map[Func, Map[String, Bound]] = {
+		// Given two maps for func -> bound, bound, will join the two maps together.
+		// If the two maps both have a bound for key k, will merge the bounds by taking
+		// the smallest of the min and the largest of the max.
 
-
-	def mergeBoundsMaps(b1: Map[Func, (Bound, Bound)],
-											b2: Map[Func, (Bound, Bound)]): Map[Func, (Bound, Bound)] = {
-		// TODO: Rewrite with scalaz?
-		b1 ++ b2.map{ case (k,v) => k -> {
-				val xb1 = v._1
-				val yb1 = v._2
-				val xb2 = b1.getOrElse(k, (Bound.zero, Bound.zero))._1
-				val yb2 = b1.getOrElse(k, (Bound.zero, Bound.zero))._2
-				(xb1 join xb2, yb1 join yb2)
-			}
+		def mergeSingleBoundSet(a: Map[String, Bound], b: Map[String, Bound]) = {
+			a ++ b.map { case (k, bBound) => k -> {
+					val aBound = a.getOrElse(k, Bound.zero)
+					aBound join bBound
+				}}
 		}
+
+		b1 ++ b2.map{ case (k,v) => k -> {
+				mergeSingleBoundSet(v, b1.getOrElse(k, Map())) }}
 	}
 
 	def extractBound(expr: Exp[_], dim: String) = expr match {
@@ -111,40 +117,54 @@ trait PipelineAnalysis extends FuncExp with DslExp
 
 
 	def analyseInputTransformations(xExpr: Exp[_],
-																	yExpr: Exp[_]): (Bound, Bound) = {
+																	yExpr: Exp[_]): Map[String, Bound] = {
 	// For now, we just analyse additive constants on x / y coordinates.
 	// Do we need anything else?
 
-	val xTransformation: Bound = extractBound(xExpr, "x")
-	val yTransformation: Bound = extractBound(yExpr, "y")
+		val xTransformation: Bound = extractBound(xExpr, "x")
+		val yTransformation: Bound = extractBound(yExpr, "y")
 
-	(xTransformation, yTransformation)
+		Map("x" -> xTransformation, "y" -> yTransformation)
 	}
 
-  def getInputTransformations(e: Exp[_]): Map[Func, (Bound, Bound)] = e match {
+  def getInputTransformations(e: Exp[_]): Map[Func, Map[String, Bound]] = e match {
     case Def(v) => v match {
     	case FuncApplication(func, xExpr, yExpr) =>  {
 				Map(func -> analyseInputTransformations(xExpr, yExpr))
 			}
+			// This is for the special case when we're calling in...
+			// Is it necessary to match here on SymbolicArray?
+			case Array2DApply(_, _, _) => Map()
       case x => {
-				treeTraversal[Map[Func, (Bound, Bound)]](
-					_.foldLeft(Map[Func, (Bound, Bound)]())(mergeBoundsMaps),
+				treeTraversal[Map[Func, Map[String, Bound]]](
+					_.foldLeft(Map[Func, Map[String, Bound]]())(mergeBoundsMaps),
 					getInputTransformations _, x)
 			}
     }
     case Const(_) => Map()
   }
 
-	def getInputBounds(): Map[Func, Map[Func, (Bound, Bound)]] = {
+	def getInputBounds(): Map[Func, Map[Func, Map[String, Bound]]] = {
 		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
-		// TODO: Abstract into a better class?
 		val x = newSymbolic2DArray[Int]()
 		prog(x)
-		funcs.toList.foldLeft(Map[Func, Map[Func, (Bound, Bound)]]())
+		funcs.keys.foldLeft(Map[Func, Map[Func, Map[String, Bound]]]())
 								{(m, f) =>
 									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
-																										 newSymbolicInt("y"))))}
+																										  newSymbolicInt("y"))))}
 	}
+
+	def getBoundsGraph(): Map[Int, Map[Int, Map[String, Bound]]] = {
+	    getInputBounds.map{case (k, v) => funcs(k) ->
+	         v.map{case (k1, v2) => funcs(k1) -> v2}}
+	}
+
+	class UselessFuncOps(f: Func) extends FuncOps(f) {
+		// Just convert sched ops to no-ops in the analysis phase
+		override def computeAt(consumer: Func, s: String): Unit = return
+	}
+
+	override implicit def toFuncOps(f: Func) = new UselessFuncOps(f)
 }

@@ -4,7 +4,6 @@ import lms.common._
 
 trait SimpleFuncOps extends Dsl {
   // The api that is presented to the DSL user
-
   type Func
 
   class FuncOps(f: Func) {
@@ -17,19 +16,30 @@ trait SimpleFuncOps extends Dsl {
   def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int]
 
   def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
-             dom: (Int, Int)): Func
+             dom: ((Int, Int), (Int, Int)), id: Int): Func
 }
 
 trait CompilerFuncOps extends SimpleFuncOps {
   // The api that is presented to the DSL compiler
 
-  class Dim(val max: Rep[Int], val name: String) {
+  class Dim(val min: Int, val max: Int,
+            val name: String, val f: Func) {
 		private var value: Option[Rep[Int]] = None
+
+    private var loopStart: Option[Rep[Int]] = None
 
 		def v: Rep[Int] = value match {
 			case Some(x) => x
 			case None => throw new InvalidSchedule("Unbound variable")
 		}
+
+    def loopStartOffset: Rep[Int] = {
+      loopStart.getOrElse(throw new InvalidSchedule("Unbound loop v"))
+    }
+
+    def loopStartOffset_=(new_val: Rep[Int]) = {
+      loopStart = Some(new_val)
+    }
 
 		// TODO: Why is this not working with _= syntax?
 		def v_=(new_val: Rep[Int]) = {
@@ -37,61 +47,44 @@ trait CompilerFuncOps extends SimpleFuncOps {
 		}
 	}
 
-  class CompilerFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
-         dom: (Int, Int)) {
-    val x: Dim = new Dim(dom._1, "x")
-    val y: Dim = new Dim(dom._2, "y")
+  class CompilerFunc(val f: (Rep[Int], Rep[Int]) => Rep[Int],
+                     dom: ((Int, Int), (Int, Int)), val id: Int) {
+    val x: Dim = new Dim(dom._1._1, dom._1._2, "x", this)
+    val y: Dim = new Dim(dom._2._1, dom._2._2, "y", this)
 
     var inlined = true
-
+    var storeAt: Option[Dim] = None
+    var computeAt: Option[Dim] = None
     var buffer: Option[Rep[Array[Array[Int]]]] = None
-
-    def apply(x: Rep[Int], y: Rep[Int]) = {
-       if (inlined) f(x, y)
-       else buffer match {
-        case Some(b) => b(x, y)
-        case None => throw new InvalidSchedule("No buffer allocated at application time")
-       }
-    }
 
     def compute() = f(x.v, y.v)
 
     def storeInBuffer(v: Rep[Int]) = buffer match {
-      case Some(b) => b(x.v, y.v) = v
-      case None => throw new InvalidSchedule("No buffer allocated at storage time")
+      case Some(b) => b(x.v - x.loopStartOffset, y.v - y.loopStartOffset) = v
+      case None => throw new InvalidSchedule(f"No buffer allocated at storage time for ")
     }
 
     def allocateNewBuffer() {
-      buffer = Some(New2DArray[Int](x.max, y.max))
+      buffer = Some(New2DArray[Int](x.max - x.min, y.max - y.min))
+    }
+
+    def allocateNewBuffer(m: Int, n: Int) {
+      buffer = Some(New2DArray[Int](m, n))
     }
   }
 
   type Func = CompilerFunc
 
   override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[Int] =
-    if (f.inlined) f(x, y)
+    if (f.inlined) f.f(x, y)
     else f.buffer match {
-     case Some(b) => b(y, x)
-     case None => throw new InvalidSchedule("No buffer allocated at application time")
+     case Some(b) => b(x - f.x.loopStartOffset,
+                       y - f.y.loopStartOffset)
+     case None => throw new InvalidSchedule(f"No buffer allocated at application time for ")
   }
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)): Func = {
-    new CompilerFunc(f, dom)
+  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int)), id: Int): Func = {
+    new CompilerFunc(f, dom, id)
   }
 
-}
-
-trait FuncExp extends SimpleFuncOps with BaseExp {
-  // This trait produces nodes for function application.
-  // It is used in the pre interperation analysis of the
-  // pipeline
-  type Func = (Rep[Int], Rep[Int]) => Rep[Int]
-
-  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: (Int, Int)) = f
-
-  case class FuncApplication(f: Func, x: Rep[Int], y: Rep[Int])
-    extends Def[Int]
-
-  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]) =
-    FuncApplication(f, x, y)
 }

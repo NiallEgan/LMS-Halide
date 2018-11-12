@@ -3,8 +3,8 @@ import scala.collection.mutable.ListBuffer
 
 import sepia._
 
-trait TestPipelineAnalysis extends PipelineAnalysis with TestPipeline {
-  def boundsAsStrings(): Map[String, Map[String, (Bound, Bound)]] = {
+trait TestPipelineAnalysis extends PipelineForAnalysis with TestPipeline {
+  def boundsAsStrings(): Map[String, Map[String, Map[String, Bound]]] = {
     val bounds = getInputBounds()
 
     bounds.map{case (k, v) => asString(k) ->
@@ -18,9 +18,8 @@ class AnalysisSpec extends FlatSpec {
       val blurredGradProg = new BlurredGradProg with TestPipelineAnalysis
 
       val bounds = blurredGradProg.boundsAsStrings
-      println(bounds)
-      assertResult(Bound(-1, 0))(bounds("g")("f")._1)
-      assertResult(Bound(-1, 0))(bounds("g")("f")._2)
+      assertResult(Bound(-1, 0))(bounds("g")("f")("x"))
+      assertResult(Bound(-1, 0))(bounds("g")("f")("y"))
       assertResult(0)(bounds("f").size)
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)
@@ -40,11 +39,21 @@ class AnalysisSpec extends FlatSpec {
       val funkyBoundsProg = new FunkyBoundsProg with TestPipelineAnalysis
 
       val bounds = funkyBoundsProg.boundsAsStrings
-      println(bounds)
-      assertResult(Bound(-11, 10))(bounds("g")("f")._1)
-      assertResult(Bound(-80, 12))(bounds("g")("f")._2)
+      assertResult(Bound(-11, 10))(bounds("g")("f")("x"))
+      assertResult(Bound(-80, 12))(bounds("g")("f")("y"))
       assertResult(0)(bounds("f").size)
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)
     }
+
+  "ThreeStageBoxBlur" should "have bounds of " in {
+    val threeStageBoxBlur = new ThreeStageBoxBlur with TestPipelineAnalysis
+    val bounds = threeStageBoxBlur.boundsAsStrings
+    assertResult(Bound(0, 0))(bounds("h")("g")("x"))
+    assertResult(Bound(-1, 1))(bounds("h")("g")("y"))
+    assertResult(Bound(-1, 1))(bounds("g")("f")("x"))
+    assertResult(Bound(0, 0))(bounds("g")("f")("y"))
+
+
+  }
 }
