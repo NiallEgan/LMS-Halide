@@ -9,32 +9,34 @@ import lms.common._
 
 trait SymbolicOps extends Base with PrimitiveOps {
   def newSymbolicInt(s: String): Rep[Int]
-  def newSymbolic2DArray[T:Typ](): Rep[Array[Array[T]]]
+  def newSymbolicArray(): Rep[Array[Int]]
 }
 
 trait SymbolicOpsExp extends SymbolicOps
-                     with Array2DOpsExp {
+                     with ImageBufferOpsExp {
 
   case class SymbolicInt(s: String) extends Def[Int]
-  case class Symbolic2DArray[T:Typ]() extends Def[Array[Array[T]]]
+  case class SymbolicArray() extends Def[Array[Int]]
 
   override def newSymbolicInt(s: String): Rep[Int] = SymbolicInt(s)
-  override def newSymbolic2DArray[T:Typ](): Rep[Array[Array[T]]] =
-    Symbolic2DArray[T]()
+  override def newSymbolicArray(): Rep[Array[Int]] =
+    SymbolicArray()
 }
 
-trait SymbolicFuncOpsExp extends SimpleFuncOps with BaseExp {
+trait SymbolicFuncOpsExp extends SimpleFuncOps with ImageBufferOpsExp {
   // This trait produces nodes for function application.
   // It is used in the pre-interperation analysis of the
   // pipeline
-  type Func = (Rep[Int], Rep[Int]) => Rep[Int]
+  type Func = (Rep[Int], Rep[Int]) => Rep[UShort]
 
-  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[Int],
+  override def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[UShort],
                       dom: ((Int, Int), (Int, Int)), id: Int) = f
 
-  case class FuncApplication(f: Func, x: Rep[Int], y: Rep[Int])
-    extends Def[Int]
+  case class FuncApplication(f: Func, x: Exp[Int], y: Exp[Int]) extends Def[UShort]
 
-  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]) =
-    FuncApplication(f, x, y)
+  override def funcApply(f: Func, x: Exp[Int], y: Exp[Int]) = {
+    val v: Exp[UShort] = FuncApplication(f, x, y)
+    v
+
+  }
 }

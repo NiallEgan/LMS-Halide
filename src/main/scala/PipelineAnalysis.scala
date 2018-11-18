@@ -133,8 +133,12 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 				Map(func -> analyseInputTransformations(xExpr, yExpr))
 			}
 			// This is for the special case when we're calling in...
-			// Is it necessary to match here on SymbolicArray?
-			case Array2DApply(_, _, _) => Map()
+			case ArrayApply(a, _) => {
+				a match {
+					case Def(SymbolicArray()) => Map()
+				}
+			}
+
       case x => {
 				treeTraversal[Map[Func, Map[String, Bound]]](
 					_.foldLeft(Map[Func, Map[String, Bound]]())(mergeBoundsMaps),
@@ -148,7 +152,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
-		val x = newSymbolic2DArray[Int]()
+		val x = Buffer(0, newSymbolicArray())
 		prog(x)
 		funcs.keys.foldLeft(Map[Func, Map[Func, Map[String, Bound]]]())
 								{(m, f) =>

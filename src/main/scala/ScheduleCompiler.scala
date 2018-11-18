@@ -66,7 +66,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
       /* At a compute node, we compute f.stage and store it.
         TODO: if we computed f in a previous iteration, we need to skip over
         it */
-      val v: Rep[Int] = stage.compute()
+      val v: Rep[UShort] = stage.compute()
       stage.storeInBuffer(v)
       for (child <- children) evalSched(child, boundsGraph)
     }

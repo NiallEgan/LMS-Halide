@@ -2,7 +2,10 @@ import sepia._
 
 
 trait GradProg extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 3)
 
@@ -12,7 +15,10 @@ trait GradProg extends TestPipeline {
 }
 
 trait BlurredGradProg extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 3)
 
@@ -27,7 +33,11 @@ trait BlurredGradProg extends TestPipeline {
 }
 
 trait BlurredGradProgComputeAt extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
+
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 5)
 
@@ -43,7 +53,10 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 }
 
 trait FunkyBoundsProg extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => 30 + x) withDomain (5, 5)
 
@@ -57,7 +70,10 @@ trait FunkyBoundsProg extends TestPipeline {
 }
 
 trait ThreeStageBoxBlur extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(5, 5)
 		val g: Func =
@@ -72,7 +88,10 @@ trait ThreeStageBoxBlur extends TestPipeline {
 }
 
 trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => in(x, y) / 2) withDomain(5, 5)
 		val g: Func =
@@ -90,8 +109,10 @@ trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
 }
 
 trait ThreeStageBoundsAnalysisExample extends TestPipeline {
-	override def prog(in: Rep[Array[Array[Int]]]): Rep[Unit] = {
-		//
+	override val width: Rep[Int] = 6
+	override val height: Rep[Int] = 6
+
+	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(6, 6)
 		val g: Func =
@@ -102,5 +123,17 @@ trait ThreeStageBoundsAnalysisExample extends TestPipeline {
 		registerFunction("f", f)
 		registerFunction("g", g)
 		registerFunction("h", h)
+	}
+}
+
+trait IDProg extends TestPipeline {
+	override val width: Rep[Int] = 5
+	override val height: Rep[Int] = 5
+
+	override def prog(in: Buffer): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(5, 6)
+
+		registerFunction("f", f)
 	}
 }

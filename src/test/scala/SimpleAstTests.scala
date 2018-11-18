@@ -11,8 +11,9 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])(in: Rep[Array[Array[Int]]]) = {
-		prog(in)
+	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])(in: Rep[Array[Int]]) = {
+		compiler_prog(in)
+		println(sched)
 		evalSched(sched, boundsGraph)
 	}
 
@@ -137,5 +138,13 @@ class CompilerSpec extends FlatSpec {
 			))
 
 		assertResult(correctAst)(blurProg.scheduleRep)
+	}
+
+	"IDProg" should "create a simple prog" in {
+		println("IDProg: ")
+		val blurProg =
+			new IDProg with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new IDProg with TestPipelineAnalysis
+		blurProg.compile(blurProgAnalysis.getBoundsGraph)
 	}
 }
