@@ -11,14 +11,16 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])(in: Rep[Array[Int]]) = {
-		compiler_prog(in)
-		println(sched)
+	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])(in: Rep[Array[Int]], out: Rep[Array[Int]]) = {
+		compiler_prog(in, out)
 		evalSched(sched, boundsGraph)
+		println(sched)
+
+		assignOutArray(out)
 	}
 
 	def compile(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]) = {
-		codegen.emitSource(ev(boundsGraph), "pipeline",
+		codegen.emitSourceMut(ev(boundsGraph), "pipeline",
 			new java.io.PrintWriter(System.out))
 	}
 }

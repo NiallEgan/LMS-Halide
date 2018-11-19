@@ -9,6 +9,7 @@ trait GradProg extends TestPipeline {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 3)
 
+		f.realize()
 		// This is for testing purposes only
 		registerFunction("f", f)
 	}
@@ -25,6 +26,8 @@ trait BlurredGradProg extends TestPipeline {
 		val g: Func =
 				((x: Rep[Int], y: Rep[Int]) =>
 					(f(x-1, y) + f(x, y-1) + f(x-1, y-1) + f(x, y)) / 4) withDomain (5, 3)
+
+		g.realize()
 
 		// This is for testing purposes only
 		registerFunction("f", f)
@@ -46,6 +49,9 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (4, 4)
 
 		f.computeAt(g, "y")
+
+		g.realize()
+
 		// This is for testing purposes only
 		registerFunction("f", f)
 		registerFunction("g", g)
@@ -64,6 +70,7 @@ trait FunkyBoundsProg extends TestPipeline {
 			((x: Rep[Int], y: Rep[Int]) =>
 			f(x-4, y+3) + f(x+10, y) + f(x-11, y+12) + f(x, y-40*2)) withDomain (5, 5) // N.B. These are not valid domains
 
+		g.realize()
 		registerFunction("f", f)
 		registerFunction("g", g)
 	}
@@ -81,6 +88,8 @@ trait ThreeStageBoxBlur extends TestPipeline {
 		val h: Func =
 			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, 4), (1, 4))
 
+
+		h.realize()
 		registerFunction("f", f)
 		registerFunction("g", g)
 		registerFunction("h", h)
@@ -102,6 +111,8 @@ trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
 		// TODO: What about 'middle functions'?
 		f.computeAt(h, "y")
 
+		h.realize()
+
 		registerFunction("f", f)
 		registerFunction("g", g)
 		registerFunction("h", h)
@@ -120,6 +131,8 @@ trait ThreeStageBoundsAnalysisExample extends TestPipeline {
 		val h: Func =
 			((x: Rep[Int], y: Rep[Int]) => g(x-1, y+1) + g(x+1, y-1)) withNZDomain ((2, 4), (2, 4))
 
+		h.realize()
+
 		registerFunction("f", f)
 		registerFunction("g", g)
 		registerFunction("h", h)
@@ -134,6 +147,7 @@ trait IDProg extends TestPipeline {
 		val f: Func =
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(5, 6)
 
+		f.realize()
 		registerFunction("f", f)
 	}
 }

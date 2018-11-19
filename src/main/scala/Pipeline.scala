@@ -5,10 +5,12 @@ trait Pipeline extends SimpleFuncOps {
 	val width: Rep[Int]
 	val height: Rep[Int]
 
+	var finalFunc: Option[Func] = None
+
 	def prog(in: Buffer): Rep[Unit]
 
-	def compiler_prog(in: Rep[Array[UShort]]) = {
-		prog(Buffer(width, in))
+	def compiler_prog(in: Rep[Array[UShort]], out: Rep[Array[Int]]) = {
+		prog(Buffer(width, height, in))
 	}
 
 	class FOps(f: (Rep[Int], Rep[Int]) => RGBVal) {
@@ -19,13 +21,14 @@ trait Pipeline extends SimpleFuncOps {
 	implicit def toFOps(f: (Rep[Int], Rep[Int]) => RGBVal): FOps = {
 		new FOps(f)
 	}
-	
+
 	implicit def intFToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
 		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y), f(x, y), f(x, y)))
 	}
 
 	abstract class FuncOps(f: Func) {
 		def computeAt(consumer: Func, v: String): Unit
+		def realize(): Unit = finalFunc = Some(f)
 	}
 
 	implicit def toFuncOps(f: Func): FuncOps
@@ -33,7 +36,7 @@ trait Pipeline extends SimpleFuncOps {
 	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int))): Func
 }
 
-trait PipelineForCompiler extends Pipeline with ScheduleOps {
+trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps {
 	// This trait is mixed in with a specific program and it adds
 	// schedule manipulations, which can then be passed to a compiler
 	private var schedule: Option[Schedule] = None
@@ -51,6 +54,19 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps {
 	class FuncOpsImp(f: Func) extends FuncOps(f) {
 		override def computeAt(consumer: Func, s: String) = {
 			schedule = Some(computefAtX(sched, f, consumer, s))
+		}
+	}
+
+	def assignOutArray(out: Rep[Array[Int]]): Rep[Unit] = {
+		val finalBuffer: Buffer = finalFunc.getOrElse(throw new InvalidAlgorithm("No final function has been realized"))
+															.buffer.getOrElse(throw new InvalidSchedule("Final func has no storage allocated"))
+		// TODO: Look into more efficient assignment here
+		for (y <- 0 until finalBuffer.height) {
+			for (x <- 0 until finalBuffer.width) {
+				array_update(out, x + finalBuffer.width * y + 2, finalBuffer(x, y).red)
+				array_update(out, x + finalBuffer.width * y + 1, finalBuffer(x, y).green)
+				array_update(out, x + finalBuffer.width * y, finalBuffer(x, y).blue)
+			}
 		}
 	}
 

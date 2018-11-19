@@ -3,7 +3,7 @@ package sepia
 import lms.common._
 
 trait ImageBufferOps extends PrimitiveOps with ArrayOps {
-  case class Buffer(val width: Rep[Int], val a: Rep[Array[UShort]])
+  case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UShort]])
   object NewBuffer {
     def apply(width: Rep[Int], height: Rep[Int]) = newBuffer(width, height)
   }
@@ -35,7 +35,6 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps {
     def /(other: RGBVal): RGBVal = RGBVal(v.red / other.red,
                                           v.green / other.green,
                                           v.blue / other.blue)
-
     def /(other: Rep[Int]): RGBVal = RGBVal(v.red / other,
                                             v.green / other,
                                             v.blue / other)
@@ -74,7 +73,7 @@ trait ImageBufferOpsExp extends ImageBufferOps
                         with ArrayOpsExpOpt with PrimitiveOpsExpOpt {
 
   override def newBuffer(m: Exp[Int], n: Exp[Int]) = {
-    Buffer(m, array_obj_new[UShort](m * n * 3))
+    Buffer(m, n, array_obj_new[UShort](m * n * 3))
   }
 
   override def bufferApply(b: Buffer, x: Exp[Int], y: Exp[Int]) = {

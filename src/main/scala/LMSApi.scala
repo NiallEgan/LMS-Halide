@@ -1,5 +1,7 @@
 package sepia
 
+import java.io.PrintWriter
+
 import scala.lms.common._
 
 trait Dsl extends PrimitiveOps with NumericOps
@@ -26,8 +28,14 @@ trait DslGenC extends CGenNumericOps
     val IR: DslExp
     import IR._
 
+    override def isPrimitiveType(tpe: String) = tpe match {
+      case "USHORT" => true
+      case _ => super.isPrimitiveType(tpe)
+    }
+
     override def remap[A](m: Typ[A]) = m.toString match {
-      case "Array[Int]" => "int32_t[]"
+      case "Array[Int]" => "USHORT[]"
+      case "Int" => "USHORT"
       case _ => super.remap(m)
 
     }
@@ -43,4 +51,14 @@ trait DslGenC extends CGenNumericOps
         case _ => super.emitNode(sym, rhs)
       }
     }
+
+    def emitSourceMut[T1: Typ, T2: Typ, R: Typ]
+                    (f: (Exp[T1], Exp[T2]) => Exp[R],
+                     className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+    // This marks the second argument as mutable
+    val s1 = fresh[T1]
+    val s2 = reflectMutableSym(fresh[T2])
+    val body = reifyBlock(f(s1, s2))
+    emitSource(List(s1, s2), body, className, stream)
+  }
 }

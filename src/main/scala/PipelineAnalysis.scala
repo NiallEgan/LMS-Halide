@@ -158,8 +158,8 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
-		val x = Buffer(0, newSymbolicArray())
-		prog(x)
+		val symbolicInput = Buffer(0, 0, newSymbolicArray())
+		prog(symbolicInput)
 		funcs.keys.foldLeft(Map[Func, Map[Func, Map[String, Bound]]]())
 								{(m, f) =>
 									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
