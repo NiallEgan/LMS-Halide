@@ -5,7 +5,6 @@ import lms.common._
 trait SimpleFuncOps extends Dsl {
   // The api that is presented to the DSL user
   type Func
-  
 
   class FuncOps(f: Func) {
     def apply(x: Rep[Int], y: Rep[Int]) =
@@ -14,9 +13,9 @@ trait SimpleFuncOps extends Dsl {
 
   implicit def funcToFuncOps(f: Func) = new FuncOps(f)
 
-  def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[UShort]
+  def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[UShort],
+  def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal,
              dom: ((Int, Int), (Int, Int)), id: Int): Func
 }
 
@@ -48,7 +47,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
 		}
 	}
 
-  class CompilerFunc(val f: (Rep[Int], Rep[Int]) => Rep[UShort],
+  class CompilerFunc(val f: (Rep[Int], Rep[Int]) => RGBVal,
                      dom: ((Int, Int), (Int, Int)), val id: Int) {
     val x: Dim = new Dim(dom._1._1, dom._1._2, "x", this)
     val y: Dim = new Dim(dom._2._1, dom._2._2, "y", this)
@@ -60,8 +59,8 @@ trait CompilerFuncOps extends SimpleFuncOps {
 
     def compute() = f(x.v, y.v)
 
-    def storeInBuffer(v: Rep[UShort]) = buffer match {
-      case Some(b) => b(x.v - x.loopStartOffset, y.v - y.loopStartOffset) = v
+    def storeInBuffer(vs: RGBVal) = buffer match {
+      case Some(b) => b(x.v - x.loopStartOffset, y.v - y.loopStartOffset) = vs
       case None => throw new InvalidSchedule(f"No buffer allocated at storage time for ")
     }
 
@@ -76,7 +75,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
 
   type Func = CompilerFunc
 
-  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): Rep[UShort] =
+  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal =
     if (f.inlined) f.f(x, y)
     else f.buffer match {
      case Some(b) => b(x - f.x.loopStartOffset,
@@ -84,8 +83,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
      case None => throw new InvalidSchedule(f"No buffer allocated at application time for ")
   }
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => Rep[UShort], dom: ((Int, Int), (Int, Int)), id: Int): Func = {
+  def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int)), id: Int): Func = {
     new CompilerFunc(f, dom, id)
   }
-
 }

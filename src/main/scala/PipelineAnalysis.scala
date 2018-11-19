@@ -77,10 +77,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case SymbolicInt(_) 								=> f(List().map(m))
   }
 
-	var funcs: Map[(Rep[Int], Rep[Int]) => Rep[Int], Int] = Map()
+	var funcs: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()
 	private var id = 0
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => Rep[Int], dom: ((Int, Int), (Int, Int))): Func = {
+	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int))): Func = {
 		funcs += (f -> id)
 		id += 1
 		mkFunc(f, dom, id)
@@ -125,6 +125,12 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		val yTransformation: Bound = extractBound(yExpr, "y")
 
 		Map("x" -> xTransformation, "y" -> yTransformation)
+	}
+
+	def getInputTransformations(v: RGBVal): Map[Func, Map[String, Bound]] = {
+		mergeBoundsMaps(getInputTransformations(v.red),
+										mergeBoundsMaps(getInputTransformations(v.blue),
+																		getInputTransformations(v.green)))
 	}
 
   def getInputTransformations(e: Exp[_]): Map[Func, Map[String, Bound]] = e match {

@@ -2,20 +2,55 @@ package sepia
 
 import lms.common._
 
-trait ImageBufferOps extends Base with ArrayOps with PrimitiveOps {
+trait ImageBufferOps extends PrimitiveOps with ArrayOps {
   case class Buffer(val width: Rep[Int], val a: Rep[Array[UShort]])
-  type UShort = Int
-
   object NewBuffer {
     def apply(width: Rep[Int], height: Rep[Int]) = newBuffer(width, height)
   }
 
-  implicit def bufferToBufferOps(b: Buffer) = new BufferOps(b)
+  type UShort = Int
+
+  class RGBValOps(v: RGBVal) {
+    def +(other: RGBVal): RGBVal = RGBVal(v.red + other.red,
+                                          v.green + other.green,
+                                          v.blue + other.blue)
+    def +(other: Rep[Int]): RGBVal = RGBVal(v.red + other,
+                                            v.green + other,
+                                            v.blue + other)
+
+    def -(other: RGBVal): RGBVal = RGBVal(v.red - other.red,
+                                          v.green - other.green,
+                                          v.blue - other.blue)
+    def -(other: Rep[Int]): RGBVal = RGBVal(v.red - other,
+                                            v.green - other,
+                                            v.blue - other)
+
+    def *(other: RGBVal): RGBVal = RGBVal(v.red * other.red,
+                                          v.green * other.green,
+                                          v.blue * other.blue)
+    def *(other: Rep[Int]): RGBVal = RGBVal(v.red * other,
+                                            v.green * other,
+                                            v.blue * other)
+
+    def /(other: RGBVal): RGBVal = RGBVal(v.red / other.red,
+                                          v.green / other.green,
+                                          v.blue / other.blue)
+
+    def /(other: Rep[Int]): RGBVal = RGBVal(v.red / other,
+                                            v.green / other,
+                                            v.blue / other)
+  }
+
+  implicit def RGBValToOps(v: RGBVal): RGBValOps = new RGBValOps(v)
+
+  case class RGBVal(red: Rep[Int], green: Rep[Int], blue: Rep[Int])
+
+  implicit def bufferToBufferOps(b: Buffer): BufferOps = new BufferOps(b)
 
   class BufferOps(b: Buffer) {
     def apply(x: Rep[Int], y: Rep[Int]) =
       bufferApply(b, x, y)
-    def update(x: Rep[Int], y: Rep[Int], v: Rep[UShort]) =
+    def update(x: Rep[Int], y: Rep[Int], v: RGBVal) =
       bufferUpdate(b, x, y, v)
   }
 
@@ -31,22 +66,26 @@ trait ImageBufferOps extends Base with ArrayOps with PrimitiveOps {
 
   def newBuffer(width: Rep[Int], height: Rep[Int]): Buffer
 
-  def bufferApply(b: Buffer, x: Rep[Int], y: Rep[Int]): Rep[UShort]
-  def bufferUpdate(b: Buffer, x: Rep[Int], y: Rep[Int], v: Rep[UShort]): Rep[Unit]
+  def bufferApply(b: Buffer, x: Rep[Int], y: Rep[Int]): RGBVal
+  def bufferUpdate(b: Buffer, x: Rep[Int], y: Rep[Int], v: RGBVal): Rep[Unit]
 }
 
 trait ImageBufferOpsExp extends ImageBufferOps
                         with ArrayOpsExpOpt with PrimitiveOpsExpOpt {
 
   override def newBuffer(m: Exp[Int], n: Exp[Int]) = {
-    Buffer(m, array_obj_new[UShort](m * n))
+    Buffer(m, array_obj_new[UShort](m * n * 3))
   }
 
   override def bufferApply(b: Buffer, x: Exp[Int], y: Exp[Int]) = {
-    array_apply(b.a, x + b.width * y)
+    RGBVal(array_apply(b.a, x + b.width * y + 2),
+           array_apply(b.a, x + b.width * y + 1),
+           array_apply(b.a, x + b.width * y))
   }
 
-  override def bufferUpdate(b: Buffer, x: Exp[Int], y: Exp[Int], v: Rep[UShort]) = {
-    array_update[UShort](b.a, x + b.width * y, v)
+  override def bufferUpdate(b: Buffer, x: Exp[Int], y: Exp[Int], v: RGBVal) = {
+    array_update(b.a, x + b.width * y + 2, v.red)
+    array_update(b.a, x + b.width * y + 1, v.green)
+    array_update(b.a, x + b.width * y, v.blue)
   }
 }
