@@ -74,7 +74,12 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
       case LongBinaryAnd(x,y)           => f(List(x, y).map(m))
       case LongToInt(x)                 => f(List(x).map(m))
       case LongShiftRightUnsigned(x,y)  => f(List(x, y).map(m))
-			case SymbolicInt(_) 								=> f(List().map(m))
+			case SymbolicInt(_) 							=> f(List().map(m))
+			case ShortPlus(a, b)							=> f(List(a, b).map(m))
+			case ShortDivide(a, b)						=> f(List(a, b).map(m))
+			case ShortMinus(a, b)							=> f(List(a, b).map(m))
+			case ShortTimes(a, b)							=> f(List(a, b).map(m))
+			case ShortConvert(a)				  		=> f(List(a).map(m))
   }
 
 	var funcs: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()

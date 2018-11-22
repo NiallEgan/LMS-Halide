@@ -1,75 +1,42 @@
-#include "qdbmp.c"
 #include "pipeline.h"
+
+void pipeline(UCHAR* x0, UCHAR* x1) {
+  UCHAR x2[90];
+  for(int x4=0; x4 < 6; x4++) {
+    UCHAR x7 = 5 * x4;
+    for(int x6=0; x6 < 5; x6++) {
+      UCHAR x8 = x6 + x7;
+      UCHAR x9 = x8 + 2;
+      UCHAR x10 = x0[x9];
+      x2[x9] = x10;
+      UCHAR x11 = x8 + 1;
+      UCHAR x12 = x0[x11];
+      x2[x11] = x12;
+      UCHAR x13 = x0[x8];
+      x2[x8] = x13;
+    }
+  }
+  for(int x21=0; x21 < 6; x21++) {
+    UCHAR x23 = 5 * x21;
+    for(int x22=0; x22 < 5; x22++) {
+      UCHAR x24 = x22 + x23;
+      UCHAR x25 = x24 + 2;
+      UCHAR x26 = x2[x25];
+      UCHAR x27 = x24 + 1;
+      UCHAR x28 = x2[x27];
+      UCHAR x29 = x2[x24];
+      x1[x25] = x26;
+      x1[x27] = x28;
+      x1[x24] = x29;
+    }
+  }
+}
 
 int main(int argc, char **argv) {
   BMP* bmp = BMP_ReadFile(argv[1]);
-  BMP* new_bmp = BMP_Create(bmp->Header->width, bmp->Header->height, bmp->Header->depth)
+  BMP* new_bmp = BMP_Create(bmp->Header.Width, bmp->Header.Height, bmp->Header.BitsPerPixel);
 
-  pipeline(bmp->Data, new_bmp->Data)
+  pipeline(bmp->Data, new_bmp->Data);
 
-  BMP_WriteFile(new_bmp, argv[2])
+  BMP_WriteFile(new_bmp, argv[2]);
 }
-
-void pipeline(USHORT[] * x0, USHORT[] * x1) {
-  USHORT[90] x2;
-  for(int x4=0; x4 < 6; x4++) {
-    USHORT x8 = 5 * x4;
-    for(int x6=0; x6 < 5; x6++) {
-      USHORT x7 = x6 + x4;
-      USHORT x9 = x6 + x8;
-      USHORT x10 = x9 + 2;
-      x2[x10] = x7;
-      USHORT x12 = x9 + 1;
-      x2[x12] = x7;
-      x2[x9] = x7;
-    }
-  }
-
-  for(int x19=0; x19 < 6; x19++) {
-    USHORT x24 = 5 * x19;
-    USHORT x21 = x19 * 5;
-    for(int x20=0; x20 < 5; x20++) {
-      USHORT x25 = x20 + x24;
-      USHORT x26 = x25 + 2;
-      USHORT x27 = x2[x26];
-      USHORT x28 = x25 + 1;
-      USHORT x29 = x2[x28];
-      USHORT x30 = x2[x25];
-      USHORT x22 = x20 + x21;
-      USHORT x23 = x22 + 2;
-      x1[x23] = x27;
-      USHORT x32 = x22 + 1;
-      x1[x32] = x29;
-      x1[x22] = x30;
-    }
-  }
-}
-
-/*
-void pipeline(int* * x0) {
-  int32_t[5][3] x1;
-
-  for(int x3=0; x3 < 3; x3++) {
-    for(int x5=0; x5 < 5; x5++) {
-    int32_t x6 = x5 + x3;
-    x1[x5][x3] = x6;
-    }
-  }
-}
-
-void pipeline(UCHAR *x0, UCHAR *out) {
-  //UCHAR[5 * 3 * 3] x1;
-  UCHAR *x1 = out
-
-  for(int x3=0; x3 < 3; x3++) {
-    for(int x5=0; x5 < 5; x5++) {
-      UCHAR x6 = x5 + x3;
-      x1[(x5 + x3 * 5) * 3] = x6;
-      x1[(x5 + x3 * 5) * 3 + 1] = x6;
-      x1[(x5 + x3 * 5) * 3 + 2] = x6;
-    }
-  }
-
-
-}
-*/

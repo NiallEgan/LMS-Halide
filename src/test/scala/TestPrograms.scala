@@ -145,7 +145,7 @@ trait IDProg extends TestPipeline {
 
 	override def prog(in: Buffer): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(5, 6)
+			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(5, 6)
 
 		f.realize()
 		registerFunction("f", f)

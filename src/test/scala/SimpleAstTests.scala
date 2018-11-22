@@ -11,7 +11,8 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])(in: Rep[Array[Int]], out: Rep[Array[Int]]) = {
+	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])
+				(in: Rep[Array[UShort]], out: Rep[Array[UShort]]) = {
 		compiler_prog(in, out)
 		evalSched(sched, boundsGraph)
 		println(sched)

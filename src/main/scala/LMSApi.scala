@@ -10,32 +10,33 @@ trait Dsl extends PrimitiveOps with NumericOps
           with IfThenElse with Equal
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
-          with ImageBufferOps {
- //type UShort = Int
+          with ImageBufferOps with ShortOps {
 }
 
 trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with BooleanOpsExpOpt with IfThenElseExp
              with RangeOpsExp with FractionalOpsExp
              with EqualExpBridgeOpt with ArrayOpsExpOpt
-             with SeqOpsExp with ImageBufferOpsExp {}
+             with SeqOpsExp with ImageBufferOpsExp
+             with ShortOpsExpOpt {}
 
 trait DslGenC extends CGenNumericOps
   with CGenPrimitiveOps with CGenBooleanOps
   with CGenIfThenElse with CGenEqual
   with CGenRangeOps with CGenFractionalOps
-  with CGenArrayOps {
+  with CGenShortOps with CGenArrayOps  {
     val IR: DslExp
     import IR._
 
     override def isPrimitiveType(tpe: String) = tpe match {
       case "USHORT" => true
+      case "UCHAR" => true
       case _ => super.isPrimitiveType(tpe)
     }
 
     override def remap[A](m: Typ[A]) = m.toString match {
-      case "Array[Int]" => "USHORT[]"
-      case "Int" => "USHORT"
+      case "Array[Short]" => "UCHAR[]"
+      case "Short" => "UCHAR"
       case _ => super.remap(m)
 
     }
@@ -46,7 +47,7 @@ trait DslGenC extends CGenNumericOps
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
         case a@ArrayNew(m) => {
           val arrType = remap(a.m)
-          stream.println(f"$arrType[${quote(m)}] ${quote(sym)};")
+          stream.println(f"$arrType ${quote(sym)}[${quote(m)}];")
         }
         case _ => super.emitNode(sym, rhs)
       }

@@ -2,47 +2,55 @@ package sepia
 
 import lms.common._
 
-trait ImageBufferOps extends PrimitiveOps with ArrayOps {
+trait ImageBufferOps extends PrimitiveOps with ArrayOps with ShortOps {
+  case class US(v: Int)
+
+  type UShort = Short
+
+//  implicit def uShortToInt(v: UShort): Int = v.v
+  //implicit def intToUShort(v: Int): UShort = US(v)
+
+  //implicit def uShotTyp: Typ[UShort]
+
   case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UShort]])
   object NewBuffer {
     def apply(width: Rep[Int], height: Rep[Int]) = newBuffer(width, height)
   }
 
-  type UShort = Int
 
   class RGBValOps(v: RGBVal) {
     def +(other: RGBVal): RGBVal = RGBVal(v.red + other.red,
                                           v.green + other.green,
                                           v.blue + other.blue)
-    def +(other: Rep[Int]): RGBVal = RGBVal(v.red + other,
-                                            v.green + other,
-                                            v.blue + other)
+    def +(other: Rep[UShort]): RGBVal = RGBVal(v.red + other,
+                                               v.green + other,
+                                               v.blue + other)
 
     def -(other: RGBVal): RGBVal = RGBVal(v.red - other.red,
                                           v.green - other.green,
                                           v.blue - other.blue)
-    def -(other: Rep[Int]): RGBVal = RGBVal(v.red - other,
-                                            v.green - other,
-                                            v.blue - other)
+    def -(other: Rep[UShort]): RGBVal = RGBVal(v.red - other,
+                                               v.green - other,
+                                               v.blue - other)
 
     def *(other: RGBVal): RGBVal = RGBVal(v.red * other.red,
                                           v.green * other.green,
                                           v.blue * other.blue)
-    def *(other: Rep[Int]): RGBVal = RGBVal(v.red * other,
-                                            v.green * other,
-                                            v.blue * other)
+    def *(other: Rep[UShort]): RGBVal = RGBVal(v.red * other,
+                                               v.green * other,
+                                               v.blue * other)
 
     def /(other: RGBVal): RGBVal = RGBVal(v.red / other.red,
                                           v.green / other.green,
                                           v.blue / other.blue)
-    def /(other: Rep[Int]): RGBVal = RGBVal(v.red / other,
-                                            v.green / other,
-                                            v.blue / other)
+    def /(other: Rep[UShort]): RGBVal = RGBVal(v.red / other,
+                                               v.green / other,
+                                               v.blue / other)
   }
 
   implicit def RGBValToOps(v: RGBVal): RGBValOps = new RGBValOps(v)
 
-  case class RGBVal(red: Rep[Int], green: Rep[Int], blue: Rep[Int])
+  case class RGBVal(red: Rep[UShort], green: Rep[UShort], blue: Rep[UShort])
 
   implicit def bufferToBufferOps(b: Buffer): BufferOps = new BufferOps(b)
 

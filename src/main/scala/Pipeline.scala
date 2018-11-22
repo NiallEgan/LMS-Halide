@@ -9,7 +9,7 @@ trait Pipeline extends SimpleFuncOps {
 
 	def prog(in: Buffer): Rep[Unit]
 
-	def compiler_prog(in: Rep[Array[UShort]], out: Rep[Array[Int]]) = {
+	def compiler_prog(in: Rep[Array[UShort]], out: Rep[Array[UShort]]) = {
 		prog(Buffer(width, height, in))
 	}
 
@@ -23,7 +23,8 @@ trait Pipeline extends SimpleFuncOps {
 	}
 
 	implicit def intFToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
-		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y), f(x, y), f(x, y)))
+		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(i2s(f(x, y)),
+																									i2s(f(x, y)), i2s(f(x, y))))
 	}
 
 	abstract class FuncOps(f: Func) {
@@ -57,7 +58,7 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps
 		}
 	}
 
-	def assignOutArray(out: Rep[Array[Int]]): Rep[Unit] = {
+	def assignOutArray(out: Rep[Array[UShort]]): Rep[Unit] = {
 		val finalBuffer: Buffer = finalFunc.getOrElse(throw new InvalidAlgorithm("No final function has been realized"))
 															.buffer.getOrElse(throw new InvalidSchedule("Final func has no storage allocated"))
 		// TODO: Look into more efficient assignment here
