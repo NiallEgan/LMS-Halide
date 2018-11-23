@@ -73,8 +73,5 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps
 
 	override implicit def toFuncOps(f: Func): FuncOps = new FuncOpsImp(f)
 
-	def sched(): Schedule = schedule match {
-		case Some(s) => s
-		case None => throw new Exception("No schedule tree generated")
-	}
+	def sched(): Schedule = schedule.getOrElse(throw new Exception("No schedule tree generated"))
 }

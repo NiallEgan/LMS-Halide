@@ -28,10 +28,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
 
     private var loopStart: Option[Rep[Int]] = None
 
-		def v: Rep[Int] = value match {
-			case Some(x) => x
-			case None => throw new InvalidSchedule("Unbound variable")
-		}
+		def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule("Unbound variable"))
 
     def loopStartOffset: Rep[Int] = {
       loopStart.getOrElse(throw new InvalidSchedule("Unbound loop v"))
@@ -75,12 +72,10 @@ trait CompilerFuncOps extends SimpleFuncOps {
 
   type Func = CompilerFunc
 
-  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal =
+  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal = {
     if (f.inlined) f.f(x, y)
-    else f.buffer match {
-     case Some(b) => b(x - f.x.loopStartOffset,
-                       y - f.y.loopStartOffset)
-     case None => throw new InvalidSchedule(f"No buffer allocated at application time for ")
+    else f.buffer
+         .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.loopStartOffset, y - f.y.loopStartOffset)
   }
 
   def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int)), id: Int): Func = {
