@@ -80,6 +80,8 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case ShortMinus(a, b)							=> f(List(a, b).map(m))
 			case ShortTimes(a, b)							=> f(List(a, b).map(m))
 			case ShortConvert(a)				  		=> f(List(a).map(m))
+			case IntConvert(a)				  	  	=> f(List(a).map(m))
+
   }
 
 	var funcs: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()

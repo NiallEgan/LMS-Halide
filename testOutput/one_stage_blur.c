@@ -1,6 +1,11 @@
-#include "pipeline.h"
-
-void pipeline(UCHAR* x0, UCHAR* x3, int32_t  x1, int32_t  x2) {
+/*****************************************
+  Emitting C Generated Code                  
+*******************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+void pipeline(UCHAR[] * x0, UCHAR[] * x3, int32_t  x1, int32_t  x2) {
 int32_t x4 = x1 - 1;
 int32_t x6 = x4 - 1;
 int32_t x5 = x2 - 1;
@@ -173,28 +178,6 @@ x3[x160] = x173;
 
 }
 }
-
-int compare(UCHAR *a, UCHAR *b, int w, int h) {
-  for (int x = 0; x < w; x++) {
-    for (int y = 0; y < h; y++) {
-      int base = (x + y * x) * 3;
-      if (a[base] != b[base] || a[base+1] != b[base+1] || a[base+2] != b[base+2]) return 1;
-    }
-  }
-  return 0;
-}
-
-int main(int argc, char **argv) {
-  // N.B. BMPv3 only for now... :(
-  BMP* bmp = BMP_ReadFile(argv[1]);
-  printf("%s\n", BMP_ERROR_STRING[BMP_LAST_ERROR_CODE]);
-  BMP* new_bmp = BMP_Create(bmp->Header.Width, bmp->Header.Height, bmp->Header.BitsPerPixel);
-
-  pipeline(bmp->Data, new_bmp->Data, bmp->Header.Width, bmp->Header.Height);
-  printf("Different = %d\n", compare(bmp->Data, new_bmp->Data, 1024, 768));
-  printf("%s\n", BMP_ERROR_STRING[BMP_LAST_ERROR_CODE]);
-
-  printf("Width: %lu\n, Height: %lu\n", bmp->Header.Width, bmp->Header.Height);
-
-  BMP_WriteFile(new_bmp, argv[2]);
-}
+/*****************************************
+  End of C Generated Code                  
+*******************************************/

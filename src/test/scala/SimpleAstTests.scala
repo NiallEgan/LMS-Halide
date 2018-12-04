@@ -1,5 +1,6 @@
 import org.scalatest.FlatSpec
 import scala.collection.mutable.ListBuffer
+import java.io.File
 
 import sepia._
 
@@ -20,9 +21,9 @@ trait CompilerInstance extends ScheduleCompiler
 		assignOutArray(out)
 	}
 
-	def compile(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]) = {
+	def compile(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]], progname: String) = {
 		codegen.emitSourceMut(ev(boundsGraph), "pipeline",
-			new java.io.PrintWriter(System.out))
+			new java.io.PrintWriter(new File(f"testOutput/$progname.c")))
 	}
 }
 
@@ -33,7 +34,7 @@ class CompilerSpec extends FlatSpec {
 
 		val gradProgAnalysis = new GradProg with TestPipelineAnalysis
 
-	 	gradProg.compile(gradProgAnalysis.getBoundsGraph)
+	 	gradProg.compile(gradProgAnalysis.getBoundsGraph, "simple_grad")
 	 	val correctAst: ScheduleNode[String, String] =
 	 		new RootNode(List(
 	 			new StorageNode("f",List(
@@ -53,7 +54,7 @@ class CompilerSpec extends FlatSpec {
 
 		val gradProgAnalysis = new BlurredGradProg with TestPipelineAnalysis
 
-		gradProg.compile(gradProgAnalysis.getBoundsGraph)
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "blurred_grad")
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
 				new StorageNode("g",List(
@@ -71,7 +72,7 @@ class CompilerSpec extends FlatSpec {
 		val gradProg =
 			new BlurredGradProgComputeAt with CompilerInstance with TestAstOps
 		val gradProgAnalysis = new BlurredGradProgComputeAt with TestPipelineAnalysis
-		gradProg.compile(gradProgAnalysis.getBoundsGraph)
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "blurred_grad_compute_at")
 
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
@@ -101,7 +102,7 @@ class CompilerSpec extends FlatSpec {
 		val gradProgAnalysis = new ThreeStageBoxBlur with TestPipelineAnalysis
 
 		println("Three stage box blur:")
-		gradProg.compile(gradProgAnalysis.getBoundsGraph)
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "three_stage_box_blur")
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
 				new StorageNode("i",List(
@@ -120,7 +121,7 @@ class CompilerSpec extends FlatSpec {
 		val blurProg =
 			new ThreeStageBoxBlurWithComputeAt with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new ThreeStageBoxBlurWithComputeAt with TestPipelineAnalysis
-		blurProg.compile(blurProgAnalysis.getBoundsGraph)
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "three_stage_box_blur_with_compute_at")
 
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
@@ -148,6 +149,20 @@ class CompilerSpec extends FlatSpec {
 		val blurProg =
 			new IDProg with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new IDProg with TestPipelineAnalysis
-		blurProg.compile(blurProgAnalysis.getBoundsGraph)
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "id_prog")
 	}
+
+	"TwoStageBlur" should "make a blurring progam (I need better testing)" in {
+		val blurProg =
+			new TwoStageBoxBlur with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new TwoStageBoxBlur with TestPipelineAnalysis
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "two_stage_blur")
+	}
+	"OneStageBoxBlur" should "make a blurring progam (I need better testing)" in {
+		val blurProg =
+			new OneStageBoxBlur with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new OneStageBoxBlur with TestPipelineAnalysis
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur")
+	}
+
 }

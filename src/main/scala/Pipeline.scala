@@ -22,8 +22,8 @@ trait Pipeline extends SimpleFuncOps {
 
 	implicit def intFToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
 		// This is for converting something like f(x, y) => x + y
-		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(i2s(f(x, y)),
-																									i2s(f(x, y)), i2s(f(x, y))))
+		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y),
+																									f(x, y), f(x, y)))
 	}
 
 	abstract class FuncOps(f: Func) {
@@ -63,9 +63,9 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps
 		// TODO: Look into more efficient assignment here
 		for (y <- 0 until finalBuffer.height) {
 			for (x <- 0 until finalBuffer.width) {
-				array_update(out, 3 * (x + finalBuffer.width * y) + 2, finalBuffer(x, y).red)
-				array_update(out, 3 * (x + finalBuffer.width * y) + 1, finalBuffer(x, y).green)
-				array_update(out, 3 * (x + finalBuffer.width * y), finalBuffer(x, y).blue)
+				array_update(out, 3 * (x + finalBuffer.width * y) + 2, i2s(finalBuffer(x, y).red))
+				array_update(out, 3 * (x + finalBuffer.width * y) + 1, i2s(finalBuffer(x, y).green))
+				array_update(out, 3 * (x + finalBuffer.width * y), i2s(finalBuffer(x, y).blue))
 			}
 		}
 	}
