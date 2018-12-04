@@ -2,20 +2,18 @@ package sepia
 
 trait Pipeline extends SimpleFuncOps {
 	// The trait the user mixes in to create their program
-	val width: Rep[Int]
-	val height: Rep[Int]
-
 	var finalFunc: Option[Func] = None
 
-	def prog(in: Buffer): Rep[Unit]
+	def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit]
 
-	def compiler_prog(in: Rep[Array[UShort]], out: Rep[Array[UShort]]) = {
-		prog(Buffer(width, height, in))
+	def compiler_prog(in: Rep[Array[UShort]], out: Rep[Array[UShort]],
+										w: Rep[Int], h: Rep[Int]) = {
+		prog(Buffer(w, h, in), w, h)
 	}
 
 	class FOps(f: (Rep[Int], Rep[Int]) => RGBVal) {
-		def withDomain(dom: (Int, Int)): Func = withNZDomain((0, dom._1), (0, dom._2))
-		def withNZDomain(dom: ((Int, Int), (Int, Int))): Func = toFunc(f, dom)
+		def withDomain(w: Rep[Int], h: Rep[Int]): Func = withNZDomain((0, w), (0, h))
+		def withNZDomain(bl: (Rep[Int], Rep[Int]), tr: (Rep[Int], Rep[Int])): Func = toFunc(f, (bl, tr))
 	}
 
 	implicit def toFOps(f: (Rep[Int], Rep[Int]) => RGBVal): FOps = {
@@ -23,6 +21,7 @@ trait Pipeline extends SimpleFuncOps {
 	}
 
 	implicit def intFToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
+		// This is for converting something like f(x, y) => x + y
 		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(i2s(f(x, y)),
 																									i2s(f(x, y)), i2s(f(x, y))))
 	}
@@ -34,7 +33,7 @@ trait Pipeline extends SimpleFuncOps {
 
 	implicit def toFuncOps(f: Func): FuncOps
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int))): Func
+	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func
 }
 
 trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps {
@@ -44,7 +43,7 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps
 	private var id = 0
 	var idToFunc: Map[Int, Func] = Map()
 
-	override def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int))): Func = {
+	override def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func = {
 		val func: Func = mkFunc(f, dom, id)
 		idToFunc += id -> func
 		id += 1
@@ -64,9 +63,9 @@ trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps
 		// TODO: Look into more efficient assignment here
 		for (y <- 0 until finalBuffer.height) {
 			for (x <- 0 until finalBuffer.width) {
-				array_update(out, x + finalBuffer.width * y + 2, finalBuffer(x, y).red)
-				array_update(out, x + finalBuffer.width * y + 1, finalBuffer(x, y).green)
-				array_update(out, x + finalBuffer.width * y, finalBuffer(x, y).blue)
+				array_update(out, 3 * (x + finalBuffer.width * y) + 2, finalBuffer(x, y).red)
+				array_update(out, 3 * (x + finalBuffer.width * y) + 1, finalBuffer(x, y).green)
+				array_update(out, 3 * (x + finalBuffer.width * y), finalBuffer(x, y).blue)
 			}
 		}
 	}

@@ -85,7 +85,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 	var funcs: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()
 	private var id = 0
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int))): Func = {
+	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func = {
 		funcs += (f -> id)
 		id += 1
 		mkFunc(f, dom, id)
@@ -164,7 +164,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
 		val symbolicInput = Buffer(0, 0, newSymbolicArray())
-		prog(symbolicInput)
+		prog(symbolicInput, newSymbolicInt("w"), newSymbolicInt("h"))
 		funcs.keys.foldLeft(Map[Func, Map[Func, Map[String, Bound]]]())
 								{(m, f) =>
 									m + (f -> getInputTransformations(f(newSymbolicInt("x"),

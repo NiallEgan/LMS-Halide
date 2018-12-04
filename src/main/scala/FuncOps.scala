@@ -5,6 +5,7 @@ import lms.common._
 trait SimpleFuncOps extends Dsl {
   // The api that is presented to the DSL user
   type Func
+  type Domain = ((Rep[Int], Rep[Int]), (Rep[Int], Rep[Int]))
 
   class FuncOps(f: Func) {
     def apply(x: Rep[Int], y: Rep[Int]) =
@@ -16,13 +17,13 @@ trait SimpleFuncOps extends Dsl {
   def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal
 
   def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal,
-             dom: ((Int, Int), (Int, Int)), id: Int): Func
+             dom: Domain, id: Int): Func
 }
 
 trait CompilerFuncOps extends SimpleFuncOps {
   // The api that is presented to the DSL compiler
 
-  class Dim(val min: Int, val max: Int,
+  class Dim(val min: Rep[Int], val max: Rep[Int],
             val name: String, val f: Func) {
 		private var value: Option[Rep[Int]] = None
 
@@ -45,7 +46,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
 	}
 
   class CompilerFunc(val f: (Rep[Int], Rep[Int]) => RGBVal,
-                     dom: ((Int, Int), (Int, Int)), val id: Int) {
+                     dom: Domain, val id: Int) {
     val x: Dim = new Dim(dom._1._1, dom._1._2, "x", this)
     val y: Dim = new Dim(dom._2._1, dom._2._2, "y", this)
 
@@ -65,7 +66,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
       buffer = Some(NewBuffer(x.max - x.min, y.max - y.min))
     }
 
-    def allocateNewBuffer(m: Int, n: Int) {
+    def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {
       buffer = Some(NewBuffer(m, n))
     }
   }
@@ -78,7 +79,7 @@ trait CompilerFuncOps extends SimpleFuncOps {
          .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.loopStartOffset, y - f.y.loopStartOffset)
   }
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: ((Int, Int), (Int, Int)), id: Int): Func = {
+  def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain, id: Int): Func = {
     new CompilerFunc(f, dom, id)
   }
 }

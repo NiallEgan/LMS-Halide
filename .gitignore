@@ -2,3 +2,9 @@
 *.log
 project/
 target/
+*.BMP
+*.out
+*.jpg
+*.BMP3
+*.bmp
+a.out

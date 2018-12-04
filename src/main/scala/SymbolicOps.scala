@@ -30,7 +30,7 @@ trait SymbolicFuncOpsExp extends SimpleFuncOps with ImageBufferOpsExp {
   type Func = (Rep[Int], Rep[Int]) => RGBVal
 
   override def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal,
-                      dom: ((Int, Int), (Int, Int)), id: Int) = f
+                      dom: Domain, id: Int) = f
 
   case class FuncApplication(f: Func, x: Exp[Int], y: Exp[Int]) extends Def[UShort]
 

@@ -2,12 +2,9 @@ import sepia._
 
 
 trait GradProg extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 3)
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
 
 		f.realize()
 		// This is for testing purposes only
@@ -16,16 +13,13 @@ trait GradProg extends TestPipeline {
 }
 
 trait BlurredGradProg extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 3)
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
 
 		val g: Func =
 				((x: Rep[Int], y: Rep[Int]) =>
-					(f(x-1, y) + f(x, y-1) + f(x-1, y-1) + f(x, y)) / 4) withDomain (5, 3)
+					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (w-1, h-1)
 
 		g.realize()
 
@@ -36,17 +30,14 @@ trait BlurredGradProg extends TestPipeline {
 }
 
 trait BlurredGradProgComputeAt extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (5, 5)
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
 
 		val g: Func =
 				((x: Rep[Int], y: Rep[Int]) =>
-					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (4, 4)
+					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (w-1, h-1)
 
 		f.computeAt(g, "y")
 
@@ -59,16 +50,13 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 }
 
 trait FunkyBoundsProg extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => 30 + x) withDomain (5, 5)
+			((x: Rep[Int], y: Rep[Int]) => 30 + x) withDomain (w, h)
 
 		val g: Func =
 			((x: Rep[Int], y: Rep[Int]) =>
-			f(x-4, y+3) + f(x+10, y) + f(x-11, y+12) + f(x, y-40*2)) withDomain (5, 5) // N.B. These are not valid domains
+			f(x-4, y+3) + f(x+10, y) + f(x-11, y+12) + f(x, y-40*2)) withDomain (w, h) // N.B. These are not valid domains
 
 		g.realize()
 		registerFunction("f", f)
@@ -77,75 +65,63 @@ trait FunkyBoundsProg extends TestPipeline {
 }
 
 trait ThreeStageBoxBlur extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(5, 5)
+			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(w, h)
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, 4), (0, 5))
-		val h: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, 4), (1, 4))
+			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
 
 
-		h.realize()
+		i.realize()
 		registerFunction("f", f)
 		registerFunction("g", g)
-		registerFunction("h", h)
+		registerFunction("i", i)
 	}
 }
 
 trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y) / 2) withDomain(5, 5)
+			((x: Rep[Int], y: Rep[Int]) => in(x, y) / 2) withDomain(w, h)
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, 4), (0, 5))
-		val h: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, 4), (1, 4))
+			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
 
 		// TODO: What about 'middle functions'?
-		f.computeAt(h, "y")
+		f.computeAt(i, "y")
 
-		h.realize()
+		i.realize()
 
 		registerFunction("f", f)
 		registerFunction("g", g)
-		registerFunction("h", h)
+		registerFunction("i", i)
 	}
 }
 
 trait ThreeStageBoundsAnalysisExample extends TestPipeline {
-	override val width: Rep[Int] = 6
-	override val height: Rep[Int] = 6
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(6, 6)
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => f(x-1, y+1) + f(x+1, y-1)) withNZDomain ((1, 5), (1, 5))
-		val h: Func =
-			((x: Rep[Int], y: Rep[Int]) => g(x-1, y+1) + g(x+1, y-1)) withNZDomain ((2, 4), (2, 4))
+			((x: Rep[Int], y: Rep[Int]) => f(x-1, y+1) + f(x+1, y-1)) withNZDomain ((1, w-1), (1, h-1))
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => g(x-1, y+1) + g(x+1, y-1)) withNZDomain ((2, w-2), (2, h-2))
 
-		h.realize()
+		i.realize()
 
 		registerFunction("f", f)
 		registerFunction("g", g)
-		registerFunction("h", h)
+		registerFunction("i", i)
 	}
 }
 
 trait IDProg extends TestPipeline {
-	override val width: Rep[Int] = 5
-	override val height: Rep[Int] = 5
-
-	override def prog(in: Buffer): Rep[Unit] = {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(5, 6)
+			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(w, h)
 
 		f.realize()
 		registerFunction("f", f)

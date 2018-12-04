@@ -15,14 +15,14 @@ trait ScheduleCompiler extends CompilerFuncOps {
 			val lowerBound: Rep[Int] = {
 				// This only works for x and y...
 				if(v.name == variable.name) v.v + bound.lb
-				else unit(variable.min)
+				else variable.min
 			}
 
 			val upperBound: Rep[Int] = {
 					// If v.name == variable.name, then (at least when we're just dealing with x and y)
 					// We are at the loop that must start from the producer variable
 					if (v.name == variable.name) v.v + bound.ub + 1
-					else unit(variable.max)
+					else variable.max
 			}
 
 			(lowerBound, upperBound)

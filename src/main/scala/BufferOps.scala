@@ -7,11 +7,6 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps with ShortOps {
 
   type UShort = Short
 
-//  implicit def uShortToInt(v: UShort): Int = v.v
-  //implicit def intToUShort(v: Int): UShort = US(v)
-
-  //implicit def uShotTyp: Typ[UShort]
-
   case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UShort]])
   object NewBuffer {
     def apply(width: Rep[Int], height: Rep[Int]) = newBuffer(width, height)
@@ -85,14 +80,14 @@ trait ImageBufferOpsExp extends ImageBufferOps
   }
 
   override def bufferApply(b: Buffer, x: Exp[Int], y: Exp[Int]) = {
-    RGBVal(array_apply(b.a, x + b.width * y + 2),
-           array_apply(b.a, x + b.width * y + 1),
-           array_apply(b.a, x + b.width * y))
+    RGBVal(array_apply(b.a, 3 * (x + b.width * y) + 2),
+           array_apply(b.a, 3 * (x + b.width * y) + 1),
+           array_apply(b.a, 3 * (x + b.width * y)))
   }
 
   override def bufferUpdate(b: Buffer, x: Exp[Int], y: Exp[Int], v: RGBVal) = {
-    array_update(b.a, x + b.width * y + 2, v.red)
-    array_update(b.a, x + b.width * y + 1, v.green)
-    array_update(b.a, x + b.width * y, v.blue)
+    array_update(b.a, 3 * (x + b.width * y) + 2, v.red)
+    array_update(b.a, 3 * (x + b.width * y) + 1, v.green)
+    array_update(b.a, 3 * (x + b.width * y), v.blue)
   }
 }

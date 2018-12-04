@@ -12,8 +12,8 @@ trait CompilerInstance extends ScheduleCompiler
     }
 
 	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])
-				(in: Rep[Array[UShort]], out: Rep[Array[UShort]]) = {
-		compiler_prog(in, out)
+				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], w: Rep[Int], h: Rep[Int]) = {
+		compiler_prog(in, out, w, h)
 		evalSched(sched, boundsGraph)
 		println(sched)
 
@@ -104,10 +104,10 @@ class CompilerSpec extends FlatSpec {
 		gradProg.compile(gradProgAnalysis.getBoundsGraph)
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
-				new StorageNode("h",List(
-					new LoopNode("y", "h", Sequential, List(
-						new LoopNode("x", "h", Sequential, List(
-							new ComputeNode("h", List())
+				new StorageNode("i",List(
+					new LoopNode("y", "i", Sequential, List(
+						new LoopNode("x", "i", Sequential, List(
+							new ComputeNode("i", List())
 						))
 					))
 				))
@@ -124,16 +124,16 @@ class CompilerSpec extends FlatSpec {
 
 		val correctAst: ScheduleNode[String, String] =
 			new RootNode(List(
-				new StorageNode("h",List(
-					new LoopNode("y", "h", Sequential, List(
+				new StorageNode("i",List(
+					new LoopNode("y", "i", Sequential, List(
 						new StorageNode("f", List(
 							new LoopNode("y", "f", Sequential, List(
 								new LoopNode("x", "f", Sequential, List(
 									new ComputeNode("f", List())
 								))
 							)),
-							new LoopNode("x", "h", Sequential, List(
-								new ComputeNode("h", List())
+							new LoopNode("x", "i", Sequential, List(
+								new ComputeNode("i", List())
 							))
 						))
 					))

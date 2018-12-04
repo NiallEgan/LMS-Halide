@@ -53,13 +53,15 @@ trait DslGenC extends CGenNumericOps
       }
     }
 
-    def emitSourceMut[T1: Typ, T2: Typ, R: Typ]
-                    (f: (Exp[T1], Exp[T2]) => Exp[R],
+    def emitSourceMut[T1: Typ, T2: Typ, R: Typ, T3: Typ, T4: Typ]
+                    (f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R],
                      className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     // This marks the second argument as mutable
     val s1 = fresh[T1]
+    val s3 = fresh[T3]
+    val s4 = fresh[T4]
     val s2 = reflectMutableSym(fresh[T2])
-    val body = reifyBlock(f(s1, s2))
-    emitSource(List(s1, s2), body, className, stream)
+    val body = reifyBlock(f(s1, s2, s3, s4))
+    emitSource(List(s1, s2, s3, s4), body, className, stream)
   }
 }

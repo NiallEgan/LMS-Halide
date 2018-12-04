@@ -94,6 +94,7 @@ BMP* BMP_Create( UINT width, UINT height, USHORT depth )
 
 	if ( depth != 8 && depth != 24 && depth != 32 )
 	{
+		printf("depth: %d\n", depth);
 		BMP_LAST_ERROR_CODE = BMP_FILE_NOT_SUPPORTED;
 		return NULL;
 	}
@@ -242,8 +243,9 @@ BMP* BMP_ReadFile( const char* filename )
 
 	/* Verify that the bitmap variant is supported */
 	if ( ( bmp->Header.BitsPerPixel != 32 && bmp->Header.BitsPerPixel != 24 && bmp->Header.BitsPerPixel != 8 )
-		|| bmp->Header.CompressionType != 0 || bmp->Header.HeaderSize != 40 )
+		|| bmp->Header.CompressionType != 0 )//|| bmp->Header.HeaderSize != 40 )
 	{
+		printf("comp type: %d\n", bmp->Header.HeaderSize);
 		BMP_LAST_ERROR_CODE = BMP_FILE_NOT_SUPPORTED;
 		fclose( f );
 		free( bmp );
@@ -795,4 +797,3 @@ int	WriteUSHORT( USHORT x, FILE* f )
 
 	return ( f && fwrite( little, 2, 1, f ) == 1 );
 }
-
