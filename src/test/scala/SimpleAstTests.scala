@@ -165,4 +165,9 @@ class CompilerSpec extends FlatSpec {
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur")
 	}
 
+	"Cropper" should "" in {
+		val cropProg = new Cropper with CompilerInstance with TestAstOps
+		val cropProgAnalysis = new Cropper with TestPipelineAnalysis
+		cropProg.compile(cropProgAnalysis.getBoundsGraph, "cropper")
+	}
 }

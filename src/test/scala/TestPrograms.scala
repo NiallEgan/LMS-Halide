@@ -154,3 +154,12 @@ trait OneStageBoxBlur extends TestPipeline {
 		registerFunction("i", i)
 	}
 }
+
+trait Cropper extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withNZDomain((1, w-1), (1, h-1))
+
+		f.realize()
+	}
+}
