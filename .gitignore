@@ -7,4 +7,5 @@ target/
 *.jpg
 *.BMP3
 *.bmp
+*.png
 a.out

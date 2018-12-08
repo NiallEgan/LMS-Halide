@@ -1,14 +1,8 @@
-/*****************************************
-  Emitting C Generated Code
-*******************************************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-void pipeline(UCHAR[] * x0, UCHAR[] * x3, int32_t  x1, int32_t  x2) {
-int32_t x4 = x1 - 1;
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 - 1;
 int32_t x6 = x4 - 1;
-int32_t x5 = x2 - 1;
+int32_t x5 = x3 - 1;
 int32_t x7 = x5 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
@@ -16,7 +10,7 @@ UCHAR x10[x9];
 for(int x12=1; x12 < x5; x12++) {
 int32_t x27 = x12 - 1;
 int32_t x28 = x6 * x27;
-int32_t x15 = x1 * x12;
+int32_t x15 = x2 * x12;
 for(int x14=1; x14 < x4; x14++) {
 int32_t x26 = x14 - 1;
 int32_t x29 = x26 + x28;
@@ -55,37 +49,15 @@ UCHAR x54 = x10[x53];
 UCHAR x56 = x10[x49];
 int32_t x52 = (int) x51;
 UCHAR x58 = x52;
-x3[x50] = x58;
+x1[x50] = x58;
 int32_t x55 = (int) x54;
 UCHAR x60 = x55;
-x3[x53] = x60;
+x1[x53] = x60;
 int32_t x57 = (int) x56;
 UCHAR x62 = x57;
-x3[x49] = x62;
+x1[x49] = x62;
 
 }
 
 }
-}
-/*****************************************
-  End of C Generated Code
-*******************************************/
-
-void pipeline(UCHAR *in, UCHAR * out, int w, int h) {
-  int buffer[(w - 1) * (h - 1) * 3];
-
-  for (int y = 1; y < h - 1; y++) {
-    int full_y_base = w * y;
-    int adj_y_base = (w - 2) * (y - 1);
-
-    for (int x = 1; x < w - 1; x++) {
-      int full_base = (full_y_base + x) * 3;
-      int adj_base = (adj_y_base + x-1) * 3;
-      buf[adj_base] = in[full_base];
-      buf[adj_base + 1] = in[full_base + 1];
-      buf[adj_base + 2] = in[full_base + 2];
-    }
-  }
-
-  memcpy(out, buf, (w-1) * (h-1) * 3);
 }

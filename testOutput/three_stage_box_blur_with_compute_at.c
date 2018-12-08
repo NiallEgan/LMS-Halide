@@ -1,19 +1,13 @@
-/*****************************************
-  Emitting C Generated Code                  
-*******************************************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-void pipeline(UCHAR[] * x0, UCHAR[] * x3, int32_t  x1, int32_t  x2) {
-int32_t x4 = x1 - 1;
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 - 1;
 int32_t x6 = x4 - 1;
-int32_t x5 = x2 - 1;
+int32_t x5 = x3 - 1;
 int32_t x7 = x5 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
 UCHAR x10[x9];
-int32_t x13 = x1 * 3;
+int32_t x13 = x2 * 3;
 int32_t x14 = x13 * 3;
 for(int x12=1; x12 < x5; x12++) {
 UCHAR x15[x14];
@@ -22,9 +16,9 @@ int32_t x17 = x12 + 1;
 int32_t x18 = x17 + 1;
 for(int x20=x16; x20 < x18; x20++) {
 int32_t x37 = x20 - x16;
-int32_t x38 = x1 * x37;
-int32_t x23 = x1 * x20;
-for(int x22=0; x22 < x1; x22++) {
+int32_t x38 = x2 * x37;
+int32_t x23 = x2 * x20;
+for(int x22=0; x22 < x2; x22++) {
 int32_t x39 = x22 + x38;
 int32_t x40 = 3 * x39;
 int32_t x41 = x40 + 2;
@@ -53,12 +47,12 @@ x15[x40] = x47;
 
 }
 int32_t x55 = x12 - x16;
-int32_t x56 = x1 * x55;
+int32_t x56 = x2 * x55;
 int32_t x98 = x17 - x16;
-int32_t x99 = x1 * x98;
+int32_t x99 = x2 * x98;
 int32_t x142 = x12 - 1;
 int32_t x143 = x142 - x16;
-int32_t x144 = x1 * x143;
+int32_t x144 = x2 * x143;
 int32_t x190 = x6 * x142;
 for(int x54=1; x54 < x4; x54++) {
 int32_t x57 = x54 + x56;
@@ -215,18 +209,15 @@ UCHAR x216 = x10[x215];
 UCHAR x218 = x10[x211];
 int32_t x214 = (int) x213;
 UCHAR x220 = x214;
-x3[x212] = x220;
+x1[x212] = x220;
 int32_t x217 = (int) x216;
 UCHAR x222 = x217;
-x3[x215] = x222;
+x1[x215] = x222;
 int32_t x219 = (int) x218;
 UCHAR x224 = x219;
-x3[x211] = x224;
+x1[x211] = x224;
 
 }
 
 }
 }
-/*****************************************
-  End of C Generated Code                  
-*******************************************/

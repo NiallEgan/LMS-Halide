@@ -1,17 +1,11 @@
-/*****************************************
-  Emitting C Generated Code                  
-*******************************************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-void pipeline(UCHAR[] * x0, UCHAR[] * x3, int32_t  x1, int32_t  x2) {
-int32_t x4 = x1 * x2;
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 * x3;
 int32_t x5 = x4 * 3;
 UCHAR x6[x5];
-for(int x8=0; x8 < x2; x8++) {
-int32_t x12 = x1 * x8;
-for(int x10=0; x10 < x1; x10++) {
+for(int x8=0; x8 < x3; x8++) {
+int32_t x12 = x2 * x8;
+for(int x10=0; x10 < x2; x10++) {
 int32_t x13 = x10 + x12;
 int32_t x14 = 3 * x13;
 int32_t x15 = x14 + 2;
@@ -25,9 +19,9 @@ x6[x14] = x16;
 }
 
 }
-for(int x25=0; x25 < x2; x25++) {
-int32_t x27 = x1 * x25;
-for(int x26=0; x26 < x1; x26++) {
+for(int x25=0; x25 < x3; x25++) {
+int32_t x27 = x2 * x25;
+for(int x26=0; x26 < x2; x26++) {
 int32_t x28 = x26 + x27;
 int32_t x29 = 3 * x28;
 int32_t x30 = x29 + 2;
@@ -37,18 +31,15 @@ UCHAR x34 = x6[x33];
 UCHAR x36 = x6[x29];
 int32_t x32 = (int) x31;
 UCHAR x38 = x32;
-x3[x30] = x38;
+x1[x30] = x38;
 int32_t x35 = (int) x34;
 UCHAR x40 = x35;
-x3[x33] = x40;
+x1[x33] = x40;
 int32_t x37 = (int) x36;
 UCHAR x42 = x37;
-x3[x29] = x42;
+x1[x29] = x42;
 
 }
 
 }
 }
-/*****************************************
-  End of C Generated Code                  
-*******************************************/

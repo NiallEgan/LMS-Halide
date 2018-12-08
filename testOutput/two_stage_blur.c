@@ -1,14 +1,8 @@
-/*****************************************
-  Emitting C Generated Code                  
-*******************************************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-void pipeline(UCHAR[] * x0, UCHAR[] * x3, int32_t  x1, int32_t  x2) {
-int32_t x4 = x1 - 1;
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 - 1;
 int32_t x6 = x4 - 1;
-int32_t x5 = x2 - 1;
+int32_t x5 = x3 - 1;
 int32_t x7 = x5 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
@@ -16,10 +10,10 @@ UCHAR x10[x9];
 for(int x12=1; x12 < x5; x12++) {
 int32_t x101 = x12 - 1;
 int32_t x148 = x6 * x101;
-int32_t x15 = x1 * x12;
+int32_t x15 = x2 * x12;
 int32_t x57 = x12 + 1;
-int32_t x58 = x1 * x57;
-int32_t x102 = x1 * x101;
+int32_t x58 = x2 * x57;
+int32_t x102 = x2 * x101;
 for(int x14=1; x14 < x4; x14++) {
 int32_t x40 = x14 - 1;
 int32_t x149 = x40 + x148;
@@ -175,18 +169,15 @@ UCHAR x174 = x10[x173];
 UCHAR x176 = x10[x169];
 int32_t x172 = (int) x171;
 UCHAR x178 = x172;
-x3[x170] = x178;
+x1[x170] = x178;
 int32_t x175 = (int) x174;
 UCHAR x180 = x175;
-x3[x173] = x180;
+x1[x173] = x180;
 int32_t x177 = (int) x176;
 UCHAR x182 = x177;
-x3[x169] = x182;
+x1[x169] = x182;
 
 }
 
 }
 }
-/*****************************************
-  End of C Generated Code                  
-*******************************************/

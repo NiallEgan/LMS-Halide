@@ -1,13 +1,7 @@
-/*****************************************
-  Emitting C Generated Code                  
-*******************************************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-void pipeline(UCHAR[] * x0, UCHAR[] * x3, int32_t  x1, int32_t  x2) {
-int32_t x4 = x1 - 1;
-int32_t x5 = x2 - 1;
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 - 1;
+int32_t x5 = x3 - 1;
 int32_t x6 = x4 * x5;
 int32_t x7 = x6 * 3;
 UCHAR x8[x7];
@@ -48,18 +42,15 @@ UCHAR x45 = x8[x44];
 UCHAR x47 = x8[x40];
 int32_t x43 = (int) x42;
 UCHAR x49 = x43;
-x3[x41] = x49;
+x1[x41] = x49;
 int32_t x46 = (int) x45;
 UCHAR x51 = x46;
-x3[x44] = x51;
+x1[x44] = x51;
 int32_t x48 = (int) x47;
 UCHAR x53 = x48;
-x3[x40] = x53;
+x1[x40] = x53;
 
 }
 
 }
 }
-/*****************************************
-  End of C Generated Code                  
-*******************************************/

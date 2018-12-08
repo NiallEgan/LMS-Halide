@@ -53,14 +53,34 @@ trait DslGenC extends CGenNumericOps
       }
     }
 
+    private def argsRemap[A](m: Typ[A]): String = m.toString match {
+      case "Array[Short]" => "UCHAR *"
+      case _ => remap(m)
+    }
+
+    override def emitSource[A:Typ](args: List[Sym[_]], body: Block[A],
+                                   functionName: String, out: PrintWriter) = {
+      val sA = remap(typ[A])
+      withStream(out) {
+        stream.println("#include \"pipeline.h\"")
+
+        stream.println(f"$sA $functionName(${args.map(a => argsRemap(a.tp)+ " " + quote(a)).mkString(", ")}) {")
+        emitBlock(body)
+        val y = getBlockResult(body)
+        if (remap(y.tp) != "void") stream.println("return " + quote(y) + ";")
+        stream.println("}")
+      }
+      Nil
+    }
+
     def emitSourceMut[T1: Typ, T2: Typ, R: Typ, T3: Typ, T4: Typ]
                     (f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R],
                      className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     // This marks the second argument as mutable
     val s1 = fresh[T1]
+    val s2 = reflectMutableSym(fresh[T2])
     val s3 = fresh[T3]
     val s4 = fresh[T4]
-    val s2 = reflectMutableSym(fresh[T2])
     val body = reifyBlock(f(s1, s2, s3, s4))
     emitSource(List(s1, s2, s3, s4), body, className, stream)
   }
