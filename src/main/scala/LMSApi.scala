@@ -49,6 +49,8 @@ trait DslGenC extends CGenNumericOps
           val arrType = remap(a.m)
           stream.println(f"$arrType ${quote(sym)}[${quote(m)}];")
         }
+        case MemCpy(src, dest, size) => stream.println(
+          src"memcpy($dest, $src, $size);")
         case _ => super.emitNode(sym, rhs)
       }
     }
@@ -62,6 +64,7 @@ trait DslGenC extends CGenNumericOps
                                    functionName: String, out: PrintWriter) = {
       val sA = remap(typ[A])
       withStream(out) {
+        stream.println("#include <string.h>")
         stream.println("#include \"pipeline.h\"")
 
         stream.println(f"$sA $functionName(${args.map(a => argsRemap(a.tp)+ " " + quote(a)).mkString(", ")}) {")
@@ -71,6 +74,12 @@ trait DslGenC extends CGenNumericOps
         stream.println("}")
       }
       Nil
+    }
+
+    def emitStaticData(name: String, v: Int, out: PrintWriter) = {
+      withStream(out) {
+        stream.println(f"#define $name ($v)")
+      }
     }
 
     def emitSourceMut[T1: Typ, T2: Typ, R: Typ, T3: Typ, T4: Typ]

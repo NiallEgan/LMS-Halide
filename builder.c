@@ -1,4 +1,4 @@
-#include "testOutline/pipeline.h"
+#include "testOutput/pipeline.h"
 #include <assert.h>
 #include <png.h>
 
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
   png_read_image(read_ptr, row_pointers);
 
   // Transform the pixels
-  char *out = malloc(sizeof(char) * (width - 2) * (height - 2) * 3);
+  char *out = malloc(sizeof(char) * (width-2) * (height-2) * 3);
   pipeline(image, out, width, height);
 
   // Write the output data
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   png_infop write_info_ptr = png_create_info_struct(write_ptr);
   FILE *ofp = fopen(argv[2], "wb");
   png_init_io(write_ptr, ofp);
-  png_set_IHDR(write_ptr, write_info_ptr, width - 2, height - 2, depth,
+  png_set_IHDR(write_ptr, write_info_ptr, width-2, height-2, depth,
                color, png_get_interlace_type(read_ptr, info_ptr),
                png_get_compression_type(read_ptr, info_ptr),
                png_get_filter_type(read_ptr, info_ptr));

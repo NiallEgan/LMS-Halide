@@ -1,26 +1,5 @@
 package sepia
 
-import scala.collection.mutable.ListBuffer
-
-case class Bound(val lb: Int, val ub: Int) {
-	// Inclusive bounds
-	def join(other: Bound): Bound = {
-		val newLb = if (lb < other.lb) lb else other.lb
-		val newUb = if (ub > other.ub) ub else other.ub
-	  Bound(newLb, newUb)
-	}
-
-	def add(other: Bound): Bound = {
-		Bound(lb + other.lb, ub + other.ub)
-	}
-
-	def width(): Int = (ub - lb) + 1
-}
-
-object Bound {
-	val zero = Bound(Int.MaxValue, Int.MinValue)
-}
-
 trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 													with SymbolicFuncOpsExp with Pipeline {
 	// Before we pass the program to the staged interpreter, we must
@@ -117,7 +96,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k)
 			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k)
 			case SymbolicInt(dim) => Bound(0, 0)
-			case _ => throw new InvalidAlgorithm(f"Error: Invalid x input to function, $v")
+			case _ => throw new InvalidAlgorithm(f"Error: Invalid input to function, $v")
 		}
 		case Const(_) => Bound(0, 0)
 	}

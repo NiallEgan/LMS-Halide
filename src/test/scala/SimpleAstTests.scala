@@ -12,18 +12,27 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
+	def widthOutDiff(boundsGrap: Map[Int, Map[Int, Map[String, Bound]]]) = {
+		???
+	}
+
+	def heightOutDiff(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]) = {
+		???
+	}
+
 	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])
 				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], w: Rep[Int], h: Rep[Int]) = {
 		compiler_prog(in, out, w, h)
 		evalSched(sched, boundsGraph)
 		println(sched)
-
 		assignOutArray(out)
 	}
 
 	def compile(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]], progname: String) = {
-		codegen.emitSourceMut(ev(boundsGraph), "pipeline",
-			new java.io.PrintWriter(new File(f"testOutput/$progname.c")))
+		val pw = 	new java.io.PrintWriter(new File(f"testOutput/$progname.c"))
+		codegen.emitStaticData("WIDTH_OUT_DIFF", widthOutDiff(boundsGraph), pw)
+		codegen.emitStaticData("HEIGHT_OUT_DIFF", heightOutDiff(boundsGraph), pw)
+		codegen.emitSourceMut(ev(boundsGraph), "pipeline", pw)
 	}
 }
 

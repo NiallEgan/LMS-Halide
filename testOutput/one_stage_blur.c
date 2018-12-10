@@ -1,3 +1,4 @@
+#include <string.h>
 #include "pipeline.h"
 void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
 int32_t x4 = x2 - 1;
@@ -148,27 +149,5 @@ x10[x141] = x148;
 }
 
 }
-for(int x155=0; x155 < x7; x155++) {
-int32_t x158 = x6 * x155;
-for(int x157=0; x157 < x6; x157++) {
-int32_t x159 = x157 + x158;
-int32_t x160 = 3 * x159;
-int32_t x161 = x160 + 2;
-UCHAR x162 = x10[x161];
-int32_t x164 = x160 + 1;
-UCHAR x165 = x10[x164];
-UCHAR x167 = x10[x160];
-int32_t x163 = (int) x162;
-UCHAR x169 = x163;
-x1[x161] = x169;
-int32_t x166 = (int) x165;
-UCHAR x171 = x166;
-x1[x164] = x171;
-int32_t x168 = (int) x167;
-UCHAR x173 = x168;
-x1[x160] = x173;
-
-}
-
-}
+memcpy(x1, x10, x9);
 }

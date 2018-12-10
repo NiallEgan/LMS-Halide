@@ -14,12 +14,12 @@ trait TestPipelineAnalysis extends PipelineForAnalysis with TestPipeline {
 
 class AnalysisSpec extends FlatSpec {
   "f in the blurred grad program" should
-    "have bounds of (0, 1), (0, 1)" in {
+    "have bounds of (-1, 1), (-1, 1)" in {
       val blurredGradProg = new BlurredGradProg with TestPipelineAnalysis
 
       val bounds = blurredGradProg.boundsAsStrings
-      assertResult(Bound(0, 1))(bounds("g")("f")("x"))
-      assertResult(Bound(0, 1))(bounds("g")("f")("y"))
+      assertResult(Bound(-1, 1))(bounds("g")("f")("x"))
+      assertResult(Bound(-1, 1))(bounds("g")("f")("y"))
       assertResult(0)(bounds("f").size)
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)

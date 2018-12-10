@@ -18,9 +18,10 @@ trait BlurredGradProg extends TestPipeline {
 			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
 
 		val g: Func =
-				((x: Rep[Int], y: Rep[Int]) =>
-					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (w-1, h-1)
-
+			((x: Rep[Int], y: Rep[Int]) =>
+				(f(x+1, y-1) + f(x+1, y) + f(x+1, y+1) +
+				 f(x,   y-1) + f(x,   y) + f(x,   y+1) +
+				 f(x-1, y-1) + f(x-1, y) + f(x-1, y+1)) / 9) withNZDomain ((1, w-1), (1, h-1))
 		g.realize()
 
 		// This is for testing purposes only
@@ -37,7 +38,9 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 
 		val g: Func =
 				((x: Rep[Int], y: Rep[Int]) =>
-					(f(x+1, y) + f(x, y+1) + f(x+1, y+1) + f(x, y)) / 4) withDomain (w-1, h-1)
+					(f(x+1, y-1) + f(x+1, y) + f(x+1, y+1) +
+					 f(x,   y-1) + f(x,   y) + f(x,   y+1) +
+				   f(x-1, y-1) + f(x-1, y) + f(x-1, y+1)) / 9) withNZDomain ((1, w-1), (1, h-1))
 
 		f.computeAt(g, "y")
 
@@ -84,7 +87,7 @@ trait ThreeStageBoxBlur extends TestPipeline {
 trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y) / 2) withDomain(w, h)
+			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(w, h)
 		val g: Func =
 			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
 		val i: Func =

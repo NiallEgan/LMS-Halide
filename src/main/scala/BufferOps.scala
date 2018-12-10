@@ -54,6 +54,9 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps with ShortOps {
       bufferApply(b, x, y)
     def update(x: Rep[Int], y: Rep[Int], v: RGBVal) =
       bufferUpdate(b, x, y, v)
+
+    def memcpy(src: Buffer) =
+      bufferMemCpy(src, b);
   }
 
   class InArrayOps(b: Rep[Array[UShort]]) {
@@ -70,10 +73,14 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps with ShortOps {
 
   def bufferApply(b: Buffer, x: Rep[Int], y: Rep[Int]): RGBVal
   def bufferUpdate(b: Buffer, x: Rep[Int], y: Rep[Int], v: RGBVal): Rep[Unit]
+  def bufferMemCpy(src: Buffer, dest: Buffer): Rep[Unit]
 }
 
 trait ImageBufferOpsExp extends ImageBufferOps
                         with ArrayOpsExpOpt with PrimitiveOpsExpOpt {
+
+  case class MemCpy(src: Rep[Array[UShort]], dest: Rep[Array[UShort]], size: Rep[Int])
+    extends Def[Unit]
 
   override def newBuffer(m: Exp[Int], n: Exp[Int]) = {
     Buffer(m, n, array_obj_new[UShort](m * n * 3))
@@ -89,5 +96,9 @@ trait ImageBufferOpsExp extends ImageBufferOps
     array_update(b.a, 3 * (x + b.width * y) + 2, i2s(v.red))
     array_update(b.a, 3 * (x + b.width * y) + 1, i2s(v.green))
     array_update(b.a, 3 * (x + b.width * y), i2s(v.blue))
+  }
+
+  override def bufferMemCpy(src: Buffer, dest: Buffer) = {
+    MemCpy(src.a, dest.a, src.width * src.height * 3)
   }
 }
