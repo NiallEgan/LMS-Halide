@@ -83,29 +83,26 @@ trait AstOps extends ScheduleOps {
 		}
 	}
 
-	def oneOf[T](l: List[Option[T]]): Option[T] = l match {
+	def listToOption[T](l: List[Option[T]]): Option[T] = l match {
 		case Nil => None
-		case Some(x)::xs => oneOf[T](xs) match {
-			case None => Some(x)
-			case Some(_) => throw new InvalidSchedule("Too many computations")
-		}
-		case None::xs => oneOf[T](xs)
+		case x::Nil => x
+		case _ => throw new InvalidSchedule("Too many matches")
 	}
 
 	private def findTreeFor(sched: Schedule, f: Func): Option[Schedule] = {
 		sched match {
-			case RootNode(children) => oneOf[Schedule](children.map(findTreeFor(_, f)))
+			case RootNode(children) => listToOption(children.map(findTreeFor(_, f)).filter(_.isDefined))
 			case l@LoopNode(_, stage, _, children) => {
 				if (stage == f) Some(l)
-				else oneOf[Schedule](children.map(findTreeFor(_, f)))
+				else listToOption(children.map(findTreeFor(_, f)).filter(_.isDefined))
 			}
 			case c@ComputeNode(stage, children) => {
 				if (stage == f) Some(c)
-				else oneOf[Schedule](children.map(findTreeFor(_, f)))
+				else listToOption(children.map(findTreeFor(_, f)).filter(_.isDefined))
 			}
 			case s@StorageNode(stage, children) => {
 				if (stage == f) Some(s)
-				else oneOf[Schedule](children.map(findTreeFor(_, f)))
+				else listToOption(children.map(findTreeFor(_, f)).filter(_.isDefined))
 			}
 		}
 	}
@@ -126,10 +123,9 @@ trait AstOps extends ScheduleOps {
 				simpleFuncTree(producer)
 			} else {
 				newSched = deleteTreeFor(sched, producer)
-				findTreeFor(sched, producer) match {
-					case Some(x) => x
-					case None => throw new RuntimeException(f"$producer not found in $sched")
-				}
+				findTreeFor(sched, producer).getOrElse(
+					throw new RuntimeException(f"$producer not found in $sched")
+				)
 			}
 
 		// Move the part of the tree for f to be a child of yLoop

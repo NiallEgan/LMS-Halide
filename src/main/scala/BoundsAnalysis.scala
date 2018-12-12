@@ -1,22 +1,28 @@
 package sepia
 
 object BoundsAnalysis {
-  def boundsForProdInCon(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]],
+  def boundsForProdInCon(boundsGraph: CallGraph,
   											 prod: Int, cons: Int, v: String): Option[Bound] = {
-    // TODO: Re-write this function
-  	if (boundsGraph(cons).contains(prod)) {
-  		Some(boundsGraph(cons)(prod)(v))
+  	if (boundsGraph.isProducerConsumer(prod, cons)) {
+  		Some(boundsGraph.getBound(prod, cons, v))
   	} else {
-      // cons = ... newCons(...)...
-  		var curBound: Option[Bound] = None
-  		for (newCons <- boundsGraph(cons).keys) {
-  			val newConsBounds = boundsGraph(cons)(newCons).getOrElse(v, Bound.zero)
-  			// TODO: Circles!
-  			boundsForProdInCon(boundsGraph, prod, newCons, v).foreach({ b =>
-  					curBound = Some(curBound.getOrElse(Bound.zero) join (b add newConsBounds))
-  			})
-  		}
-  		curBound
+  		// Get the bounds for the producers of cons
+      val (validProducers, nextBounds) =
+        (for (otherProd <- boundsGraph.producersOf(cons);
+             x = boundsForProdInCon(boundsGraph, prod, otherProd, v)
+             if !x.isEmpty) yield (otherProd, x.get)).unzip
+
+      // If none of the producers eventually get to prod, return none
+      if (nextBounds.isEmpty) None
+      else {
+        // We now need to adjust the bounds we got (vertical join)
+        val adjustedBounds =
+          (validProducers zip nextBounds).map{
+            case (p, b) => b add boundsGraph.getBound(p, cons, v)
+          }
+        // And now collect them all together (horizontal join)
+        Some(adjustedBounds.fold(Bound.zero)(_ join _))
+      }
   	}
   }
 }

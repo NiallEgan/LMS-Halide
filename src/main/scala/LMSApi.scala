@@ -1,5 +1,7 @@
 package sepia
 
+import java.io.PrintWriter
+
 import scala.lms.common._
 
 trait Dsl extends PrimitiveOps with NumericOps
@@ -8,19 +10,87 @@ trait Dsl extends PrimitiveOps with NumericOps
           with IfThenElse with Equal
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
-          with Array2DOps {}
+          with ImageBufferOps with ShortOps {
+}
 
 trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with BooleanOpsExpOpt with IfThenElseExp
              with RangeOpsExp with FractionalOpsExp
              with EqualExpBridgeOpt with ArrayOpsExpOpt
-             with SeqOpsExp with Array2DOpsExp {}
+             with SeqOpsExp with ImageBufferOpsExp
+             with ShortOpsExpOpt {}
 
 trait DslGenC extends CGenNumericOps
   with CGenPrimitiveOps with CGenBooleanOps
   with CGenIfThenElse with CGenEqual
   with CGenRangeOps with CGenFractionalOps
-  with CGenArrayOps with CGenArray2DOps {
+  with CGenShortOps with CGenArrayOps  {
     val IR: DslExp
     import IR._
+
+    override def isPrimitiveType(tpe: String) = tpe match {
+      case "USHORT" => true
+      case "UCHAR" => true
+      case _ => super.isPrimitiveType(tpe)
+    }
+
+    override def remap[A](m: Typ[A]) = m.toString match {
+      case "Array[Short]" => "UCHAR[]"
+      case "Short" => "UCHAR"
+      case _ => super.remap(m)
+
+    }
+
+    override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
+      rhs match {
+        case ArrayApply(x, m) => emitValDef(sym, src"$x[$m]")
+        case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
+        case a@ArrayNew(m) => {
+          val arrType = remap(a.m)
+          stream.println(f"$arrType ${quote(sym)}[${quote(m)}];")
+        }
+        case MemCpy(src, dest, size) => stream.println(
+          src"memcpy($dest, $src, $size);")
+        case _ => super.emitNode(sym, rhs)
+      }
+    }
+
+    private def argsRemap[A](m: Typ[A]): String = m.toString match {
+      case "Array[Short]" => "UCHAR *"
+      case _ => remap(m)
+    }
+
+    override def emitSource[A:Typ](args: List[Sym[_]], body: Block[A],
+                                   functionName: String, out: PrintWriter) = {
+      val sA = remap(typ[A])
+      withStream(out) {
+        stream.println("#include <string.h>")
+        stream.println("#include \"pipeline.h\"")
+
+        stream.println(f"$sA $functionName(${args.map(a => argsRemap(a.tp)+ " " + quote(a)).mkString(", ")}) {")
+        emitBlock(body)
+        val y = getBlockResult(body)
+        if (remap(y.tp) != "void") stream.println("return " + quote(y) + ";")
+        stream.println("}")
+      }
+      Nil
+    }
+
+    def emitStaticData(name: String, v: Int, out: PrintWriter) = {
+      withStream(out) {
+        stream.println(f"#define $name ($v)")
+      }
+    }
+
+    def emitSourceMut[T1: Typ, T2: Typ, R: Typ, T3: Typ, T4: Typ]
+                    (f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R],
+                     className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+    // This marks the second argument as mutable
+    val s1 = fresh[T1]
+    val s2 = reflectMutableSym(fresh[T2])
+    val s3 = fresh[T3]
+    val s4 = fresh[T4]
+    val body = reifyBlock(f(s1, s2, s3, s4))
+    emitSource(List(s1, s2, s3, s4), body, className, stream)
+  }
 }
