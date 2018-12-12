@@ -20,7 +20,7 @@ trait SimpleFuncOps extends Dsl {
              dom: Domain, id: Int): Func
 }
 
-trait CompilerFuncOps extends SimpleFuncOps {
+trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   // The api that is presented to the DSL compiler
 
   class Dim(val min: Rep[Int], val max: Rep[Int],

@@ -151,3 +151,5 @@ x10[x141] = x148;
 }
 memcpy(x1, x10, x9);
 }
+#define WIDTH_OUT_DIFF (2)
+#define HEIGHT_OUT_DIFF (2)

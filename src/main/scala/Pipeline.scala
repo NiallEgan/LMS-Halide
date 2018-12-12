@@ -36,7 +36,9 @@ trait Pipeline extends SimpleFuncOps {
 	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func
 }
 
-trait PipelineForCompiler extends Pipeline with ScheduleOps with CompilerFuncOps {
+trait PipelineForCompiler extends Pipeline
+													with ScheduleOps with CompilerFuncOps
+													with CompilerImageOps {
 	// This trait is mixed in with a specific program and it adds
 	// schedule manipulations, which can then be passed to a compiler
 	private var schedule: Option[Schedule] = None

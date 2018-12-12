@@ -151,8 +151,6 @@ trait OneStageBoxBlur extends TestPipeline {
 			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
 																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
 																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9) withNZDomain((1, w-1), (1, h-1))
-
-
 		i.realize()
 		registerFunction("i", i)
 	}

@@ -3,7 +3,7 @@ package sepia
 
 trait ScheduleCompiler extends CompilerFuncOps {
 	def computeLoopBounds(variable: Dim, stage: Func,
-												boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]): (Rep[Int], Rep[Int]) = {
+												boundsGraph: CallGraph): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) (variable.min, variable.max)
 		else {
 			val v = stage.computeAt
@@ -30,7 +30,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 	}
 
 	def evalSched(node: ScheduleNode[Func, Dim],
-								boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]): Rep[Unit] = node match {
+								boundsGraph: CallGraph): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph)
 			variable.loopStartOffset_=(lb)

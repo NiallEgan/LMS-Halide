@@ -12,15 +12,20 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
-	def widthOutDiff(boundsGrap: Map[Int, Map[Int, Map[String, Bound]]]) = {
-		???
+	def widthOutDiff(boundsGraph: CallGraph) = {
+		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
+									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
+									 "x").getOrElse(Bound(0, 0)).width - 1
 	}
 
-	def heightOutDiff(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]]) = {
-		???
+	def heightOutDiff(boundsGraph: CallGraph) = {
+		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
+									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
+									 "y").getOrElse(Bound(0, 0)).width - 1
+
 	}
 
-	def ev(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]])
+	def ev(boundsGraph: CallGraph)
 				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], w: Rep[Int], h: Rep[Int]) = {
 		compiler_prog(in, out, w, h)
 		evalSched(sched, boundsGraph)
@@ -28,11 +33,11 @@ trait CompilerInstance extends ScheduleCompiler
 		assignOutArray(out)
 	}
 
-	def compile(boundsGraph: Map[Int, Map[Int, Map[String, Bound]]], progname: String) = {
+	def compile(boundsGraph: CallGraph, progname: String) = {
 		val pw = 	new java.io.PrintWriter(new File(f"testOutput/$progname.c"))
+		codegen.emitSourceMut(ev(boundsGraph), "pipeline", pw)
 		codegen.emitStaticData("WIDTH_OUT_DIFF", widthOutDiff(boundsGraph), pw)
 		codegen.emitStaticData("HEIGHT_OUT_DIFF", heightOutDiff(boundsGraph), pw)
-		codegen.emitSourceMut(ev(boundsGraph), "pipeline", pw)
 	}
 }
 

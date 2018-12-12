@@ -40,3 +40,5 @@ x10[x30] = x37;
 }
 memcpy(x1, x10, x9);
 }
+#define WIDTH_OUT_DIFF (0)
+#define HEIGHT_OUT_DIFF (0)

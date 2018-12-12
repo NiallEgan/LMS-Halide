@@ -63,17 +63,17 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
   }
 
-	var funcs: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()
+	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()
 	private var id = 0
 
 	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func = {
-		funcs += (f -> id)
+		funcsToId += (f -> id)
 		id += 1
 		mkFunc(f, dom, id)
 	}
 
-	def mergeBoundsMaps(b1: Map[Func, Map[String, Bound]],
-											b2: Map[Func, Map[String, Bound]]): Map[Func, Map[String, Bound]] = {
+	def mergeBoundsMaps(b1: Map[Int, Map[String, Bound]],
+											b2: Map[Int, Map[String, Bound]]): Map[Int, Map[String, Bound]] = {
 		// Given two maps for func -> bound, bound, will join the two maps together.
 		// If the two maps both have a bound for key k, will merge the bounds by taking
 		// the smallest of the min and the largest of the max.
@@ -113,48 +113,51 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		Map("x" -> xTransformation, "y" -> yTransformation)
 	}
 
-	def getInputTransformations(v: RGBVal): Map[Func, Map[String, Bound]] = {
+	def getInputTransformations(v: RGBVal): Map[Int, Map[String, Bound]] = {
 		mergeBoundsMaps(getInputTransformations(v.red),
 										mergeBoundsMaps(getInputTransformations(v.blue),
 																		getInputTransformations(v.green)))
 	}
 
-  def getInputTransformations(e: Exp[_]): Map[Func, Map[String, Bound]] = e match {
+  def getInputTransformations(e: Exp[_]): Map[Int, Map[String, Bound]] = e match {
     case Def(v) => v match {
     	case FuncApplication(func, xExpr, yExpr) =>  {
-				Map(func -> analyseInputTransformations(xExpr, yExpr))
+				Map(funcsToId(func) -> analyseInputTransformations(xExpr, yExpr))
 			}
 			// This is for the special case when we're calling in...
-			case ArrayApply(a, _) => {
+			/*case ArrayApply(a, _) => {
 				a match {
 					case Def(SymbolicArray()) => Map()
 				}
+			}*/
+
+			case SymbolicArrayApplication(_, xExpr, yExpr) => {
+				Map(-1 -> analyseInputTransformations(xExpr, yExpr))
 			}
 
       case x => {
-				treeTraversal[Map[Func, Map[String, Bound]]](
-					_.foldLeft(Map[Func, Map[String, Bound]]())(mergeBoundsMaps),
+				treeTraversal[Map[Int, Map[String, Bound]]](
+					_.foldLeft(Map[Int, Map[String, Bound]]())(mergeBoundsMaps),
 					getInputTransformations _, x)
 			}
     }
     case Const(_) => Map()
   }
 
-	def getInputBounds(): Map[Func, Map[Func, Map[String, Bound]]] = {
+	def getInputBounds(): Map[Int, Map[Int, Map[String, Bound]]] = {
 		// f -> (g1 -> (a, b), g2 -> (c, d) ...) means that
 		// f calls functions g1, g2 with (a, b) a bound on
 		// g1's input and (c, d) a bound on g2's input.
 		val symbolicInput = Buffer(0, 0, newSymbolicArray())
 		prog(symbolicInput, newSymbolicInt("w"), newSymbolicInt("h"))
-		funcs.keys.foldLeft(Map[Func, Map[Func, Map[String, Bound]]]())
-								{(m, f) =>
-									m + (f -> getInputTransformations(f(newSymbolicInt("x"),
-																										  newSymbolicInt("y"))))}
+		funcsToId.map( { case (f, id) => (id -> getInputTransformations(
+														 f(newSymbolicInt("x"), newSymbolicInt("y"))))})
 	}
 
-	def getBoundsGraph(): Map[Int, Map[Int, Map[String, Bound]]] = {
-	    getInputBounds.map{case (k, v) => funcs(k) ->
-	         v.map{case (k1, v2) => funcs(k1) -> v2}}
+	def getBoundsGraph(): CallGraph = {
+	    val m = getInputBounds
+			CallGraph.graphFromMap(m,
+				funcsToId(finalFunc.getOrElse(throw new InvalidAlgorithm("Error: No final func"))))
 	}
 
 	class UselessFuncOps(f: Func) extends FuncOps(f) {
