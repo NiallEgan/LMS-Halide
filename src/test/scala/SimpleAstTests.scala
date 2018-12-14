@@ -29,7 +29,7 @@ trait CompilerInstance extends ScheduleCompiler
 				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], w: Rep[Int], h: Rep[Int]) = {
 		compiler_prog(in, out, w, h)
 		evalSched(sched, boundsGraph)
-		println(sched)
+		//println(sched)
 		assignOutArray(out)
 	}
 
@@ -97,10 +97,10 @@ class CompilerSpec extends FlatSpec {
 								new LoopNode("x", "f", Sequential, List(
 									new ComputeNode("f", List())
 								))
-							)),
-							new LoopNode("x", "g", Sequential, List(
-								new ComputeNode("g", List())
 							))
+						)),
+						new LoopNode("x", "g", Sequential, List(
+							new ComputeNode("g", List())
 						))
 					))
 				))
@@ -146,14 +146,23 @@ class CompilerSpec extends FlatSpec {
 								new LoopNode("x", "f", Sequential, List(
 									new ComputeNode("f", List())
 								))
-							)),
-							new LoopNode("x", "i", Sequential, List(
-								new ComputeNode("i", List())
 							))
+						)),
+						new LoopNode("x", "i", Sequential, List(
+							new ComputeNode("i", List())
 						))
 					))
 				))
 			))
+
+			/*RootNode(List(
+				StorageNode(i,List(
+					LoopNode(y,i,Sequential,List(
+						StorageNode(f,List(
+							LoopNode(y,f,Sequential,List(
+								LoopNode(x,f,Sequential,List(
+									ComputeNode(f,List()))))))),
+						LoopNode(x,i,Sequential,List(ComputeNode(i,List())))))))))*/
 
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
