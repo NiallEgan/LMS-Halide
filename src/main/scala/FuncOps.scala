@@ -51,6 +51,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     val y: Dim = new Dim(dom._2._1, dom._2._2, "y", this)
 
     var inlined = true
+    var computeRoot = false
     var storeAt: Option[Dim] = None
     var computeAt: Option[Dim] = None
     var buffer: Option[Buffer] = None

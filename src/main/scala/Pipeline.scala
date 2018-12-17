@@ -28,7 +28,8 @@ trait Pipeline extends SimpleFuncOps {
 
 	abstract class FuncOps(f: Func) {
 		def computeAt(consumer: Func, v: String): Unit
-		def realize(): Unit = finalFunc = Some(f)
+		def storeAt(consumer: Func, v: String): Unit
+		def realize(): Unit
 	}
 
 	implicit def toFuncOps(f: Func): FuncOps
@@ -56,6 +57,16 @@ trait PipelineForCompiler extends Pipeline
 	class FuncOpsImp(f: Func) extends FuncOps(f) {
 		override def computeAt(consumer: Func, s: String) = {
 			schedule = Some(computefAtX(sched, f, consumer, s))
+		}
+
+		override def storeAt(consumer: Func, s: String) = {
+			schedule = Some(storefAtX(sched, f, consumer, s))
+		}
+
+		override def realize(): Unit = {
+			finalFunc = Some(f)
+			f.inlined = false
+			f.computeRoot = true
 		}
 	}
 

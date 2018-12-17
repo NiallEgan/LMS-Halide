@@ -3,47 +3,41 @@ package sepia
 
 trait ScheduleCompiler extends CompilerFuncOps {
 	def computeLoopBounds(variable: Dim, stage: Func,
-												boundsGraph: CallGraph): (Rep[Int], Rep[Int]) = {
-		if (stage.inlined) (variable.min, variable.max)
+												boundsGraph: CallGraph,
+												loopsEncountered: Set[(Func, String)]): (Rep[Int], Rep[Int]) = {
+		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
+		if (stage.computeRoot) (variable.min, variable.max)
 		else {
 			val v = stage.computeAt
 							.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
-			val bound = BoundsAnalysis
-					 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, v.name)
-					 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
+			val shouldAdjust = loopsEncountered contains (v.f, variable.name)
 
-			val lowerBound: Rep[Int] = {
-				// This only works for x and y...
-				if(v.name == variable.name) v.v + bound.lb
-				else variable.min
+			if (!shouldAdjust) (variable.min, variable.max)
+			else {
+				val bound = BoundsAnalysis
+						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, v.name)
+						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
+				(v.v + bound.lb, v.v + bound.ub + 1)
 			}
-
-			val upperBound: Rep[Int] = {
-					// If v.name == variable.name, then (at least when we're just dealing with x and y)
-					// We are at the loop that must start from the producer variable
-					if (v.name == variable.name) v.v + bound.ub + 1
-					else variable.max
-			}
-
-			(lowerBound, upperBound)
 		}
 	}
 
 	def evalSched(node: ScheduleNode[Func, Dim],
-								boundsGraph: CallGraph): Rep[Unit] = node match {
+								boundsGraph: CallGraph,
+								loopsEncountered: Set[(Func, String)]): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
-			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph)
+			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, loopsEncountered)
 			variable.loopStartOffset_=(lb)
       loopType match {
         case Sequential =>
           for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, boundsGraph)
+            for (child <- children) evalSched(child, boundsGraph, loopsEncountered + ((stage, variable.name)))
           }
         case Unrolled =>
           for (i <- lb until ub) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, boundsGraph)
+            for (child <- children) evalSched(child, boundsGraph, loopsEncountered + ((stage, variable.name)))
           }
       }
 
@@ -53,7 +47,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
         it */
       val v: RGBVal = stage.compute()
       stage.storeInBuffer(v)
-      for (child <- children) evalSched(child, boundsGraph)
+      for (child <- children) evalSched(child, boundsGraph, loopsEncountered)
     }
 
  	  case StorageNode(stage, children) => {
@@ -80,11 +74,11 @@ trait ScheduleCompiler extends CompilerFuncOps {
 					}
 				}
 			}
-   	 	for (child <- children) evalSched(child, boundsGraph)
+   	 	for (child <- children) evalSched(child, boundsGraph, loopsEncountered)
  	  }
 
     case RootNode(children) => {
-      for (child <- children) evalSched(child, boundsGraph)
+      for (child <- children) evalSched(child, boundsGraph, loopsEncountered)
     }
   }
 }
