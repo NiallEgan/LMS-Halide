@@ -29,7 +29,7 @@ trait CompilerInstance extends ScheduleCompiler
 				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], w: Rep[Int], h: Rep[Int]) = {
 		compiler_prog(in, out, w, h)
 		println(sched)
-		evalSched(sched, boundsGraph, Set())
+		evalSched(sched, boundsGraph, Map())
 		//println(sched)
 		assignOutArray(out)
 	}
@@ -159,7 +159,7 @@ class CompilerSpec extends FlatSpec {
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 
-	"The two stage blur with a storeAt" should "not crash" in {
+	"The two stage blur with a storeAt" should "have the below tree" in {
 		println("Two stage blur w/ storeAt:")
 		val blurProg = new TwoStageBoxBlurStoreAt with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new TwoStageBoxBlurStoreAt with TestPipelineAnalysis
@@ -181,6 +181,33 @@ class CompilerSpec extends FlatSpec {
 		))
 
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "two_stage_blur_store_at")
+		assertResult(correctAst)(blurProg.scheduleRep)
+
+	}
+
+	"The two stage blur with compute at x" should "have the below tree" in {
+		println("Two stage blur w/ storeAt:")
+		val blurProg = new TwoStageBoxBlurComputeAtX with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new TwoStageBoxBlurComputeAtX with TestPipelineAnalysis
+
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("i", List(
+				new LoopNode("y", "i", Sequential, List(
+					new LoopNode("x", "i", Sequential, List(
+						new StorageNode("g", List(
+							new LoopNode("y", "g", Sequential, List(
+								new LoopNode("x", "g", Sequential, List(
+									new ComputeNode("g", List())
+								))
+							))
+						)),
+						new ComputeNode("i", List())
+					))
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "two_stage_blur_compute_at_x")
 		assertResult(correctAst)(blurProg.scheduleRep)
 
 	}

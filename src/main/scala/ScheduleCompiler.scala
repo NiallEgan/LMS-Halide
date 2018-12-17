@@ -4,27 +4,28 @@ package sepia
 trait ScheduleCompiler extends CompilerFuncOps {
 	def computeLoopBounds(variable: Dim, stage: Func,
 												boundsGraph: CallGraph,
-												loopsEncountered: Set[(Func, String)]): (Rep[Int], Rep[Int]) = {
+												loopsEncountered: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
 		if (stage.computeRoot) (variable.min, variable.max)
 		else {
 			val v = stage.computeAt
 							.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
-			val shouldAdjust = loopsEncountered contains (v.f, variable.name)
+			val shouldAdjust = loopsEncountered.keySet contains (v.f, variable.name)
 
 			if (!shouldAdjust) (variable.min, variable.max)
 			else {
+				val baseVar = loopsEncountered((v.f, variable.name))
 				val bound = BoundsAnalysis
-						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, v.name)
+						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.name)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-				(v.v + bound.lb, v.v + bound.ub + 1)
+				(baseVar.v + bound.lb, baseVar.v + bound.ub + 1)
 			}
 		}
 	}
 
 	def evalSched(node: ScheduleNode[Func, Dim],
 								boundsGraph: CallGraph,
-								loopsEncountered: Set[(Func, String)]): Rep[Unit] = node match {
+								loopsEncountered: Map[(Func, String), Dim]): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, loopsEncountered)
 			variable.loopStartOffset_=(lb)
@@ -32,12 +33,12 @@ trait ScheduleCompiler extends CompilerFuncOps {
         case Sequential =>
           for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, boundsGraph, loopsEncountered + ((stage, variable.name)))
+            for (child <- children) evalSched(child, boundsGraph, loopsEncountered + ((stage, variable.name) -> variable))
           }
         case Unrolled =>
           for (i <- lb until ub) {
             variable.v_=(i)
-            for (child <- children) evalSched(child, boundsGraph, loopsEncountered + ((stage, variable.name)))
+            for (child <- children) evalSched(child, boundsGraph, loopsEncountered + ((stage, variable.name) -> variable))
           }
       }
 
