@@ -6,7 +6,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 												boundsGraph: CallGraph,
 												loopsEncountered: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
-		if (stage.computeRoot) (variable.min, variable.max)
+		else if (stage.computeRoot) (variable.min, variable.max)
 		else {
 			val v = stage.computeAt
 							.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
@@ -21,6 +21,39 @@ trait ScheduleCompiler extends CompilerFuncOps {
 				(baseVar.v + bound.lb, baseVar.v + bound.ub + 1)
 			}
 		}
+	}
+
+	def computeStorageBounds(stage: Func,
+													 boundsGraph: CallGraph,
+												 	 loopsEncountered: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
+		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no storage")
+		else if (stage.storeRoot) (stage.domWidth, stage.domHeight)
+		else {
+			val v = stage.storeAt
+							.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no storeAt"))
+
+			val shouldAdjustX = loopsEncountered.keySet contains (v.f, "x")
+			val xDim: Rep[Int] = if (!shouldAdjustX) stage.domWidth else {
+				val bound = BoundsAnalysis
+						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, "x")
+						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
+				bound.width
+			}
+
+			val shouldAdjustY = loopsEncountered.keySet contains (v.f, "y")
+			val yDim: Rep[Int] = if (!shouldAdjustY) stage.domWidth else {
+				val bound = BoundsAnalysis
+						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, "y")
+						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
+				bound.width
+			}
+
+			(xDim, yDim)
+		}
+	}
+
+	def previouslyComputed(stage: Func): Rep[Boolean] = {
+		
 	}
 
 	def evalSched(node: ScheduleNode[Func, Dim],
@@ -46,35 +79,16 @@ trait ScheduleCompiler extends CompilerFuncOps {
       /* At a compute node, we compute f.stage and store it.
         TODO: if we computed f in a previous iteration, we need to skip over
         it */
-      val v: RGBVal = stage.compute()
-      stage.storeInBuffer(v)
+			if (!previouslyComputed(stage)) {
+	      val v: RGBVal = stage.compute()
+	      stage.storeInBuffer(v)
+			}
       for (child <- children) evalSched(child, boundsGraph, loopsEncountered)
     }
 
  	  case StorageNode(stage, children) => {
-			stage.storeAt match {
-				case None => stage.allocateNewBuffer()
-				case Some(storeAtDim) => {
-					// TODO: For now, only support storing at one level up
-					val consumerFunction = storeAtDim.f
-					val xBound =
-						BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id,
-							consumerFunction.id, stage.x.name)
-							.getOrElse(throw new InvalidSchedule("Couldn't find bound for "))
-					val yBound =
-						BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id,
-							consumerFunction.id, stage.y.name)
-							.getOrElse(throw new InvalidSchedule("Couldn't find bound for "))
-
-					if (storeAtDim.name == "y") {
-						stage.allocateNewBuffer(stage.x.max, yBound.width)
-					} else if (storeAtDim.name == "x") {
-						stage.allocateNewBuffer(xBound.width, stage.y.max)
-					} else {
-						throw new RuntimeException("Error: Unknown variable name")
-					}
-				}
-			}
+			val dims = computeStorageBounds(stage, boundsGraph, loopsEncountered)
+			stage.allocateNewBuffer(dims._1, dims._2)
    	 	for (child <- children) evalSched(child, boundsGraph, loopsEncountered)
  	  }
 

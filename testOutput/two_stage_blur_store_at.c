@@ -8,26 +8,26 @@ int32_t x7 = x5 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
 UCHAR x10[x9];
-int32_t x13 = x4 * 3;
+int32_t x13 = x6 * 3;
 int32_t x14 = x13 * 3;
 for(int x12=1; x12 < x5; x12++) {
-UCHAR x15[x14]; // Is this the correct bound??
+UCHAR x15[x14];
 int32_t x18 = x12 + -1;
 int32_t x19 = x12 + 1;
 int32_t x20 = x19 + 1;
 int32_t x85 = x12 - x18;
-int32_t x86 = x4 * x85;
+int32_t x86 = x6 * x85;
 int32_t x87 = 3 * x86;
 int32_t x88 = x87 + 2;
 int32_t x91 = x87 + 1;
 int32_t x96 = x19 - x18;
-int32_t x97 = x4 * x96;
+int32_t x97 = x6 * x96;
 int32_t x98 = 3 * x97;
 int32_t x99 = x98 + 2;
 int32_t x102 = x98 + 1;
 int32_t x110 = x12 - 1;
 int32_t x111 = x110 - x18;
-int32_t x112 = x4 * x111;
+int32_t x112 = x6 * x111;
 int32_t x113 = 3 * x112;
 int32_t x114 = x113 + 2;
 int32_t x117 = x113 + 1;
@@ -36,7 +36,7 @@ for(int x17=1; x17 < x4; x17++) {
 int32_t x23 = x17 + 1;
 for(int x22=x18; x22 < x20; x22++) {
 int32_t x69 = x22 - x18;
-int32_t x70 = x4 * x69;
+int32_t x70 = x6 * x69;
 int32_t x26 = x2 * x22;
 for(int x25=x17; x25 < x23; x25++) {
 int32_t x68 = x25 - x17;
@@ -95,7 +95,7 @@ x15[x72] = x79;
 }
 
 }
-UCHAR x89 = x15[x88];  // Should we be calling so many values here?
+UCHAR x89 = x15[x88];
 UCHAR x92 = x15[x91];
 UCHAR x94 = x15[x87];
 UCHAR x100 = x15[x99];

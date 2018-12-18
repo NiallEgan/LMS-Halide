@@ -52,6 +52,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     var inlined = true
     var computeRoot = false
+    var storeRoot = false
     var storeAt: Option[Dim] = None
     var computeAt: Option[Dim] = None
     var buffer: Option[Buffer] = None
@@ -70,6 +71,9 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {
       buffer = Some(NewBuffer(m, n))
     }
+
+    def domWidth = x.max - x.min
+    def domHeight = y.max - y.min
   }
 
   type Func = CompilerFunc

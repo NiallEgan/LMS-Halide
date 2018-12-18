@@ -67,6 +67,7 @@ trait PipelineForCompiler extends Pipeline
 			finalFunc = Some(f)
 			f.inlined = false
 			f.computeRoot = true
+			f.storeRoot = true
 		}
 	}
 
