@@ -49,6 +49,24 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 		// This is for testing purposes only
 		registerFunction("f", f)
 		registerFunction("g", g)
+
+
+/*RootNode(List(
+	StorageNode(sepia.CompilerFuncOps$CompilerFunc@268775a7,List(
+		LoopNode(y,sepia.CompilerFuncOps$CompilerFunc@268775a7,Sequential,List(
+			StorageNode(sepia.CompilerFuncOps$CompilerFunc@71601bd9,List(
+				LoopNode(y,sepia.CompilerFuncOps$CompilerFunc@71601bd9,Sequential,List(
+					LoopNode(x,sepia.CompilerFuncOps$CompilerFunc@71601bd9,Sequential,List(
+						ComputeNode(sepia.CompilerFuncOps$CompilerFunc@71601bd9,List())
+					))
+				)), // This is a relevant sn
+				LoopNode(x,sepia.CompilerFuncOps$CompilerFunc@268775a7,Sequential,
+					List(ComputeNode(sepia.CompilerFuncOps$CompilerFunc@268775a7,List()))
+				))
+			))
+		))
+	)))*/
+
 	}
 }
 

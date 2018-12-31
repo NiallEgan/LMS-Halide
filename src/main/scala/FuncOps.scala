@@ -29,7 +29,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     private var loopStart: Option[Rep[Int]] = None
 
-		def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule("Unbound variable"))
+		def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f"))
 
     def loopStartOffset: Rep[Int] = {
       loopStart.getOrElse(throw new InvalidSchedule("Unbound loop v"))
@@ -38,6 +38,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def loopStartOffset_=(new_val: Rep[Int]) = {
       loopStart = Some(new_val)
     }
+
+    override def toString() = name
 
 		// TODO: Why is this not working with _= syntax?
 		def v_=(new_val: Rep[Int]) = {
@@ -49,6 +51,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
                      dom: Domain, val id: Int) {
     val x: Dim = new Dim(dom._1._1, dom._1._2, "x", this)
     val y: Dim = new Dim(dom._2._1, dom._2._2, "y", this)
+
+    val vars = Map("x" -> x, "y" -> y)
 
     var inlined = true
     var computeRoot = false

@@ -14,8 +14,6 @@ class LoopBoundsSpec extends FlatSpec {
     val progAnalysis = new OneStageBoxBlur with TestPipelineAnalysis
 
     val bounds = progAnalysis.getBoundsGraph
-    println("One ")
-    println(progAnalysis.boundsAsStrings)
 
     assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "x"))
     assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "y"))
@@ -26,8 +24,6 @@ class LoopBoundsSpec extends FlatSpec {
     val progAnalysis = new TwoStageBoxBlur with TestPipelineAnalysis
 
     val bounds = progAnalysis.getBoundsGraph
-    println("Two ")
-    println(progAnalysis.boundsAsStrings)
 
     assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 1, "x"))
     assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 1, "y"))
@@ -37,8 +33,6 @@ class LoopBoundsSpec extends FlatSpec {
     val progAnalysis = new ThreeStageBoxBlur with TestPipelineAnalysis
 
     val bounds = progAnalysis.getBoundsGraph
-    println("One ")
-    println(progAnalysis.boundsAsStrings)
 
     assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 2, "x"))
     assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 2, "y"))
