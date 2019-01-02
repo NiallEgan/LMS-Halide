@@ -16,5 +16,6 @@ case class Bound(val lb: Int, val ub: Int) {
 }
 
 object Bound {
+	// TODO: Change to inf here
 	val zero = Bound(Int.MaxValue, Int.MinValue)
 }

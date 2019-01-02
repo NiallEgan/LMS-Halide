@@ -22,22 +22,22 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps with ShortOps {
                                           v.green - other.green,
                                           v.blue - other.blue)
     def -(other: Rep[Int]): RGBVal = RGBVal(v.red - other,
-                                               v.green - other,
-                                               v.blue - other)
+                                            v.green - other,
+                                            v.blue - other)
 
     def *(other: RGBVal): RGBVal = RGBVal(v.red * other.red,
                                           v.green * other.green,
                                           v.blue * other.blue)
     def *(other: Rep[Int]): RGBVal = RGBVal(v.red * other,
-                                               v.green * other,
-                                               v.blue * other)
+                                            v.green * other,
+                                            v.blue * other)
 
     def /(other: RGBVal): RGBVal = RGBVal(v.red / other.red,
                                           v.green / other.green,
                                           v.blue / other.blue)
     def /(other: Rep[Int]): RGBVal = RGBVal(v.red / other,
-                                               v.green / other,
-                                               v.blue / other)
+                                            v.green / other,
+                                            v.blue / other)
   }
 
   implicit def RGBValToOps(v: RGBVal): RGBValOps = new RGBValOps(v)

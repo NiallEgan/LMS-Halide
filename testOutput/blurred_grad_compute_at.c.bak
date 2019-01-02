@@ -1,0 +1,180 @@
+#include <string.h>
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 - 1;
+int32_t x6 = x4 - 1;
+int32_t x5 = x3 - 1;
+int32_t x7 = x5 - 1;
+int32_t x8 = x6 * x7;
+int32_t x9 = x8 * 3;
+UCHAR x10[x9];
+int32_t x13 = x2 * 3;
+int32_t x14 = x13 * 3;
+for(int x12=1; x12 < x5; x12++) {
+UCHAR x15[x14];
+int32_t x16 = x12 + -1;
+int32_t x17 = x12 + 1;
+int32_t x18 = x17 + 1;
+for(int x20=x16; x20 < x18; x20++) {
+int32_t x24 = x20 - x16;
+int32_t x25 = x2 * x24;
+for(int x22=0; x22 < x2; x22++) {
+int32_t x26 = x22 + x25;
+int32_t x27 = 3 * x26;
+int32_t x28 = x27 + 2;
+int32_t x23 = x22 + x20;
+UCHAR x29 = x23;
+x15[x28] = x29;
+int32_t x31 = x27 + 1;
+x15[x31] = x29;
+x15[x27] = x29;
+
+}
+
+}
+int32_t x41 = x12 - 1;
+int32_t x42 = x41 - x16;
+int32_t x43 = x2 * x42;
+int32_t x54 = x12 - x16;
+int32_t x55 = x2 * x54;
+int32_t x69 = x17 - x16;
+int32_t x70 = x2 * x69;
+int32_t x166 = x6 * x41;
+for(int x39=1; x39 < x4; x39++) {
+int32_t x40 = x39 + 1;
+int32_t x44 = x40 + x43;
+int32_t x45 = 3 * x44;
+int32_t x46 = x45 + 2;
+UCHAR x47 = x15[x46];
+int32_t x49 = x45 + 1;
+UCHAR x50 = x15[x49];
+UCHAR x52 = x15[x45];
+int32_t x56 = x40 + x55;
+int32_t x57 = 3 * x56;
+int32_t x58 = x57 + 2;
+UCHAR x59 = x15[x58];
+int32_t x61 = x57 + 1;
+UCHAR x62 = x15[x61];
+UCHAR x64 = x15[x57];
+int32_t x71 = x40 + x70;
+int32_t x72 = 3 * x71;
+int32_t x73 = x72 + 2;
+UCHAR x74 = x15[x73];
+int32_t x76 = x72 + 1;
+UCHAR x77 = x15[x76];
+UCHAR x79 = x15[x72];
+int32_t x84 = x39 + x43;
+int32_t x85 = 3 * x84;
+int32_t x86 = x85 + 2;
+UCHAR x87 = x15[x86];
+int32_t x89 = x85 + 1;
+UCHAR x90 = x15[x89];
+UCHAR x92 = x15[x85];
+int32_t x97 = x39 + x55;
+int32_t x98 = 3 * x97;
+int32_t x99 = x98 + 2;
+UCHAR x100 = x15[x99];
+int32_t x102 = x98 + 1;
+UCHAR x103 = x15[x102];
+UCHAR x105 = x15[x98];
+int32_t x110 = x39 + x70;
+int32_t x111 = 3 * x110;
+int32_t x112 = x111 + 2;
+UCHAR x113 = x15[x112];
+int32_t x115 = x111 + 1;
+UCHAR x116 = x15[x115];
+UCHAR x118 = x15[x111];
+int32_t x123 = x39 - 1;
+int32_t x124 = x123 + x43;
+int32_t x125 = 3 * x124;
+int32_t x126 = x125 + 2;
+UCHAR x127 = x15[x126];
+int32_t x129 = x125 + 1;
+UCHAR x130 = x15[x129];
+UCHAR x132 = x15[x125];
+int32_t x137 = x123 + x55;
+int32_t x138 = 3 * x137;
+int32_t x139 = x138 + 2;
+UCHAR x140 = x15[x139];
+int32_t x142 = x138 + 1;
+UCHAR x143 = x15[x142];
+UCHAR x145 = x15[x138];
+int32_t x150 = x123 + x70;
+int32_t x151 = 3 * x150;
+int32_t x152 = x151 + 2;
+UCHAR x153 = x15[x152];
+int32_t x155 = x151 + 1;
+UCHAR x156 = x15[x155];
+UCHAR x158 = x15[x151];
+int32_t x167 = x123 + x166;
+int32_t x168 = 3 * x167;
+int32_t x169 = x168 + 2;
+int32_t x48 = (int) x47;
+int32_t x60 = (int) x59;
+int32_t x66 = x48 + x60;
+int32_t x75 = (int) x74;
+int32_t x81 = x66 + x75;
+int32_t x88 = (int) x87;
+int32_t x94 = x81 + x88;
+int32_t x101 = (int) x100;
+int32_t x107 = x94 + x101;
+int32_t x114 = (int) x113;
+int32_t x120 = x107 + x114;
+int32_t x128 = (int) x127;
+int32_t x134 = x120 + x128;
+int32_t x141 = (int) x140;
+int32_t x147 = x134 + x141;
+int32_t x154 = (int) x153;
+int32_t x160 = x147 + x154;
+int32_t x163 = x160 / 9;
+UCHAR x170 = x163;
+x10[x169] = x170;
+int32_t x172 = x168 + 1;
+int32_t x51 = (int) x50;
+int32_t x63 = (int) x62;
+int32_t x67 = x51 + x63;
+int32_t x78 = (int) x77;
+int32_t x82 = x67 + x78;
+int32_t x91 = (int) x90;
+int32_t x95 = x82 + x91;
+int32_t x104 = (int) x103;
+int32_t x108 = x95 + x104;
+int32_t x117 = (int) x116;
+int32_t x121 = x108 + x117;
+int32_t x131 = (int) x130;
+int32_t x135 = x121 + x131;
+int32_t x144 = (int) x143;
+int32_t x148 = x135 + x144;
+int32_t x157 = (int) x156;
+int32_t x161 = x148 + x157;
+int32_t x164 = x161 / 9;
+UCHAR x173 = x164;
+x10[x172] = x173;
+int32_t x53 = (int) x52;
+int32_t x65 = (int) x64;
+int32_t x68 = x53 + x65;
+int32_t x80 = (int) x79;
+int32_t x83 = x68 + x80;
+int32_t x93 = (int) x92;
+int32_t x96 = x83 + x93;
+int32_t x106 = (int) x105;
+int32_t x109 = x96 + x106;
+int32_t x119 = (int) x118;
+int32_t x122 = x109 + x119;
+int32_t x133 = (int) x132;
+int32_t x136 = x122 + x133;
+int32_t x146 = (int) x145;
+int32_t x149 = x136 + x146;
+int32_t x159 = (int) x158;
+int32_t x162 = x149 + x159;
+int32_t x165 = x162 / 9;
+UCHAR x175 = x165;
+x10[x168] = x175;
+
+}
+
+}
+memcpy(x1, x10, x9);
+}
+#define WIDTH_OUT_DIFF (0)
+#define HEIGHT_OUT_DIFF (0)

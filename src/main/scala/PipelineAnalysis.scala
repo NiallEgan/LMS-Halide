@@ -124,14 +124,9 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
     	case FuncApplication(func, xExpr, yExpr) =>  {
 				Map(funcsToId(func) -> analyseInputTransformations(xExpr, yExpr))
 			}
-			// This is for the special case when we're calling in...
-			/*case ArrayApply(a, _) => {
-				a match {
-					case Def(SymbolicArray()) => Map()
-				}
-			}*/
 
 			case SymbolicArrayApplication(_, xExpr, yExpr) => {
+				// -1 = in
 				Map(-1 -> analyseInputTransformations(xExpr, yExpr))
 			}
 
@@ -163,6 +158,12 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 	class UselessFuncOps(f: Func) extends FuncOps(f) {
 		// Just convert sched ops to no-ops in the analysis phase
 		override def computeAt(consumer: Func, s: String): Unit = return
+		override def storeAt(consumer: Func, s: String): Unit = return
+		override def storeRoot(): Unit = return
+		override def realize(): Unit = {
+			finalFunc = Some(f)
+		}
+
 	}
 
 	override implicit def toFuncOps(f: Func) = new UselessFuncOps(f)

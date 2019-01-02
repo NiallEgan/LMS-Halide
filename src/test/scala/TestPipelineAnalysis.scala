@@ -24,7 +24,6 @@ class AnalysisSpec extends FlatSpec {
       val bounds = blurredGradProg.boundsAsStrings
       assertResult(Bound(-1, 1))(bounds("g")("f")("x"))
       assertResult(Bound(-1, 1))(bounds("g")("f")("y"))
-      println(bounds)
       assertResult(0)(bounds("f").size)
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)

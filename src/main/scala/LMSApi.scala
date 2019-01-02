@@ -10,21 +10,23 @@ trait Dsl extends PrimitiveOps with NumericOps
           with IfThenElse with Equal
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
-          with ImageBufferOps with ShortOps {
+          with ImageBufferOps with ShortOps
+          with OrderingOps {
 }
 
 trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
-             with BooleanOpsExpOpt with IfThenElseExp
+             with BooleanOpsExpOpt with IfThenElseExpOpt
              with RangeOpsExp with FractionalOpsExp
              with EqualExpBridgeOpt with ArrayOpsExpOpt
              with SeqOpsExp with ImageBufferOpsExp
-             with ShortOpsExpOpt {}
+             with ShortOpsExpOpt with OrderingOpsExpOpt {}
 
 trait DslGenC extends CGenNumericOps
   with CGenPrimitiveOps with CGenBooleanOps
   with CGenIfThenElse with CGenEqual
   with CGenRangeOps with CGenFractionalOps
-  with CGenShortOps with CGenArrayOps  {
+  with CGenShortOps with CGenArrayOps
+  with CGenOrderingOps  {
     val IR: DslExp
     import IR._
 
