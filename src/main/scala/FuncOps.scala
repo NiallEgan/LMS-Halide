@@ -27,16 +27,25 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
             val name: String, val f: Func) {
 		private var value: Option[Rep[Int]] = None
 
-    private var loopStart: Option[Rep[Int]] = None
+    private var offset: Option[Rep[Int]] = None
+    private var loopLowerBound: Option[Rep[Int]] = None
 
 		def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f"))
 
-    def loopStartOffset: Rep[Int] = {
-      loopStart.getOrElse(throw new InvalidSchedule("Unbound loop v"))
+    def looplb: Rep[Int] = {
+      loopLowerBound.getOrElse(throw new InvalidSchedule(f"Unbound looplb for $name"))
     }
 
-    def loopStartOffset_=(new_val: Rep[Int]) = {
-      loopStart = Some(new_val)
+    def looplb_=(new_val: Rep[Int]) = {
+      loopLowerBound = Some(new_val)
+    }
+
+    def dimOffset: Rep[Int] = {
+      offset.getOrElse(throw new InvalidSchedule(f"Unbound loop offset for $name"))
+    }
+
+    def dimOffset_=(new_val: Rep[Int]) = {
+      offset = Some(new_val)
     }
 
     override def toString() = name
@@ -64,8 +73,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def compute() = f(x.v, y.v)
 
     def storeInBuffer(vs: RGBVal) = buffer match {
-      case Some(b) => b(x.v - x.loopStartOffset, y.v - y.loopStartOffset) = vs
+      case Some(b) => b(x.v - x.dimOffset, y.v - y.dimOffset) = vs
       case None => throw new InvalidSchedule(f"No buffer allocated at storage time for ")
+    }
+
+    def setOffsets(offsets: List[(String, Rep[Int])]) = {
+      offsets.foreach({case (v, off) => vars(v).dimOffset_=(off)})
     }
 
     def allocateNewBuffer() {
@@ -85,7 +98,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal = {
     if (f.inlined) f.f(x, y)
     else f.buffer
-         .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.loopStartOffset, y - f.y.loopStartOffset)
+         .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
   }
 
   def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain, id: Int): Func = {

@@ -235,6 +235,20 @@ trait AstOps extends ScheduleOps {
 		val storeAtDim: Dim = if (s == "x") consumer.x
 														else if (s == "y") consumer.y
 														else throw new InvalidSchedule(f"Invalid computeAt var $s")
+
+		// If no computeAt, storeAt is useless ORDER!
+		val newParent = findLoopNodeFor(sched, storeAtDim).getOrElse(throw new InvalidSchedule("Couldn't find consumer"))
+		producer.storeAt = Some(storeAtDim)
+		storeAtNode(sched, producer, newParent)
+	}
+
+	def storeAtRoot(sched: Schedule, producer: Func): Schedule = {
+		val newParent = sched
+		producer.storeRoot = true
+		storeAtNode(sched, producer, newParent)
+	}
+
+	def storeAtNode(sched: Schedule, producer: Func, newParent: Schedule) = {
 		def findStoreNode(sched: Schedule, producer: Func): Option[Schedule] = {
 			def r(children: List[Schedule]) = listToOption(children.map(findStoreNode(_, producer)).filter(_.isDefined))
 			sched match {
@@ -247,14 +261,13 @@ trait AstOps extends ScheduleOps {
 				}
 			}
 		}
-		// If no computeAt, storeAt is useless ORDER!
-		producer.storeAt = Some(storeAtDim)
+
 		val storageNode = findStoreNode(sched, producer).getOrElse(StorageNode(producer, List()))
-		val newParent = findLoopNodeFor(sched, storeAtDim).getOrElse(throw new InvalidSchedule("Couldn't find consumer"))
 		val oldChildren = newParent.getChildren
-		println(f"Old children: $oldChildren")
 		val oldParent = oldChildren.filter(_.exists(n => n == storageNode))(0)
-		println(f"NEW PARENT: $newParent")
-		spliceInNewNode(StorageNode(producer, List()), cutOutNode(newParent, storageNode), cutOutNode(oldParent, storageNode), cutOutNode(sched, storageNode))
+		spliceInNewNode(StorageNode(producer, List()),
+										cutOutNode(newParent, storageNode),
+										cutOutNode(oldParent, storageNode),
+										cutOutNode(sched, storageNode))
 	}
 }

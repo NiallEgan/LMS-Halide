@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
                png_get_filter_type(read_ptr, info_ptr));
   png_write_info(write_ptr, write_info_ptr);
   png_bytep out_row_pointers[height-2];
-  for (int i = 0; i < height-2; i++) out_row_pointers[i] = out + 3 * (width-2) * i;
+  for (int i = 0; i < height-2; i++) out_row_pointers[i] = out + 3 * (width - 2) * i;
   png_write_image(write_ptr, out_row_pointers);
 
   free(image);

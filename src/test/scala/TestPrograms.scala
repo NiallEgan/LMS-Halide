@@ -49,24 +49,6 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 		// This is for testing purposes only
 		registerFunction("f", f)
 		registerFunction("g", g)
-
-
-/*RootNode(List(
-	StorageNode(sepia.CompilerFuncOps$CompilerFunc@268775a7,List(
-		LoopNode(y,sepia.CompilerFuncOps$CompilerFunc@268775a7,Sequential,List(
-			StorageNode(sepia.CompilerFuncOps$CompilerFunc@71601bd9,List(
-				LoopNode(y,sepia.CompilerFuncOps$CompilerFunc@71601bd9,Sequential,List(
-					LoopNode(x,sepia.CompilerFuncOps$CompilerFunc@71601bd9,Sequential,List(
-						ComputeNode(sepia.CompilerFuncOps$CompilerFunc@71601bd9,List())
-					))
-				)), // This is a relevant sn
-				LoopNode(x,sepia.CompilerFuncOps$CompilerFunc@268775a7,Sequential,
-					List(ComputeNode(sepia.CompilerFuncOps$CompilerFunc@268775a7,List()))
-				))
-			))
-		))
-	)))*/
-
 	}
 }
 
@@ -200,6 +182,23 @@ trait TwoStageBoxBlurStoreAt extends TestPipeline {
 	}
 }
 
+trait TwoStageBoxBlurStoreAtReflected extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y-1) + in(x, y) + in(x, y+1)) / 3) withNZDomain((0, w), (1, h-1))
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (g(x-1, y) + g(x, y) + g(x+1, y)) / 3) withNZDomain((1, w-1), (1, h-1))
+
+		g.computeAt(i, "x")
+		g.storeAt(i, "y")
+		i.realize()
+
+		registerFunction("i", i)
+		registerFunction("g", g)
+
+	}
+}
+
 trait TwoStageBoxBlurComputeAtX extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
@@ -211,6 +210,24 @@ trait TwoStageBoxBlurComputeAtX extends TestPipeline {
 		i.realize()
 
 		registerFunction("i", i)
+		registerFunction("g", g)
+
+	}
+}
+
+trait BlurredGradStoreRoot extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x+1, y) + f(x+1, y+1)) / 4) withDomain(w-1, h-1)
+
+		f.computeAt(g, "y")
+		f.storeRoot()
+
+		g.realize()
+		registerFunction("f", f)
 		registerFunction("g", g)
 
 	}

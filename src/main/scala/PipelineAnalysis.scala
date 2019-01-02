@@ -159,6 +159,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		// Just convert sched ops to no-ops in the analysis phase
 		override def computeAt(consumer: Func, s: String): Unit = return
 		override def storeAt(consumer: Func, s: String): Unit = return
+		override def storeRoot(): Unit = return
 		override def realize(): Unit = {
 			finalFunc = Some(f)
 		}
