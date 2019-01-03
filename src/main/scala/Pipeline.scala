@@ -31,6 +31,7 @@ trait Pipeline extends SimpleFuncOps {
 		def storeAt(consumer: Func, v: String): Unit
 		def realize(): Unit
 		def storeRoot(): Unit
+		def computeRoot(): Unit
 	}
 
 	implicit def toFuncOps(f: Func): FuncOps
@@ -73,6 +74,10 @@ trait PipelineForCompiler extends Pipeline
 
 		override def storeRoot(): Unit = {
 			schedule = Some(storeAtRoot(sched, f))
+		}
+
+		override def computeRoot(): Unit = {
+			schedule = Some(computeAtRoot(sched, f))
 		}
 	}
 

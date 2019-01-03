@@ -152,37 +152,26 @@ trait AstOps extends ScheduleOps {
 
 	}
 
-	def computefAtX(sched: Schedule, producer: Func, consumer: Func, s: String): Schedule = {
-		// If f is inlined, create a new sched tree for it.
-		// Else, cut out the current f tree
-		// TODO: Producer consumer checks
-		val computeAtDim: Dim = if (s == "x") consumer.x
-														else if (s == "y") consumer.y
-														else throw new InvalidSchedule(f"Invalid computeAt var $s")
-		var newSched = sched
-		producer.computeAt = Some(computeAtDim)
-		producer.storeAt = Some(computeAtDim)
-
-		if (producer.inlined) {
-			producer.inlined = false
-			newSched = deInline(producer, consumer, sched)
-		}
-
-		val producerSchedule: Schedule = isolateProducer(producer, newSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $newSched"))
+	def removeProducerSchedule(deInlinedSched: Schedule, producer: Func): (Schedule, Schedule) = {
+		val producerSchedule: Schedule = isolateProducer(producer, deInlinedSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $deInlinedSched"))
 
 		val notMovingChildren = producerSchedule.getChildren.filter(!_.belongsTo(producer))
 		val newProducerSchedule = producerSchedule.withChildren(
 			producerSchedule.getChildren.filter(_.belongsTo(producer)))
-		newSched = newSched.findAndTransform(
+		val schedLessProducer = deInlinedSched.findAndTransform(
 			(n: Schedule) => n.getChildren.exists(_ == producerSchedule),
 			(n: Schedule) => n.withChildren(notMovingChildren)
 		)
 
-		// Move the part of the tree for f to be a child of yLoop
-		val newParent = findLoopNodeFor(newSched, computeAtDim).getOrElse(throw new
-		InvalidSchedule("Couldn't find consumer"))
+		(schedLessProducer, newProducerSchedule)
+	}
+
+	def insertComputeAtNode(schedLessProducer: Schedule,
+													producer: Func,
+													newProducerSchedule: ScheduleNode[Func, Dim],
+													newParent: ScheduleNode[Func, Dim]): Schedule = {
 		if (isStorageNodeFor(newProducerSchedule, producer)) {
-			newSched.findAndTransform(newParent,
+			schedLessProducer.findAndTransform(newParent,
 				(n: Schedule) => newParent.withChildren(
 					newProducerSchedule.withChildren(
 						newProducerSchedule.getChildren ++ newParent.getChildren
@@ -190,7 +179,49 @@ trait AstOps extends ScheduleOps {
 				)
 			)
 		}
-		else addLeastSibling(newProducerSchedule, newParent, newSched)
+		else addLeastSibling(newProducerSchedule, newParent, schedLessProducer)
+	}
+
+	def computeAtRoot(sched: Schedule, producer: Func): Schedule = {
+		producer.computeRoot = true
+		producer.storeRoot = true
+
+		val deInlinedSched = if (producer.inlined) {
+			producer.inlined = false
+			val cn: ComputeNode[Func, Dim] = ComputeNode[Func, Dim](producer, List())
+			val xLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](producer.x, producer,
+												Sequential, List(cn))
+			val yLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](producer.y, producer,
+												Sequential, List(xLoop))
+			sched.withChildren(StorageNode(producer, yLoop::sched.getChildren))
+		} else sched
+
+		val (schedLessProducer, newProducerSchedule) = removeProducerSchedule(deInlinedSched, producer)
+		val newParent = schedLessProducer
+		insertComputeAtNode(schedLessProducer, producer, newProducerSchedule, newParent)
+	}
+
+	def computefAtX(sched: Schedule, producer: Func, consumer: Func, s: String): Schedule = {
+		// If f is inlined, create a new sched tree for it.
+		// Else, cut out the current f tree
+		// TODO: Producer consumer checks
+		val computeAtDim: Dim = if (s == "x") consumer.x
+														else if (s == "y") consumer.y
+														else throw new InvalidSchedule(f"Invalid computeAt var $s")
+		producer.computeAt = Some(computeAtDim)
+		producer.storeAt = Some(computeAtDim)
+
+		val deInlinedSched = if (producer.inlined) {
+			producer.inlined = false
+			deInline(producer, consumer, sched)
+		} else sched
+
+		val (schedLessProducer, newProducerSchedule) = removeProducerSchedule(deInlinedSched, producer)
+
+		// Move the part of the tree for f to be a child of yLoop
+		val newParent = findLoopNodeFor(schedLessProducer, computeAtDim).getOrElse(throw new
+			InvalidSchedule("Couldn't find consumer"))
+		insertComputeAtNode(schedLessProducer, producer, newProducerSchedule, newParent)
 	}
 
 	def cutOutNode(sched: Schedule, node: ScheduleNode[Func, Dim]): Schedule = {
