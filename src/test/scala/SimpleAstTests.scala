@@ -118,7 +118,7 @@ class CompilerSpec extends FlatSpec {
 	}
 
 	"The blurred grad prog with computeAt and storeRoot" should "deinline f and move it" in {
-		println("blurred grad prog w/ compute & store at")
+		println("blurred grad prog w/ compute & store root")
 
 		val gradProg =
 			new BlurredGradStoreRoot with CompilerInstance with TestAstOps
@@ -276,7 +276,32 @@ class CompilerSpec extends FlatSpec {
 
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "two_stage_blur_compute_at_x")
 		assertResult(correctAst)(blurProg.scheduleRep)
+	}
 
+	"The two stage blur with computeRoot should have the below tree" should "have the below tree" in {
+		println("Two stage blur with compute root:")
+		val blurProg = new TwoStageBoxBlurComputeRoot with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new TwoStageBoxBlurComputeRoot with TestPipelineAnalysis
+
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("g", List(
+				new LoopNode("y", "g", Sequential, List(
+					new LoopNode("x", "g", Sequential, List(
+						new ComputeNode("g", List())
+					))
+				)),
+				new StorageNode("i", List(
+					new LoopNode("y", "i", Sequential, List(
+						new LoopNode("x", "i", Sequential, List(
+							new ComputeNode("i", List())
+						))
+					))
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "two_stage_blur_compute_at_root")
+		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 
 	"IDProg" should "create a simple prog" in {

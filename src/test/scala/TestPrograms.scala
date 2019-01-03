@@ -232,3 +232,18 @@ trait BlurredGradStoreRoot extends TestPipeline {
 
 	}
 }
+
+trait TwoStageBoxBlurComputeRoot extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+
+		g.computeRoot()
+		i.realize()
+
+		registerFunction("i", i)
+		registerFunction("g", g)
+	}
+}

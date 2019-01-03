@@ -10,4 +10,6 @@ trait ScheduleOps {
 	def storefAtX(sched: Schedule, producer: Func,
 									consumer: Func, x: String): Schedule
 	def storeAtRoot(sched: Schedule, producer: Func): Schedule
+	def computeAtRoot(sched: Schedule, producer: Func): Schedule
+
 }
