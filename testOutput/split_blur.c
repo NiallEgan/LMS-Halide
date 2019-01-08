@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stdio.h>
 #include "pipeline.h"
 void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
 int32_t x4 = x2 - 1;

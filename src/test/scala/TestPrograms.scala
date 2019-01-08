@@ -286,3 +286,21 @@ trait TwoStageBoxBlurWithSplitVar extends TestPipeline {
 		registerFunction("i", i)
 	}
 }
+
+trait TwoStageBoxBlurStoreRootSplit extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+
+		f.computeAt(g, "y")
+		f.storeRoot()
+		f.split("y", "y_outer", "y_inner", 2)
+
+		g.realize()
+		registerFunction("f", f)
+		registerFunction("g", g)
+
+	}
+}
