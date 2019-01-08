@@ -247,3 +247,42 @@ trait TwoStageBoxBlurComputeRoot extends TestPipeline {
 		registerFunction("g", g)
 	}
 }
+
+trait GradSplit extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func = ((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+
+		f.split("x", "x_outer", "x_inner", 2)
+		f.realize()
+
+		registerFunction("f", f)
+	}
+}
+
+trait DoubleGradSplit extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func = ((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+
+		f.split("x", "x_outer", "x_inner", 2)
+		f.split("y", "y_outer", "y_inner", 2)
+		f.realize()
+
+		registerFunction("f", f)
+	}
+}
+
+trait TwoStageBoxBlurWithSplitVar extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+
+		g.computeAt(i, "y")
+		g.split("y", "y_outer", "y_inner", 2)
+
+		i.realize()
+		registerFunction("g", g)
+		registerFunction("i", i)
+	}
+}

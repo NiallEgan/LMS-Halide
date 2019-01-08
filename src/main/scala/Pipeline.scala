@@ -29,6 +29,7 @@ trait Pipeline extends SimpleFuncOps {
 	abstract class FuncOps(f: Func) {
 		def computeAt(consumer: Func, v: String): Unit
 		def storeAt(consumer: Func, v: String): Unit
+		def split(v: String, outer: String, inner: String, splitFactor: Int): Unit
 		def realize(): Unit
 		def storeRoot(): Unit
 		def computeRoot(): Unit
@@ -40,7 +41,7 @@ trait Pipeline extends SimpleFuncOps {
 }
 
 trait PipelineForCompiler extends Pipeline
-													with ScheduleOps with CompilerFuncOps
+													with AstOps with CompilerFuncOps
 													with CompilerImageOps {
 	// This trait is mixed in with a specific program and it adds
 	// schedule manipulations, which can then be passed to a compiler
@@ -78,6 +79,12 @@ trait PipelineForCompiler extends Pipeline
 
 		override def computeRoot(): Unit = {
 			schedule = Some(computeAtRoot(sched, f))
+		}
+
+		override def split(v: String, outer: String, inner: String, splitFactor: Int) = {
+			f.split(v, outer, inner, splitFactor)
+			schedule = Some(splitLoopNode(sched, f.vars(v),
+											f.vars(outer), f.vars(inner)))
 		}
 	}
 
