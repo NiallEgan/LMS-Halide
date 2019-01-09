@@ -1,9 +1,9 @@
 package sepia
 
-trait AstOps extends ScheduleOps {
+trait AstOps {
 	this: CompilerFuncOps =>
 
-	override type Schedule = ScheduleNode[Func, Dim]
+	type Schedule = ScheduleNode[Func, Dim]
 
 	private def simpleFuncTree(f: Func): ScheduleNode[Func, Dim] = {
 		val cn: ComputeNode[Func, Dim] = ComputeNode[Func, Dim](f, List())
@@ -300,5 +300,24 @@ trait AstOps extends ScheduleOps {
 										cutOutNode(newParent, storageNode),
 										cutOutNode(oldParent, storageNode),
 										cutOutNode(sched, storageNode))
+	}
+
+	def splitLoopNode(sched: Schedule, currentDim: Dim, outer: Dim, inner: Dim) = {
+		println(sched)
+		println(currentDim)
+		val s = sched.findAndTransform(
+			_ match {
+				case LoopNode(d, _, _, _) if d.name == currentDim.name && d.f == currentDim.f => {
+					true
+				}
+				case _ => false
+			},
+			_ match {
+				case LoopNode(_, f, _, children) => LoopNode(outer, f, Sequential, List(LoopNode(inner, f, Sequential, children)))
+			}
+		)
+
+		println(s)
+		s
 	}
 }

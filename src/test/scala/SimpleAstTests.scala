@@ -304,6 +304,102 @@ class CompilerSpec extends FlatSpec {
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 
+	"The grad program with a split variable" should "split the x variable in 2" in {
+		println("Grad x split: ")
+		val gradProg = new GradSplit with CompilerInstance with TestAstOps
+		val gradProgAnalysis = new GradSplit with TestPipelineAnalysis
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("f", List(
+				new LoopNode("y", "f", Sequential, List(
+					new LoopNode("x_outer", "f", Sequential, List(
+						new LoopNode("x_inner", "f", Sequential, List(
+							new ComputeNode("f", List())
+						))
+					))
+				))
+			))
+		))
+
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "split_grad")
+		assertResult(correctAst)(gradProg.scheduleRep)
+	}
+
+	"The grad program with two split variables" should "split the variable x and y in 2" in {
+		println("Grad x and y split: ")
+		val gradProg = new DoubleGradSplit with CompilerInstance with TestAstOps
+		val gradProgAnalysis = new DoubleGradSplit with TestPipelineAnalysis
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("f", List(
+				new LoopNode("y_outer", "f", Sequential, List(
+					new LoopNode("y_inner", "f", Sequential, List(
+						new LoopNode("x_outer", "f", Sequential, List(
+							new LoopNode("x_inner", "f", Sequential, List(
+								new ComputeNode("f", List())
+							))
+						))
+					))
+				))
+			))
+		))
+
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "2split_grad")
+		assertResult(correctAst)(gradProg.scheduleRep)
+	}
+
+	"The box blur program with two split variables" should "split the variable x and y in 2" in {
+		println("Box blur split: ")
+		val gradProg = new TwoStageBoxBlurWithSplitVar with CompilerInstance with TestAstOps
+		val gradProgAnalysis = new TwoStageBoxBlurWithSplitVar with TestPipelineAnalysis
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("i", List(
+				new LoopNode("y", "i", Sequential, List(
+					new StorageNode("g", List(
+						new LoopNode("y_outer", "g", Sequential, List(
+							new LoopNode("y_inner", "g", Sequential, List(
+								new LoopNode("x", "g", Sequential, List(
+									new ComputeNode("g", List())
+								))
+							))
+						)),
+						new LoopNode("x", "i", Sequential, List(
+							new ComputeNode("i", List())
+						))
+					))
+				))
+			))
+		))
+
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "split_blur")
+		assertResult(correctAst)(gradProg.scheduleRep)
+	}
+
+	"The box blur program store root and split" should "split the variable x and y in 2" in {
+		println("Box blur split, store root: ")
+		val gradProg = new TwoStageBoxBlurStoreRootSplit with CompilerInstance with TestAstOps
+		val gradProgAnalysis = new TwoStageBoxBlurStoreRootSplit with TestPipelineAnalysis
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("f", List(
+				new StorageNode("g", List(
+					new LoopNode("y", "g", Sequential, List(
+						new LoopNode("y_outer", "f", Sequential, List(
+							new LoopNode("y_inner", "f", Sequential, List(
+								new LoopNode("x", "f", Sequential, List(
+									new ComputeNode("f", List())
+								))
+							))
+						)),
+						new LoopNode("x", "g", Sequential, List(
+							new ComputeNode("g", List())
+						))
+					))
+				))
+			))
+		))
+
+		gradProg.compile(gradProgAnalysis.getBoundsGraph, "split_blur_store_root")
+		assertResult(correctAst)(gradProg.scheduleRep)
+	}
+
 	"IDProg" should "create a simple prog" in {
 		println("IDProg: ")
 		val blurProg =

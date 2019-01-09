@@ -6,19 +6,31 @@ trait ScheduleCompiler extends CompilerFuncOps {
 												boundsGraph: CallGraph,
 												enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
-		else if (stage.computeRoot) (variable.min, variable.max)
-		else {
+		else if (stage.computeRoot) {
+			variable.looplb_=(variable.min)
+			variable.shadowingUb_=(stage.vars(variable.shadowingName).max)
+			(variable.min, variable.max)
+		} else {
 			val v = stage.computeAt
 							.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
-			val shouldAdjust = enclosingLoops.keySet contains (v.f, variable.name)
+			val shouldAdjust = enclosingLoops.keySet contains (v.f, variable.shadowingName)
 
-			if (!shouldAdjust) (variable.min, variable.max)
+			if (!shouldAdjust) {
+				variable.looplb_=(variable.min)
+				variable.shadowingUb_=(stage.vars(variable.shadowingName).max)
+				(variable.min, variable.max)
+			}
 			else {
-				val baseVar = enclosingLoops((v.f, variable.name))
+				val baseVar = enclosingLoops((v.f, variable.shadowingName))
 				val bound = BoundsAnalysis
-						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.name)
+						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-				(baseVar.v + bound.lb, baseVar.v + bound.ub + 1)
+			  val unadjLb = baseVar.v + bound.lb
+				val unadjUb = baseVar.v + bound.ub
+			  variable.looplb_=(variable.adjustLower(unadjLb))
+				variable.shadowingUb_=(unadjUb + 1)
+				(variable.adjustLower(unadjLb),
+				 variable.adjustUpper(unadjUb) + 1)
 			}
 		}
 	}
@@ -26,6 +38,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 	def computeStorageBounds(stage: Func,
 													 boundsGraph: CallGraph,
 												 	 enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
+		// todo: x, y here problematic
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no storage")
 		else if (stage.storeRoot) (stage.domWidth, stage.domHeight)
 		else {
@@ -108,7 +121,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 				if (relevantBounds.isEmpty) unit(true)
 				else {
 					println(f"Bounds: ${relevantBounds.isEmpty}")
-					val consumerVariables: Map[String, Dim] = computeAtFunc.vars
+					val consumerVariables: Map[String, Dim] = computeAtFunc.vars.toMap
 
 					 // Generate list for each variable
 					 // v < v.min + overlapSize || v == upperLoopBound
@@ -159,20 +172,19 @@ trait ScheduleCompiler extends CompilerFuncOps {
 							  completeTree: ScheduleNode[Func, Dim]): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, enclosingLoops)
-			variable.looplb_=(lb)
       loopType match {
         case Sequential =>
           for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
 						for (child <- children) evalSched(child, boundsGraph,
-																							enclosingLoops + ((stage, variable.name) -> variable),
+																							enclosingLoops + ((stage, variable.shadowingName) -> variable),
 																							completeTree)
           }
         case Unrolled =>
           for (i <- lb until ub) {
             variable.v_=(i)
             for (child <- children) evalSched(child, boundsGraph,
-																							enclosingLoops + ((stage, variable.name) -> variable),
+																							enclosingLoops + ((stage, variable.shadowingName) -> variable),
 																							completeTree)
           }
       }
