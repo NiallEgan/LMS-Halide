@@ -303,8 +303,6 @@ trait AstOps {
 	}
 
 	def splitLoopNode(sched: Schedule, currentDim: Dim, outer: Dim, inner: Dim) = {
-		println(sched)
-		println(currentDim)
 		val s = sched.findAndTransform(
 			_ match {
 				case LoopNode(d, _, _, _) if d.name == currentDim.name && d.f == currentDim.f => {
@@ -316,8 +314,20 @@ trait AstOps {
 				case LoopNode(_, f, _, children) => LoopNode(outer, f, Sequential, List(LoopNode(inner, f, Sequential, children)))
 			}
 		)
-
-		println(s)
 		s
+	}
+
+	def swapLoopNodes(sched: Schedule, v1: Dim, v2: Dim): Schedule = {
+		sched match {
+			case LoopNode(variable, stage, loopType, children)
+				if variable == v1 => {
+					LoopNode(v2, stage, loopType, children.map(swapLoopNodes(_, v1, v2)))
+				}
+			case LoopNode(variable, stage, loopType, children)
+				if variable == v2 => {
+					LoopNode(v1, stage, loopType, children.map(swapLoopNodes(_, v1, v2)))
+				}
+			case _ => sched.mapChildren(swapLoopNodes(_, v1, v2))
+		}
 	}
 }

@@ -400,6 +400,50 @@ class CompilerSpec extends FlatSpec {
 		assertResult(correctAst)(gradProg.scheduleRep)
 	}
 
+	"One stage box blur split loops reordered" should "reoder x and y" in {
+		println("One stage blur, reordered: ")
+		val blurProg = new OneStageBoxBlurSplitLoopsReordered with CompilerInstance
+									 with TestAstOps
+		val blurProgAnalysis = new OneStageBoxBlurSplitLoopsReordered
+													 with TestPipelineAnalysis
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("i", List(
+				new LoopNode("x", "i", Sequential, List(
+					new LoopNode("y", "i", Sequential, List(
+						new ComputeNode("i", List())
+					))
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur_reordered")
+		assertResult(correctAst)(blurProg.scheduleRep)
+	}
+
+	"Tiled grad" should "split and reorder x and y" in {
+		println("One stage blur, reordered: ")
+		val blurProg = new SimpleGradTiled with CompilerInstance
+									 with TestAstOps
+		val blurProgAnalysis = new SimpleGradTiled
+													 with TestPipelineAnalysis
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("f", List(
+				new LoopNode("y_outer", "f", Sequential, List(
+					new LoopNode("x_outer", "f", Sequential, List(
+						new LoopNode("y_inner", "f", Sequential, List(
+							new LoopNode("x_inner", "f", Sequential, List(
+								new ComputeNode("f", List())
+							))
+						))
+					))
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "tiled_grad")
+		assertResult(correctAst)(blurProg.scheduleRep)
+	}
+
 	"IDProg" should "create a simple prog" in {
 		println("IDProg: ")
 		val blurProg =

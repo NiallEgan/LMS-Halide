@@ -148,7 +148,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def split(v: String, outer: String, inner: String, splitFactor: Int) = {
       val innerDim = new Dim(0, splitFactor, inner, this)
       // We floor the bottom and ceil at the top to make sure
-      // that we hit every value: todo - a clamp
+      // that we hit every value
       val oldDim = vars(v)
       val x = oldDim.max - splitFactor
       val outerDim = new OuterDim(oldDim.min / splitFactor,

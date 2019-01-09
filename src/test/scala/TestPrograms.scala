@@ -304,3 +304,32 @@ trait TwoStageBoxBlurStoreRootSplit extends TestPipeline {
 
 	}
 }
+
+trait OneStageBoxBlurSplitLoopsReordered extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
+																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
+																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9) withNZDomain((1, w-1), (1, h-1))
+		i.reorder("x", "y")
+
+		i.realize()
+		registerFunction("i", i)
+	}
+}
+
+trait SimpleGradTiled extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+
+		/*f.split("y", "y_outer", "y_inner", 2)
+		f.split("x", "x_outer", "x_inner", 2)
+		f.reorder("y_inner", "x_outer")*/
+		f.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 2, 2)
+
+		f.realize()
+
+		registerFunction("f", f)
+	}
+}
