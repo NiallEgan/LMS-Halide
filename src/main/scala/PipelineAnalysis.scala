@@ -162,6 +162,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		override def storeRoot(): Unit = return
 		override def computeRoot(): Unit = return
 		override def split(v: String, outer: String, inner: String, splitFactor: Int): Unit = return
+		override def reorder(v1: String, v2: String): Unit = return
 		override def realize(): Unit = {
 			finalFunc = Some(f)
 		}

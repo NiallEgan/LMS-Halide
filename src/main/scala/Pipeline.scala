@@ -30,9 +30,18 @@ trait Pipeline extends SimpleFuncOps {
 		def computeAt(consumer: Func, v: String): Unit
 		def storeAt(consumer: Func, v: String): Unit
 		def split(v: String, outer: String, inner: String, splitFactor: Int): Unit
+		def reorder(v1: String, v2: String): Unit
 		def realize(): Unit
 		def storeRoot(): Unit
 		def computeRoot(): Unit
+
+		def tile(x: String, y: String,
+						 xOuter: String, yOuter: String, xInner: String,
+					 	 yInner: String, xSplit: Int, ySplit: Int) = {
+			split(x, xOuter, xInner, xSplit)
+			split(y, yOuter, yInner, xSplit)
+			reorder(yInner, xOuter)
+		}
 	}
 
 	implicit def toFuncOps(f: Func): FuncOps
@@ -86,6 +95,11 @@ trait PipelineForCompiler extends Pipeline
 			schedule = Some(splitLoopNode(sched, f.vars(v),
 											f.vars(outer), f.vars(inner)))
 		}
+
+		override def reorder(v1: String, v2: String): Unit = {
+			schedule = Some(swapLoopNodes(sched, f.vars(v1), f.vars(v2)))
+		}
+
 	}
 
 	def assignOutArray(out: Rep[Array[UShort]]): Rep[Unit] = {
