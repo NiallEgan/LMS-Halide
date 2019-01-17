@@ -30,6 +30,7 @@ trait Pipeline extends SimpleFuncOps {
 		def computeAt(consumer: Func, v: String): Unit
 		def storeAt(consumer: Func, v: String): Unit
 		def split(v: String, outer: String, inner: String, splitFactor: Int): Unit
+		def fuse(v: String, outer: String, inner: String): Unit
 		def reorder(v1: String, v2: String): Unit
 		def realize(): Unit
 		def storeRoot(): Unit
@@ -93,6 +94,12 @@ trait PipelineForCompiler extends Pipeline
 		override def split(v: String, outer: String, inner: String, splitFactor: Int) = {
 			f.split(v, outer, inner, splitFactor)
 			schedule = Some(splitLoopNode(sched, f.vars(v),
+											f.vars(outer), f.vars(inner)))
+		}
+
+		override def fuse(v: String, outer: String, inner: String) = {
+			f.fuse(v, outer, inner)
+			schedule = Some(fuseLoopNodes(sched, f.vars(v),
 											f.vars(outer), f.vars(inner)))
 		}
 

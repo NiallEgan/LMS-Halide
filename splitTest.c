@@ -3,7 +3,7 @@
 
 int main() {
   int x_max = 5;
-  int y_max = 5;
+  int y_max = 6;
   UCHAR input[x_max * y_max * 3];
 
   for (int y = 0; y < y_max; y++) {

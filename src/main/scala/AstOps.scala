@@ -330,4 +330,27 @@ trait AstOps {
 			case _ => sched.mapChildren(swapLoopNodes(_, v1, v2))
 		}
 	}
+
+	def fuseLoopNodes(sched: Schedule, newDim: Dim, outer: Dim, inner: Dim) = {
+		def isLoopNodeFor(dim: Dim)(n: Schedule) = n match {
+			case LoopNode(d, _, _, _) if d.name == dim.name && d.f == dim.f => {
+				true
+			}
+			case _ => false
+		}
+		sched.findAndTransform(isLoopNodeFor(outer)(_),
+			_ match {
+				case LoopNode(o, stage, loopType, children) => {
+					println(f"chilun: $children")
+					if (!children.exists(isLoopNodeFor(inner)(_))) throw new InvalidSchedule("Can only fuse loops in a parent-child relationship")
+					else {
+						LoopNode(newDim, stage, loopType, children.flatMap(x =>
+							if (isLoopNodeFor(inner)(x)) x.getChildren
+							else List(x)
+						))
+					}
+				}
+			}
+		)
+	}
 }

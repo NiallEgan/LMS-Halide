@@ -421,7 +421,7 @@ class CompilerSpec extends FlatSpec {
 	}
 
 	"Tiled grad" should "split and reorder x and y" in {
-		println("One stage blur, reordered: ")
+		println("Grad tiled: ")
 		val blurProg = new SimpleGradTiled with CompilerInstance
 									 with TestAstOps
 		val blurProgAnalysis = new SimpleGradTiled
@@ -441,6 +441,24 @@ class CompilerSpec extends FlatSpec {
 		))
 
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "tiled_grad")
+		assertResult(correctAst)(blurProg.scheduleRep)
+	}
+
+	"Fused blur" should "fuse the x and y variables" in {
+		println("One stage blur fused: ")
+		val blurProg = new FusedBlur with CompilerInstance
+									 with TestAstOps
+		val blurProgAnalysis = new FusedBlur with TestPipelineAnalysis
+
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("i", List(
+				new LoopNode("xy", "i", Sequential, List(
+					new ComputeNode("i", List())
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "fused_blur")
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 

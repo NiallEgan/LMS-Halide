@@ -333,3 +333,16 @@ trait SimpleGradTiled extends TestPipeline {
 		registerFunction("f", f)
 	}
 }
+
+trait FusedBlur extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val i: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
+																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
+																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9) withNZDomain((1, w-1), (1, h-1))
+		i.fuse("xy", "y", "x")
+		i.realize()
+		registerFunction("i", i)
+
+	}
+}
