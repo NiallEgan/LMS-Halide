@@ -26,7 +26,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
   class Dim(val min: Rep[Int], val max: Rep[Int],
             val name: String, val f: Func) {
-		private var value: Option[Rep[Int]] = None
+		protected var value: Option[Rep[Int]] = None
     // Shading name is the name of the variable, except for
     // outer variables where it is the name of either x or y,
     // depending on where it was originally split from
@@ -35,13 +35,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     private var offset: Option[Rep[Int]] = None
     private var loopLowerBound: Option[Rep[Int]] = None
+    private var loopUpperBound: Option[Rep[Int]] = None
     private var shadowingUpperBound: Option[Rep[Int]] = None
 
 		def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f"))
 
-    def shadowingUb_=(newVal: Rep[Int]) = {
-      shadowingUpperBound = Some(newVal)
-    }
+    def shadowingUb_=(newVal: Rep[Int]) = shadowingUpperBound = Some(newVal)
 
     def shadowingUb(): Rep[Int] = {
       shadowingUpperBound.getOrElse(throw new InvalidSchedule(f"Unbound loopub for $name"))
@@ -51,17 +50,19 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       loopLowerBound.getOrElse(throw new InvalidSchedule(f"Unbound looplb for $name"))
     }
 
-    def looplb_=(new_val: Rep[Int]) = {
-      loopLowerBound = Some(new_val)
+    def looplb_=(newVal: Rep[Int]) = loopLowerBound = Some(newVal)
+
+    def loopub: Rep[Int] = {
+      loopUpperBound.getOrElse(throw new InvalidSchedule(f"Unbound loopub for $name"))
     }
+
+    def loopub_=(newVal: Rep[Int]) = loopUpperBound = Some(newVal)
 
     def dimOffset: Rep[Int] = {
       offset.getOrElse(throw new InvalidSchedule(f"Unbound loop offset for $name"))
     }
 
-    def dimOffset_=(new_val: Rep[Int]) = {
-      offset = Some(new_val)
-    }
+    def dimOffset_=(new_val: Rep[Int]) = offset = Some(new_val)
 
     override def toString() = name
 
@@ -74,6 +75,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     def adjustLower(x: Rep[Int]) = x
     def adjustUpper(x: Rep[Int]) = x
+
+    val pseudoLoops: Map[(Func, String), Dim] = Map((f, shadowingName) -> this)
 	}
 
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func,
@@ -108,6 +111,22 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
         if (x % scaleRatio == 0) x / scaleRatio else x / scaleRatio + 1
       }
   }
+
+  class FusedDim(min: Rep[Int], max: Rep[Int], name: String, f: Func,
+                 val inner: Dim, val outer: Dim) extends Dim(min, max, name, f) {
+    private def innerWidth = inner.loopub - inner.looplb
+
+    override def v_=(newVal: Rep[Int]) = {
+      inner.v_=((newVal - inner.looplb) % innerWidth + inner.looplb)
+      outer.v_=((newVal - inner.looplb) / innerWidth)
+      value = Some(newVal)
+    }
+
+    override val pseudoLoops = inner.pseudoLoops ++ outer.pseudoLoops
+  }
+
+
+
 
   class CompilerFunc(val f: (Rep[Int], Rep[Int]) => RGBVal,
                      dom: Domain, val id: Int) {
@@ -159,6 +178,13 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
                              outerDim, innerDim, splitFactor)
       vars(outer) = outerDim
       vars(inner) = innerDim
+    }
+
+    def fuse(v: String, outer: String, inner: String) = {
+      val fusedMin = inner.min + (inner.max - inner.min) * outer.min
+      val fuseMax = inner.max + (inner.max - inner.max) * outer.max
+      val fusedVariable = new FusedDim(fusedMin, fuseMax, v, this, vars(inner), vars(outer))
+      vars(v) = fusedVariable
     }
   }
 

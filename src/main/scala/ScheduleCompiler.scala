@@ -5,9 +5,32 @@ trait ScheduleCompiler extends CompilerFuncOps {
 	def computeLoopBounds(variable: Dim, stage: Func,
 												boundsGraph: CallGraph,
 												enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
+		if (variable.isInstanceOf[FusedDim]) {
+			val fusedVariable = variable.asInstanceOf[FusedDim]
+			val innerBounds = computeSimpleLoopBounds(fusedVariable.inner, stage,
+																								boundsGraph, enclosingLoops)
+			val outerBounds = computeSimpleLoopBounds(fusedVariable.outer, stage,
+																								boundsGraph, enclosingLoops)
+			val a = outerBounds._1
+			val b = outerBounds._2
+			val c = innerBounds._1
+			val d = innerBounds._2
+			val lowerBound = c + (d - c) * a
+			val upperBound = d + (b - 1) * (d - c)
+			variable.looplb_=(lowerBound)
+			variable.loopub_=(upperBound)
+			variable.shadowingUb_=(upperBound)
+			(lowerBound, upperBound)
+		} else computeSimpleLoopBounds(variable, stage, boundsGraph, enclosingLoops)
+	}
+
+	def computeSimpleLoopBounds(variable: Dim, stage: Func,
+															boundsGraph: CallGraph,
+															enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
 		else if (stage.computeRoot) {
 			variable.looplb_=(variable.min)
+			variable.loopub_=(variable.max)
 			variable.shadowingUb_=(stage.vars(variable.shadowingName).max)
 			(variable.min, variable.max)
 		} else {
@@ -17,6 +40,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 
 			if (!shouldAdjust) {
 				variable.looplb_=(variable.min)
+				variable.loopub_=(variable.max)
 				variable.shadowingUb_=(stage.vars(variable.shadowingName).max)
 				(variable.min, variable.max)
 			}
@@ -29,6 +53,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 				val unadjUb = baseVar.v + bound.ub
 			  variable.looplb_=(variable.adjustLower(unadjLb))
 				variable.shadowingUb_=(unadjUb + 1)
+				variable.loopub_=(unadjUb + 1)
 				(variable.adjustLower(unadjLb),
 				 variable.adjustUpper(unadjUb) + 1)
 			}
@@ -38,7 +63,6 @@ trait ScheduleCompiler extends CompilerFuncOps {
 	def computeStorageBounds(stage: Func,
 													 boundsGraph: CallGraph,
 												 	 enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
-		// todo: x, y here problematic
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no storage")
 		else if (stage.storeRoot) (stage.domWidth, stage.domHeight)
 		else {
@@ -177,14 +201,14 @@ trait ScheduleCompiler extends CompilerFuncOps {
           for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
 						for (child <- children) evalSched(child, boundsGraph,
-																							enclosingLoops + ((stage, variable.shadowingName) -> variable),
+																							enclosingLoops ++ variable.pseudoLoops,
 																							completeTree)
           }
         case Unrolled =>
           for (i <- lb until ub) {
             variable.v_=(i)
             for (child <- children) evalSched(child, boundsGraph,
-																							enclosingLoops + ((stage, variable.shadowingName) -> variable),
+																							enclosingLoops ++ variable.pseudoLoops,
 																							completeTree)
           }
       }
