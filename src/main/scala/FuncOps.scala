@@ -117,8 +117,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     private def innerWidth = inner.loopub - inner.looplb
 
     override def v_=(newVal: Rep[Int]) = {
-      inner.v_=(newVal % innerWidth + inner.looplb)
-      outer.v_=((newVal - outer.looplb) / innerWidth)
+      inner.v_=((newVal - inner.looplb) % innerWidth + inner.looplb)
+      outer.v_=((newVal - inner.looplb) / innerWidth)
       value = Some(newVal)
     }
 

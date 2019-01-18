@@ -343,6 +343,21 @@ trait FusedBlur extends TestPipeline {
 		i.fuse("xy", "y", "x")
 		i.realize()
 		registerFunction("i", i)
+	}
+}
 
+trait TwoStageBlurInnerFused extends TestPipeline {
+	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f: Func =
+			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+		val g: Func =
+			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+
+		f.computeAt(g, "y")
+		f.fuse("xy", "y", "x")
+		g.realize()
+
+		registerFunction("f", f)
+		registerFunction("g", g)
 	}
 }

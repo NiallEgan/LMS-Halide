@@ -462,6 +462,31 @@ class CompilerSpec extends FlatSpec {
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 
+	"Two stage fused blur" should "fuse the inner x and y variables" in {
+		println("Two stage blur fused inner: ")
+		val blurProg = new TwoStageBlurInnerFused with CompilerInstance
+									 with TestAstOps
+		val blurProgAnalysis = new TwoStageBlurInnerFused with TestPipelineAnalysis
+
+		val correctAst: ScheduleNode[String, String] = new RootNode(List(
+			new StorageNode("g", List(
+				new LoopNode("y", "g", Sequential, List(
+					new StorageNode("f", List(
+						new LoopNode("xy", "f", Sequential, List(
+							new ComputeNode("f", List())
+						)),
+						new LoopNode("x", "g", Sequential, List(
+							new ComputeNode("g", List())
+						))
+					))
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "two_stage_inner_fused_blur")
+		assertResult(correctAst)(blurProg.scheduleRep)
+	}
+
 	"IDProg" should "create a simple prog" in {
 		println("IDProg: ")
 		val blurProg =
