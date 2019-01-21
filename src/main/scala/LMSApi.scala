@@ -80,7 +80,7 @@ trait DslGenC extends CGenNumericOps
 
     def emitStaticData(name: String, v: Int, out: PrintWriter) = {
       withStream(out) {
-        stream.println(f"#define $name ($v)")
+        stream.println(f"int32_t $name = $v;")
       }
     }
 

@@ -143,5 +143,5 @@ x10[x135] = x142;
 }
 memcpy(x1, x10, x9);
 }
-#define WIDTH_OUT_DIFF (2)
-#define HEIGHT_OUT_DIFF (2)
+int32_t WIDTH_OUT_DIFF = 2;
+int32_t HEIGHT_OUT_DIFF = 2;

@@ -22,5 +22,5 @@ x6[x14] = x16;
 }
 memcpy(x1, x6, x5);
 }
-#define WIDTH_OUT_DIFF (0)
-#define HEIGHT_OUT_DIFF (0)
+int32_t WIDTH_OUT_DIFF = 0;
+int32_t HEIGHT_OUT_DIFF = 0;

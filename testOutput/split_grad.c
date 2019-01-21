@@ -47,5 +47,5 @@ x13[x27] = x29;
 }
 memcpy(x1, x13, x12);
 }
-#define WIDTH_OUT_DIFF (0)
-#define HEIGHT_OUT_DIFF (0)
+int32_t WIDTH_OUT_DIFF = 0;
+int32_t HEIGHT_OUT_DIFF = 0;

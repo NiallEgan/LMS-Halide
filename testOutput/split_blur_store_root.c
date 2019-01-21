@@ -163,5 +163,5 @@ x20[x138] = x157;
 }
 memcpy(x1, x20, x19);
 }
-#define WIDTH_OUT_DIFF (2)
-#define HEIGHT_OUT_DIFF (2)
+int32_t WIDTH_OUT_DIFF = 2;
+int32_t HEIGHT_OUT_DIFF = 2;

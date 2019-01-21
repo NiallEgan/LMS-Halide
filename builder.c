@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
   png_read_image(read_ptr, row_pointers);
 
   // Transform the pixels
-  char *out = malloc(sizeof(char) * (width-2) * (height-2) * 3);
+  char *out = malloc(sizeof(char) * (width-WIDTH_OUT_DIFF) * (height-HEIGHT_OUT_DIFF) * 3);
   pipeline(image, out, width, height);
 
   // Write the output data
@@ -54,13 +54,13 @@ int main(int argc, char **argv) {
   png_infop write_info_ptr = png_create_info_struct(write_ptr);
   FILE *ofp = fopen(argv[2], "wb");
   png_init_io(write_ptr, ofp);
-  png_set_IHDR(write_ptr, write_info_ptr, width-2, height-2, depth,
+  png_set_IHDR(write_ptr, write_info_ptr, width-WIDTH_OUT_DIFF, height-HEIGHT_OUT_DIFF, depth,
                color, png_get_interlace_type(read_ptr, info_ptr),
                png_get_compression_type(read_ptr, info_ptr),
                png_get_filter_type(read_ptr, info_ptr));
   png_write_info(write_ptr, write_info_ptr);
-  png_bytep out_row_pointers[height-2];
-  for (int i = 0; i < height-2; i++) out_row_pointers[i] = out + 3 * (width - 2) * i;
+  png_bytep out_row_pointers[height-HEIGHT_OUT_DIFF];
+  for (int i = 0; i < height-HEIGHT_OUT_DIFF; i++) out_row_pointers[i] = out + 3 * (width - WIDTH_OUT_DIFF) * i;
   png_write_image(write_ptr, out_row_pointers);
 
   free(image);
