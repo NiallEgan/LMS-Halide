@@ -3,8 +3,7 @@ import sepia._
 
 trait GradProg extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => x + y
 
 		f.realize()
 		// This is for testing purposes only
@@ -15,13 +14,13 @@ trait GradProg extends TestPipeline {
 trait BlurredGradProg extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
+			(x: Rep[Int], y: Rep[Int]) => x + y
 
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) =>
+			(x: Rep[Int], y: Rep[Int]) =>
 				(f(x+1, y-1) + f(x+1, y) + f(x+1, y+1) +
 				 f(x,   y-1) + f(x,   y) + f(x,   y+1) +
-				 f(x-1, y-1) + f(x-1, y) + f(x-1, y+1)) / 9) withNZDomain ((1, w-1), (1, h-1))
+				 f(x-1, y-1) + f(x-1, y) + f(x-1, y+1)) / 9
 		g.realize()
 
 		// This is for testing purposes only
@@ -34,13 +33,13 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain (w, h)
+			(x: Rep[Int], y: Rep[Int]) => x + y
 
 		val g: Func =
-				((x: Rep[Int], y: Rep[Int]) =>
+				(x: Rep[Int], y: Rep[Int]) =>
 					(f(x+1, y-1) + f(x+1, y) + f(x+1, y+1) +
 					 f(x,   y-1) + f(x,   y) + f(x,   y+1) +
-				   f(x-1, y-1) + f(x-1, y) + f(x-1, y+1)) / 9) withNZDomain ((1, w-1), (1, h-1))
+				   f(x-1, y-1) + f(x-1, y) + f(x-1, y+1)) / 9
 
 		f.computeAt(g, "y")
 
@@ -54,12 +53,10 @@ trait BlurredGradProgComputeAt extends TestPipeline {
 
 trait FunkyBoundsProg extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => 30 + x) withDomain (w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => 30 + x
 
-		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) =>
-			f(x-4, y+3) + f(x+10, y) + f(x-11, y+12) + f(x, y-40*2)) withDomain (w, h) // N.B. These are not valid domains
+		val g: Func = (x: Rep[Int], y: Rep[Int]) =>
+			f(x-4, y+3) + f(x+10, y) + f(x-11, y+12) + f(x, y-40*2)
 
 		g.realize()
 		registerFunction("f", f)
@@ -69,12 +66,11 @@ trait FunkyBoundsProg extends TestPipeline {
 
 trait ThreeStageBoxBlur extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => in(x, y)
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 
 		i.realize()
@@ -86,12 +82,11 @@ trait ThreeStageBoxBlur extends TestPipeline {
 
 trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => in(x, y)
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x+1, y) + f(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 		// TODO: What about 'middle functions'?
 		f.computeAt(i, "y")
@@ -106,12 +101,9 @@ trait ThreeStageBoxBlurWithComputeAt extends TestPipeline {
 
 trait ThreeStageBoundsAnalysisExample extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
-		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => f(x-1, y+1) + f(x+1, y-1)) withNZDomain ((1, w-1), (1, h-1))
-		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => g(x-1, y+1) + g(x+1, y-1)) withNZDomain ((2, w-2), (2, h-2))
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => x + y
+		val g: Func = (x: Rep[Int], y: Rep[Int]) => f(x-1, y+1) + f(x+1, y-1)
+		val i: Func = (x: Rep[Int], y: Rep[Int]) => g(x-1, y+1) + g(x+1, y-1)
 
 		i.realize()
 
@@ -123,8 +115,7 @@ trait ThreeStageBoundsAnalysisExample extends TestPipeline {
 
 trait IDProg extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => in(x, y)) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => in(x, y)
 
 		f.realize()
 		registerFunction("f", f)
@@ -134,9 +125,9 @@ trait IDProg extends TestPipeline {
 trait TwoStageBoxBlur extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 
 		i.realize()
@@ -148,9 +139,9 @@ trait TwoStageBoxBlur extends TestPipeline {
 trait OneStageBoxBlur extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
 																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
-																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9) withNZDomain((1, w-1), (1, h-1))
+																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9
 		i.realize()
 		registerFunction("i", i)
 	}
@@ -168,9 +159,9 @@ trait Cropper extends TestPipeline {
 trait TwoStageBoxBlurStoreAt extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 		g.computeAt(i, "x")
 		g.storeAt(i, "y")
@@ -185,9 +176,9 @@ trait TwoStageBoxBlurStoreAt extends TestPipeline {
 trait TwoStageBoxBlurStoreAtReflected extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y-1) + in(x, y) + in(x, y+1)) / 3) withNZDomain((0, w), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y-1) + in(x, y) + in(x, y+1)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x-1, y) + g(x, y) + g(x+1, y)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x-1, y) + g(x, y) + g(x+1, y)) / 3
 
 		g.computeAt(i, "x")
 		g.storeAt(i, "y")
@@ -202,9 +193,9 @@ trait TwoStageBoxBlurStoreAtReflected extends TestPipeline {
 trait TwoStageBoxBlurComputeAtX extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 		g.computeAt(i, "x")
 		i.realize()
@@ -217,11 +208,10 @@ trait TwoStageBoxBlurComputeAtX extends TestPipeline {
 
 trait BlurredGradStoreRoot extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => x + y
 
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x+1, y) + f(x+1, y+1)) / 4) withDomain(w-1, h-1)
+			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x+1, y) + f(x+1, y+1)) / 4
 
 		f.computeAt(g, "y")
 		f.storeRoot()
@@ -236,9 +226,9 @@ trait BlurredGradStoreRoot extends TestPipeline {
 trait TwoStageBoxBlurComputeRoot extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 		g.computeRoot()
 		i.realize()
@@ -250,7 +240,7 @@ trait TwoStageBoxBlurComputeRoot extends TestPipeline {
 
 trait GradSplit extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func = ((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => x + y
 
 		f.split("x", "x_outer", "x_inner", 2)
 		f.realize()
@@ -261,7 +251,7 @@ trait GradSplit extends TestPipeline {
 
 trait DoubleGradSplit extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func = ((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => x + y
 
 		f.split("x", "x_outer", "x_inner", 2)
 		f.split("y", "y_outer", "y_inner", 2)
@@ -274,9 +264,9 @@ trait DoubleGradSplit extends TestPipeline {
 trait TwoStageBoxBlurWithSplitVar extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 
 		g.computeAt(i, "y")
 		g.split("y", "y_outer", "y_inner", 2)
@@ -290,9 +280,9 @@ trait TwoStageBoxBlurWithSplitVar extends TestPipeline {
 trait TwoStageBoxBlurStoreRootSplit extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3
 
 		f.computeAt(g, "y")
 		f.storeRoot()
@@ -308,9 +298,9 @@ trait TwoStageBoxBlurStoreRootSplit extends TestPipeline {
 trait OneStageBoxBlurSplitLoopsReordered extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
 																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
-																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9) withNZDomain((1, w-1), (1, h-1))
+																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9
 		i.reorder("x", "y")
 
 		i.realize()
@@ -320,8 +310,7 @@ trait OneStageBoxBlurSplitLoopsReordered extends TestPipeline {
 
 trait SimpleGradTiled extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => x + y) withDomain(w, h)
+		val f: Func = (x: Rep[Int], y: Rep[Int]) => x + y
 
 		/*f.split("y", "y_outer", "y_inner", 2)
 		f.split("x", "x_outer", "x_inner", 2)
@@ -337,9 +326,9 @@ trait SimpleGradTiled extends TestPipeline {
 trait FusedBlur extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val i: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
 																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
-																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9) withNZDomain((1, w-1), (1, h-1))
+																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9
 		i.fuse("xy", "y", "x")
 		i.realize()
 		registerFunction("i", i)
@@ -349,9 +338,9 @@ trait FusedBlur extends TestPipeline {
 trait TwoStageBlurInnerFused extends TestPipeline {
 	override def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f: Func =
-			((x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3) withNZDomain((1, w-1), (0, h))
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
 		val g: Func =
-			((x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3) withNZDomain((1, w-1), (1, h-1))
+			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3
 
 		f.computeAt(g, "y")
 		f.fuse("xy", "y", "x")
