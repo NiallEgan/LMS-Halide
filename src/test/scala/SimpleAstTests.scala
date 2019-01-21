@@ -12,10 +12,16 @@ trait CompilerInstance extends ScheduleCompiler
       val IR: self.type = self
     }
 
+	override var w: Rep[Int] = null // todo: write good code
+	override var h: Rep[Int] = null
+	override var callGraph: CallGraph = null
+
 	def widthOutDiff(boundsGraph: CallGraph) = {
+		// todo: doesn't work for multistage pipelines with no in
 		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
 									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
 									 "x").getOrElse(Bound(0, 0)).width - 1
+
 	}
 
 	def heightOutDiff(boundsGraph: CallGraph) = {
@@ -26,8 +32,11 @@ trait CompilerInstance extends ScheduleCompiler
 	}
 
 	def ev(boundsGraph: CallGraph)
-				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], w: Rep[Int], h: Rep[Int]) = {
-		compiler_prog(in, out, w, h)
+				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], width: Rep[Int], height: Rep[Int]) = {
+		callGraph = boundsGraph
+		w = width
+		h = height
+		compilerProg(in, out, w, h)
 		//println(sched)
 		println()
 		evalSched(sched, boundsGraph, Map(), sched)

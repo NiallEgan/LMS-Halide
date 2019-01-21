@@ -133,6 +133,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def x = vars("x")
     def y = vars("y")
 
+    val domain = Map("x" -> dom._1, "y" -> dom._2)
+
     val vars = MMap("x" -> new Dim(dom._1._1, dom._1._2, "x", this),
                     "y" -> new Dim(dom._2._1, dom._2._2, "y", this))
     var inlined = true

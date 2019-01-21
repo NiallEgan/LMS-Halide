@@ -6,7 +6,7 @@ trait Pipeline extends SimpleFuncOps {
 
 	def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit]
 
-	def compiler_prog(in: Rep[Array[UShort]], out: Rep[Array[UShort]],
+	def compilerProg(in: Rep[Array[UShort]], out: Rep[Array[UShort]],
 										w: Rep[Int], h: Rep[Int]) = {
 		prog(Buffer(w, h, in), w, h)
 	}
@@ -47,6 +47,12 @@ trait Pipeline extends SimpleFuncOps {
 
 	implicit def toFuncOps(f: Func): FuncOps
 
+	implicit def toFuncSansDomain(f: (Rep[Int], Rep[Int]) => RGBVal): Func
+
+	implicit def itoFuncSansDomain(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func = {
+		toFuncSansDomain((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y), f(x, y), f(x, y)))
+	}
+
 	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func
 }
 
@@ -58,6 +64,33 @@ trait PipelineForCompiler extends Pipeline
 	private var schedule: Option[Schedule] = None
 	private var id = 0
 	var idToFunc: Map[Int, Func] = Map()
+	var w: Rep[Int]
+	var h: Rep[Int]
+	var callGraph: CallGraph
+
+	private def getSingleVariableDomain(cg: CallGraph, fId: Int, v: String, wOrH: Rep[Int]): (Rep[Int], Rep[Int]) = {
+		// Check if f eventually gets to in
+		BoundsAnalysis.boundsForProdInCon(cg, -1, fId, v) match {
+			case Some(b) => (0 - b.lb, wOrH - b.ub)  // This special case isn't really necessary...
+			case None => {
+				if (cg.producersOf(fId).length == 0) {
+					(0, wOrH)
+				} else {
+					// Want to merge adjusted producer domains
+					cg.producersOf(fId).foldLeft((unit(0), wOrH)){case (acc, prod) =>
+						val prodDomain = idToFunc(prod).domain(v)
+						val b = BoundsAnalysis.boundsForProdInCon(cg, prod, fId, v).getOrElse(throw new Exception("Not possible"))
+						val adjustedDomain: (Rep[Int], Rep[Int]) = (prodDomain._1 - b.lb, prodDomain._2 - b.ub)
+						(adjustedDomain._1 max acc._1, adjustedDomain._2 min acc._2)
+					}
+				}
+			}
+		}
+	}
+	def getDomain(fId: Int): Domain = {
+		(getSingleVariableDomain(callGraph, fId, "x", w),
+		 getSingleVariableDomain(callGraph, fId, "y", h))
+	}
 
 	override def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func = {
 		val func: Func = mkFunc(f, dom, id)
@@ -66,6 +99,11 @@ trait PipelineForCompiler extends Pipeline
 		schedule = Some(newSimpleSched(func))
 		func
 	}
+
+	implicit def toFuncSansDomain(f: (Rep[Int], Rep[Int]) => RGBVal): Func = {
+		toFunc(f, getDomain(id))
+	}
+
 
 	class FuncOpsImp(f: Func) extends FuncOps(f) {
 		override def computeAt(consumer: Func, s: String) = {

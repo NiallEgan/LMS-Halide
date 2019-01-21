@@ -72,6 +72,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		mkFunc(f, dom, id)
 	}
 
+	override def toFuncSansDomain(f: (Rep[Int], Rep[Int]) => RGBVal): Func = {
+		toFunc(f, ((0, 0), (0, 0)))
+	}
+
 	def mergeBoundsMaps(b1: Map[Int, Map[String, Bound]],
 											b2: Map[Int, Map[String, Bound]]): Map[Int, Map[String, Bound]] = {
 		// Given two maps for func -> bound, bound, will join the two maps together.
