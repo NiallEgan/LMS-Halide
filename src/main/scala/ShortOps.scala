@@ -76,7 +76,7 @@ trait ShortOpsExpOpt extends ShortOpsExp {
 
 trait CGenShortOps extends CGenBase {
   val IR: ShortOpsExp
-  import IR._
+  import IR._ 
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
     rhs match {
@@ -86,7 +86,7 @@ trait CGenShortOps extends CGenBase {
       case ShortDivide(a, b) => emitValDef(sym, src"$a / $b")
       case ShortConvert(a) => emitValDef(sym, src"$a")
       case IntConvert(a) => emitValDef(sym, src"(int) $a") // unsafe...
-      case DoubleToShortConversion(a) => emitValDef(sym, src"(USHORT) $a")
+      case DoubleToShortConversion(a) => emitValDef(sym, src"(UCHAR) $a")
       case _ => super.emitNode(sym, rhs)
     }
   }

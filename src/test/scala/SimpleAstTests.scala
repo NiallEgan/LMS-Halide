@@ -521,6 +521,15 @@ class CompilerSpec extends FlatSpec {
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur")
 	}
 
+	"LowPassEdgeFilter" should "make a gaussian blur program" in {
+		println("one stage blur (simple)")
+
+		val blurProg =
+			new EdgeFilter with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new EdgeFilter with TestPipelineAnalysis
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "edge_filter")
+	}
+
 	"Cropper" should "" in {
 		println("cropper stage blur (simple)")
 

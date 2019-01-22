@@ -47,9 +47,9 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
     def +(other: Rep[T]): RGBVal[T] = RGBVal(numeric_plus(v.red, other),
                                               numeric_plus(v.green, other),
                                               numeric_plus(v.blue, other))
-    /*def +(other: Rep[Double]): RGBVal[Double] = RGBVal[Double](other + v.red,
+    def +(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] = RGBVal[Double](other + v.red,
                                             v.green + other,
-                                            v.blue + other)*/
+                                            v.blue + other)
 
     def -(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red - other.red,
                                           v.green - other.green,
@@ -57,32 +57,83 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
     def -(other: Rep[T]): RGBVal[T] = RGBVal(v.red - other,
                                                v.green - other,
                                                v.blue - other)
-    /*def -(other: Rep[Double]): RGBVal[Double] = RGBVal(v.red - other,
-                                              v.green - other,
-                                              v.blue - other)*/
+    def -(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] =
+                                RGBVal(v.red - other,
+                                       v.green - other,
+                                       v.blue - other)
 
     def *(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red * other.red,
-                                          v.green * other.green,
-                                          v.blue * other.blue)
+                                                v.green * other.green,
+                                                v.blue * other.blue)
     def *(other: Rep[T]): RGBVal[T] = RGBVal(v.red * other,
-                                            v.green * other,
-                                            v.blue * other)
-    /*def *(other: Rep[Double]): RGBVal[Double] = RGBVal(v.red * other,
-                                               v.green * other,
-                                               v.blue * other)*/
+                                             v.green * other,
+                                             v.blue * other)
+    def *(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] =
+                              RGBVal(v.red * other,
+                                     v.green * other,
+                                     v.blue * other)
 
     def /(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red / other.red,
-                                          v.green / other.green,
-                                          v.blue / other.blue)
+                                                v.green / other.green,
+                                                v.blue / other.blue)
     def /(other: Rep[T]): RGBVal[T] = RGBVal(v.red / other,
-                                            v.green / other,
-                                            v.blue / other)
-    /*def /(other: Rep[Double]): RGBVal[Double] = RGBVal(v.red / other,
-                                            v.green / other,
-                                            v.blue / other)*/
+                                             v.green / other,
+                                             v.blue / other)
+    def /(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] =
+                                RGBVal(v.red / other,
+                                       v.green / other,
+                                       v.blue / other)
   }
 
   implicit def RGBValToOps[T:Typ:Numeric:SepiaNum](v: RGBVal[T]): RGBValOps[T] = new RGBValOps(v)
+
+  implicit class RGBEnrichedDoubles(v: Rep[Double]) {
+    def makeRGBValOp[T:Typ:Numeric:SepiaNum](f: (Rep[Double], Rep[Double]) => Rep[Double])(rgb: RGBVal[T]): RGBVal[Double] = {
+      val sNum = implicitly[SepiaNum[T]]
+      RGBVal(f(v,sNum.T2Double(rgb.red)),
+             f(v, sNum.T2Double(rgb.green)),
+             f(v, sNum.T2Double(rgb.blue)))
+    }
+    def *[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+      makeRGBValOp[T](numeric_times)(rgb)
+    }
+
+    def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+      makeRGBValOp[T](numeric_divide)(rgb)
+    }
+
+    def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+      makeRGBValOp[T](numeric_minus)(rgb)
+    }
+
+    def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+      makeRGBValOp[T](numeric_plus)(rgb)
+    }
+  }
+
+  implicit class RGBEnrichedInts(v: Rep[Int]) {
+    def makeRGBValOp[T:Typ:Numeric:SepiaNum](f: (Rep[T], Rep[T]) => Rep[T])(rgb: RGBVal[T]): RGBVal[T] = {
+      val sNum = implicitly[SepiaNum[T]]
+      RGBVal(f(sNum.int2T(v),rgb.red),
+             f(sNum.int2T(v), rgb.green),
+             f(sNum.int2T(v), rgb.blue))
+    }
+    def *[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+      makeRGBValOp[T](numeric_times)(rgb)
+    }
+
+    def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+      makeRGBValOp[T](numeric_divide)(rgb)
+    }
+
+    def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+      makeRGBValOp[T](numeric_minus)(rgb)
+    }
+
+    def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+      makeRGBValOp[T](numeric_plus)(rgb)
+    }
+  }
 
   case class RGBVal[T:Typ:Numeric:SepiaNum](red: Rep[T], green: Rep[T], blue: Rep[T])
 
