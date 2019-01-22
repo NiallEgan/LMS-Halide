@@ -6,124 +6,127 @@ case object Sequential extends LoopType
 case object Unrolled extends LoopType
 // TODO: Vectorized, parallelized
 
-sealed trait ScheduleNode[Stage, Dimension] {
-	def findAndTransform(p: ScheduleNode[Stage, Dimension] => Boolean,
-											 f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension]
-	def findAndTransform(n: ScheduleNode[Stage, Dimension],
-											 f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension] = {
-			findAndTransform(n == _, f)
-		}
+trait Ast {
+	type Stage[_]
+	type Dimension
 
-	def mapChildren(f: ScheduleNode[Stage, Dimension] =>
-										 ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension]
+	sealed trait ScheduleNode {
+		def findAndTransform(p: ScheduleNode => Boolean,
+												  f: ScheduleNode => ScheduleNode): ScheduleNode
+		def findAndTransform(n: ScheduleNode,
+												    f: ScheduleNode => ScheduleNode): ScheduleNode = {
+				findAndTransform(n == _, f)
+			}
 
-	def withChildren(l: List[ScheduleNode[Stage, Dimension]]): ScheduleNode[Stage, Dimension]
-	def withChildren(l: ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension] = withChildren(List(l))
+		def mapChildren(f: ScheduleNode => ScheduleNode): ScheduleNode
 
-	def getChildren(): List[ScheduleNode[Stage, Dimension]]
+		def withChildren(l: List[ScheduleNode]): ScheduleNode
+		def withChildren(l: ScheduleNode): ScheduleNode = withChildren(List(l))
 
-	def exists(f: ScheduleNode[Stage, Dimension] => Boolean): Boolean
+		def getChildren(): List[ScheduleNode]
 
-	def belongsTo(s: Stage): Boolean
+		def exists(f: ScheduleNode => Boolean): Boolean
 
-}
-
-case class LoopNode[Stage, Dimension](variable: Dimension, stage: Stage,
-									  loopType: LoopType,
-					          children: List[ScheduleNode[Stage, Dimension]])
-  extends ScheduleNode[Stage, Dimension] {
-		override def findAndTransform(p: ScheduleNode[Stage, Dimension] => Boolean,
-																	f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension] = {
-			if (p(this)) f(this)
-			else this.mapChildren(_.findAndTransform(p, f))
-		}
-
-		override def mapChildren(f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]) = {
-			LoopNode(variable, stage, loopType, children.map(f))
-		}
-
-		override def withChildren(l: List[ScheduleNode[Stage, Dimension]]) =
-			LoopNode(variable, stage, loopType, l)
-
-		override def getChildren() = children
-
-		override def exists(f: ScheduleNode[Stage, Dimension] => Boolean) = {
-			f(this) || children.exists(_.exists(f))
-		}
-
-		override def belongsTo(s: Stage): Boolean = s == stage
+		def belongsTo[T](s: Stage[T]): Boolean
 
 	}
 
-case class ComputeNode[Stage, Dimension](stage: Stage, children: List[ScheduleNode[Stage, Dimension]])
-  extends ScheduleNode[Stage, Dimension] {
-		override def findAndTransform(p: ScheduleNode[Stage, Dimension] => Boolean,
-																	f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension] = {
-			if (p(this)) f(this)
-			else this.mapChildren(_.findAndTransform(p, f))
+	case class LoopNode[T](variable: Dimension, stage: Stage[T],
+										     loopType: LoopType,
+							           children: List[ScheduleNode])
+	  extends ScheduleNode {
+			override def findAndTransform(p: ScheduleNode => Boolean,
+																		f: ScheduleNode => ScheduleNode): ScheduleNode = {
+				if (p(this)) f(this)
+				else this.mapChildren(_.findAndTransform(p, f))
+			}
+
+			override def mapChildren(f: ScheduleNode => ScheduleNode) = {
+				LoopNode(variable, stage, loopType, children.map(f))
+			}
+
+			override def withChildren(l: List[ScheduleNode]) =
+				LoopNode(variable, stage, loopType, l)
+
+			override def getChildren() = children
+
+			override def exists(f: ScheduleNode => Boolean) = {
+				f(this) || children.exists(_.exists(f))
+			}
+
+			override def belongsTo[T](s: Stage[T]): Boolean = s == stage
+
 		}
 
-		override def mapChildren(f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]) = {
-			ComputeNode(stage, children.map(f))
-		}
+	case class ComputeNode[T](stage: Stage[T], children: List[ScheduleNode])
+	  extends ScheduleNode {
+			override def findAndTransform(p: ScheduleNode => Boolean,
+																		f: ScheduleNode => ScheduleNode): ScheduleNode = {
+				if (p(this)) f(this)
+				else this.mapChildren(_.findAndTransform(p, f))
+			}
 
-		override def withChildren(l: List[ScheduleNode[Stage, Dimension]]) =
-			ComputeNode(stage, l)
+			override def mapChildren(f: ScheduleNode => ScheduleNode) = {
+				ComputeNode(stage, children.map(f))
+			}
 
-		override def getChildren() = children
+			override def withChildren(l: List[ScheduleNode]) =
+				ComputeNode(stage, l)
 
-		override def exists(f: ScheduleNode[Stage, Dimension] => Boolean) = {
-			f(this) || children.exists(_.exists(f))
-		}
+			override def getChildren() = children
 
-		override def belongsTo(s: Stage): Boolean = s == stage
-}
+			override def exists(f: ScheduleNode => Boolean) = {
+				f(this) || children.exists(_.exists(f))
+			}
 
-case class RootNode[Stage, Dimension](children: List[ScheduleNode[Stage, Dimension]])
-  extends ScheduleNode[Stage, Dimension] {
-		override def findAndTransform(p: ScheduleNode[Stage, Dimension] => Boolean,
-																	f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension] = {
-			if (p(this)) f(this)
-			else this.mapChildren(_.findAndTransform(p, f))
-		}
-
-		override def mapChildren(f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]) = {
-			RootNode(children.map(f))
-		}
-
-		override def withChildren(l: List[ScheduleNode[Stage, Dimension]]) =
-			RootNode(l)
-
-		override def getChildren() = children
-
-		override def exists(f: ScheduleNode[Stage, Dimension] => Boolean) = {
-			f(this) || children.exists(_.exists(f))
-		}
-
-		override def belongsTo(s: Stage): Boolean = false
-}
-
-case class StorageNode[Stage, Dimension](stage: Stage,
-						                  					 children: List[ScheduleNode[Stage, Dimension]])
-  extends ScheduleNode[Stage, Dimension] {
-		override def findAndTransform(p: ScheduleNode[Stage, Dimension] => Boolean,
-																	f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]): ScheduleNode[Stage, Dimension] = {
-			if (p(this)) f(this)
-			else this.mapChildren(_.findAndTransform(p, f))
-		}
-
-		override def mapChildren(f: ScheduleNode[Stage, Dimension] => ScheduleNode[Stage, Dimension]) = {
-			StorageNode(stage, children.map(f))
-		}
-
-		override def withChildren(l: List[ScheduleNode[Stage, Dimension]]) =
-			StorageNode(stage, l)
-
-		override def getChildren() = children
-
-		override def exists(f: ScheduleNode[Stage, Dimension] => Boolean) = {
-			f(this) || children.exists(_.exists(f))
-		}
-
-		override def belongsTo(s: Stage): Boolean = s == stage
+			override def belongsTo[T](s: Stage[T]): Boolean = s == stage
 	}
+
+	case class RootNode(children: List[ScheduleNode])
+	  extends ScheduleNode {
+			override def findAndTransform(p: ScheduleNode => Boolean,
+																		f: ScheduleNode => ScheduleNode): ScheduleNode = {
+				if (p(this)) f(this)
+				else this.mapChildren(_.findAndTransform(p, f))
+			}
+
+			override def mapChildren(f: ScheduleNode => ScheduleNode) = {
+				RootNode(children.map(f))
+			}
+
+			override def withChildren(l: List[ScheduleNode]) =
+				RootNode(l)
+
+			override def getChildren() = children
+
+			override def exists(f: ScheduleNode => Boolean) = {
+				f(this) || children.exists(_.exists(f))
+			}
+
+			override def belongsTo[T](s: Stage[T]): Boolean = false
+	}
+
+	case class StorageNode[T](stage: Stage[T], children: List[ScheduleNode])
+	  extends ScheduleNode {
+			override def findAndTransform(p: ScheduleNode => Boolean,
+																		f: ScheduleNode => ScheduleNode): ScheduleNode = {
+				if (p(this)) f(this)
+				else this.mapChildren(_.findAndTransform(p, f))
+			}
+
+			override def mapChildren(f: ScheduleNode => ScheduleNode) = {
+				StorageNode(stage, children.map(f))
+			}
+
+			override def withChildren(l: List[ScheduleNode]) =
+				StorageNode(stage, l)
+
+			override def getChildren() = children
+
+			override def exists(f: ScheduleNode => Boolean) = {
+				f(this) || children.exists(_.exists(f))
+			}
+
+			override def belongsTo[T](s: Stage[T]): Boolean = s == stage
+		}
+}

@@ -1,21 +1,25 @@
 import sepia._
 
+abstract class TNode
+case class TRootNode(children: List[TNode]) extends TNode
+case class TComputeNode(func: String, children: List[TNode]) extends TNode
+case class TStorageNode(func: String, children: List[TNode]) extends TNode
+case class TLoopNode(variable: String, func: String, loopType: LoopType, children: List[TNode]) extends TNode
+
 trait TestAstOps extends AstOps {
 	this: CompilerFuncOps with TestPipeline with PipelineForCompiler =>
-
-	private def toString(node: ScheduleNode[Func, Dim]): ScheduleNode[String, String] = {
+	private def toString(node: ScheduleNode): TNode = {
 		node match {
-			case RootNode(children) =>
-				new RootNode[String, String](children.map(toString))
+			case RootNode(children) => TRootNode(children.map(toString))
 			case ComputeNode(func, children) =>
-				new ComputeNode[String, String](asString(func), children.map(toString))
+					TComputeNode(asString(func), children.map(toString))
 			case StorageNode(func, children) =>
-				new StorageNode[String, String](asString(func), children.map(toString))
+					TStorageNode(asString(func), children.map(toString))
 			case LoopNode(variable, func, loopType, children) =>
-				new LoopNode[String, String](variable.name, asString(func), loopType,
-											 children.map(toString))
+				 	TLoopNode(variable.name, asString(func), loopType,
+										children.map(toString))
 		}
 	}
 
-	def scheduleRep(): ScheduleNode[String, String] = toString(sched)
+	def scheduleRep(): TNode = toString(sched)
 }

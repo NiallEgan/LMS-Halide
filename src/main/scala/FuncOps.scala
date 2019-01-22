@@ -5,27 +5,27 @@ import lms.common._
 
 trait SimpleFuncOps extends Dsl {
   // The api that is presented to the DSL user
-  type Func
+  type Func[T]
   type Domain = ((Rep[Int], Rep[Int]), (Rep[Int], Rep[Int]))
 
-  class FuncOps(f: Func) {
+  class FuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) {
     def apply(x: Rep[Int], y: Rep[Int]) =
       funcApply(f, x, y)
   }
 
-  implicit def funcToFuncOps(f: Func) = new FuncOps(f)
+  implicit def funcToFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) = new FuncOps(f)
 
-  def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal
+  def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T]
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal,
-             dom: Domain, id: Int): Func
+  def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T],
+             dom: Domain, id: Int): Func[T]
 }
 
 trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   // The api that is presented to the DSL compiler
 
   class Dim(val min: Rep[Int], val max: Rep[Int],
-            val name: String, val f: Func) {
+            val name: String, val f: Func[_]) {
 		protected var value: Option[Rep[Int]] = None
     // Shading name is the name of the variable, except for
     // outer variables where it is the name of either x or y,
@@ -76,10 +76,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def adjustLower(x: Rep[Int]) = x
     def adjustUpper(x: Rep[Int]) = x
 
-    val pseudoLoops: Map[(Func, String), Dim] = Map((f, shadowingName) -> this)
+    val pseudoLoops: Map[(Func[_], String), Dim] = Map((f, shadowingName) -> this)
 	}
 
-  class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func,
+  class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
                  val outer: Dim, val inner: Dim, val splitFactor: Int) extends Dim(min, max, name, f) {
       override def v: Rep[Int] = {
         val clampedOuter: Rep[Int] =
@@ -97,7 +97,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       }
   }
 
-  class OuterDim(min: Rep[Int], max: Rep[Int], name: String, f: Func,
+  class OuterDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
                  sName: String, sRatio: Int) extends Dim(min, max, name, f) {
       // scale ratio is the ratio of this dimension to the original x or y
       override val scaleRatio = sRatio
@@ -112,7 +112,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       }
   }
 
-  class FusedDim(min: Rep[Int], max: Rep[Int], name: String, f: Func,
+  class FusedDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
                  val inner: Dim, val outer: Dim) extends Dim(min, max, name, f) {
     private def innerWidth = inner.loopub - inner.looplb
 
@@ -128,7 +128,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
 
 
-  class CompilerFunc(val f: (Rep[Int], Rep[Int]) => RGBVal,
+  class CompilerFunc[T:Typ:Numeric:SepiaNum](val f: (Rep[Int], Rep[Int]) => RGBVal[T],
                      dom: Domain, val id: Int) {
     def x = vars("x")
     def y = vars("y")
@@ -146,7 +146,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     def compute() = f(x.v, y.v)
 
-    def storeInBuffer(vs: RGBVal) = buffer match {
+    def storeInBuffer(vs: RGBVal[T]) = buffer match {
       case Some(b) => b(x.v - x.dimOffset, y.v - y.dimOffset) = vs
       case None => throw new InvalidSchedule(f"No buffer allocated at storage time for ")
     }
@@ -190,15 +190,19 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
   }
 
-  type Func = CompilerFunc
+  type Func[T] = CompilerFunc[T]
 
-  override def funcApply(f: Func, x: Rep[Int], y: Rep[Int]): RGBVal = {
+  override def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T] = {
+    val sepiaNum = implicitly[SepiaNum[T]]
     if (f.inlined) f.f(x, y)
-    else f.buffer
-         .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
+    else {
+        val r = f.buffer
+                .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
+        new RGBVal(sepiaNum.int2T(r.red), sepiaNum.int2T(r.green), sepiaNum.int2T(r.blue))
+    }
   }
 
-  def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain, id: Int): Func = {
+  def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain, id: Int): Func[T] = {
     new CompilerFunc(f, dom, id)
   }
 }

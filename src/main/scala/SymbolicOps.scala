@@ -22,8 +22,7 @@ trait SymbolicOpsExp extends SymbolicOps with PrimitiveOpsExpOpt {
     SymbolicArray()
 }
 
-trait SymbolicImageBufferOpsExp extends
-                             ImageBufferOps with SymbolicOpsExp {
+trait SymbolicImageBufferOpsExp extends ImageBufferOps with SymbolicOpsExp {
   def symbolicRGBVal(x: Exp[Int], y: Exp[Int]) = {
       RGBVal(new SymbolicArrayApplication("r", x, y),
              new SymbolicArrayApplication("g", x, y),
@@ -39,14 +38,14 @@ trait SymbolicFuncOpsExp extends SimpleFuncOps with SymbolicImageBufferOpsExp {
   // This trait produces nodes for function application.
   // It is used in the pre-interperation analysis of the
   // pipeline
-  type Func = (Rep[Int], Rep[Int]) => RGBVal
+  type Func[T] = (Rep[Int], Rep[Int]) => RGBVal[T]
 
-  override def mkFunc(f: (Rep[Int], Rep[Int]) => RGBVal,
+  override def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T],
                       dom: Domain, id: Int) = f
 
-  case class FuncApplication(f: Func, x: Exp[Int], y: Exp[Int]) extends Def[Int]
+  case class FuncApplication[T:Typ:Numeric:SepiaNum](f: Func[T], x: Exp[Int], y: Exp[Int]) extends Def[T]
 
-  override def funcApply(f: Func, x: Exp[Int], y: Exp[Int]) = {
+  override def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Exp[Int], y: Exp[Int]) = {
    RGBVal(FuncApplication(f, x, y), FuncApplication(f, x, y), FuncApplication(f, x, y))
   }
 }

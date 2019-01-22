@@ -1,29 +1,31 @@
 package sepia
 
-trait AstOps {
+trait AstOps extends Ast {
 	this: CompilerFuncOps =>
+	type Stage[T] = Func[T]
+	type Dimension = Dim
 
-	type Schedule = ScheduleNode[Func, Dim]
+	type Schedule = ScheduleNode
+	type N = ScheduleNode
 
-	private def simpleFuncTree(f: Func): ScheduleNode[Func, Dim] = {
-		val cn: ComputeNode[Func, Dim] = ComputeNode[Func, Dim](f, List())
-		val xLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](f.x, f,
+	private def simpleFuncTree[T:Typ:Numeric:SepiaNum](f: Func[T]): ScheduleNode = {
+		val cn: ComputeNode[T] = ComputeNode[T](f, List())
+		val xLoop: LoopNode[T] = LoopNode[T](f.x, f,
 											Sequential, List(cn))
-		val yLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](f.y, f,
-											Sequential, List(xLoop))
-	  StorageNode[Func, Dim](f, List(yLoop))
+		val yLoop: LoopNode[T] = LoopNode[T](f.y, f, Sequential, List(xLoop))
+	  StorageNode[T](f, List(yLoop))
 	}
 
-	def newSimpleSched(stage: Func): Schedule = {
+	def newSimpleSched[T:Typ:Numeric:SepiaNum](stage: Func[T]): Schedule = {
 		// A simple function for now that just returns
 		// a new tree for stage. This assumes that everything is inlined
 		// etc
 
-    new RootNode[Func, Dim](List(simpleFuncTree(stage)))
+    new RootNode(List(simpleFuncTree(stage)))
 	}
 
-	private def addChildren(t: ScheduleNode[Func, Dim],
-													children: List[ScheduleNode[Func, Dim]]) = t match {
+	private def addChildren(t: ScheduleNode,
+													children: List[ScheduleNode]) = t match {
 			case RootNode(otherChildren) => RootNode(otherChildren ++ children)
 			case ComputeNode(s, otherChildren) => ComputeNode(s, otherChildren ++ children)
 			case StorageNode(s, otherChildren) => StorageNode(s, otherChildren ++ children)
@@ -31,8 +33,7 @@ trait AstOps {
 
 	}
 
-	private def findLoopNodeFor(sched: ScheduleNode[Func, Dim],
-															computeAtVar: Dim): Option[ScheduleNode[Func, Dim]] = sched match {
+	private def findLoopNodeFor(sched: N, computeAtVar: Dim): Option[N] = sched match {
 		// Inserts fTree at the loop for y in sched
 		case RootNode(children) => {
 			listToOption(children.map(findLoopNodeFor(_, computeAtVar)))
@@ -51,9 +52,9 @@ trait AstOps {
 		}
 	}
 
-	private def addLeastSibling(child: ScheduleNode[Func, Dim],
-															parent: ScheduleNode[Func, Dim],
-														  sched: ScheduleNode[Func, Dim]): ScheduleNode[Func, Dim] = {
+	private def addLeastSibling(child: ScheduleNode,
+															parent: ScheduleNode,
+														  sched: ScheduleNode): ScheduleNode = {
 		def insert() = parent match {
 			case RootNode(children) => RootNode(child::children)
 			case ComputeNode(stage, children) => ComputeNode(stage, child::children)
@@ -74,7 +75,7 @@ trait AstOps {
 		}
 	}
 
-	private def nodeFor(f: Func, sched: ScheduleNode[Func, Dim]) = {
+	private def nodeFor(f: Func[_], sched: ScheduleNode) = {
 		sched match {
 			case RootNode(_) => false
 			case ComputeNode(stage, _) => stage == f
@@ -103,42 +104,43 @@ trait AstOps {
 		}
 	}
 
-	def listToOption[T](l: List[Option[T]]): Option[T] = l match {
+	def listToOption(l: List[Option[ScheduleNode]]): Option[ScheduleNode] = l match {
 		case Nil => None
 		case x::Nil => x
 		case _ => throw new InvalidSchedule("Too many matches")
 	}
 
-	private def isComputeNode(node: ScheduleNode[Func, Dim], consumer: Func) = node match {
+	private def isComputeNode(node: ScheduleNode, consumer: Func[_]) = node match {
 		case ComputeNode(f, _) if f == consumer => true
 		case _ => false
 	}
 
-	private def isStorageNodeFor(node: ScheduleNode[Func, Dim], f: Func) =
+	private def isStorageNodeFor(node: ScheduleNode, f: Func[_]) =
 		node match {
 			case StorageNode(fun, _) if f == fun => true
 			case _ => false
 		}
 
-	private def deInline(producer: Func, consumer: Func, sched: Schedule) = {
-		def findParentOfCnFor(consumer: Func, sched: Schedule): Option[ScheduleNode[Func, Dim]] =
+	private def deInline[T:Typ:Numeric:SepiaNum, U:Typ:Numeric:SepiaNum]
+											(producer: Func[T], consumer: Func[U], sched: Schedule) = {
+		def findParentOfCnFor(consumer: Func[U], sched: Schedule): Option[ScheduleNode] =
 			if (sched.getChildren.exists(isComputeNode(_, consumer))) Some(sched)
 			else listToOption(sched.getChildren.map(findParentOfCnFor(consumer, _)))
 
 		// Find the consumer cn in the Schedule (and its parent)
 		val parent = findParentOfCnFor(consumer, sched).getOrElse(throw new InvalidSchedule("Unable to locate consumer. Is it inlined?"))
 		assert(parent.belongsTo(consumer))
-		val cn: ComputeNode[Func, Dim] = ComputeNode[Func, Dim](producer, List())
-		val xLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](producer.x, producer,
+		val cn: ComputeNode[T] = ComputeNode(producer, List())
+		val xLoop: LoopNode[T] = LoopNode(producer.x, producer,
 											Sequential, List(cn))
-		val yLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](producer.y, producer,
+		val yLoop: LoopNode[T] = LoopNode(producer.y, producer,
 											Sequential, List(xLoop))
 		sched.findAndTransform(parent, (n: Schedule) =>
 			n.withChildren(StorageNode(producer, yLoop::n.getChildren))
 		)
 	}
 
-	def isolateProducer(producer: Func, sched: Schedule): Option[Schedule] = {
+	def isolateProducer[T:Typ:Numeric:SepiaNum](producer: Func[T], sched: Schedule): Option[Schedule] = {
 		// We find the first node s.t. there is a path of only producer nodes to the producer cn
 		def goesToCn(node: Schedule): Boolean = {
 			if (isComputeNode(node, producer)) true
@@ -152,24 +154,24 @@ trait AstOps {
 
 	}
 
-	def removeProducerSchedule(deInlinedSched: Schedule, producer: Func): (Schedule, Schedule) = {
-		val producerSchedule: Schedule = isolateProducer(producer, deInlinedSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $deInlinedSched"))
+	def removeProducerSchedule[T:Typ:Numeric:SepiaNum](deInlinedSched: N, producer: Func[T]): (Schedule, Schedule) = {
+		val producerSchedule: N = isolateProducer(producer, deInlinedSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $deInlinedSched"))
 
 		val notMovingChildren = producerSchedule.getChildren.filter(!_.belongsTo(producer))
 		val newProducerSchedule = producerSchedule.withChildren(
 			producerSchedule.getChildren.filter(_.belongsTo(producer)))
 		val schedLessProducer = deInlinedSched.findAndTransform(
-			(n: Schedule) => n.getChildren.exists(_ == producerSchedule),
-			(n: Schedule) => n.withChildren(notMovingChildren)
+			(n: N) => n.getChildren.exists(_ == producerSchedule),
+			(n: N) => n.withChildren(notMovingChildren)
 		)
 
 		(schedLessProducer, newProducerSchedule)
 	}
 
-	def insertComputeAtNode(schedLessProducer: Schedule,
-													producer: Func,
-													newProducerSchedule: ScheduleNode[Func, Dim],
-													newParent: ScheduleNode[Func, Dim]): Schedule = {
+	def insertComputeAtNode[T:Typ:Numeric:SepiaNum](schedLessProducer: Schedule,
+													producer: Func[T],
+													newProducerSchedule: ScheduleNode,
+													newParent: ScheduleNode): Schedule = {
 		if (isStorageNodeFor(newProducerSchedule, producer)) {
 			schedLessProducer.findAndTransform(newParent,
 				(n: Schedule) => newParent.withChildren(
@@ -182,17 +184,15 @@ trait AstOps {
 		else addLeastSibling(newProducerSchedule, newParent, schedLessProducer)
 	}
 
-	def computeAtRoot(sched: Schedule, producer: Func): Schedule = {
+	def computeAtRoot[T:Typ:Numeric:SepiaNum](sched: Schedule, producer: Func[T]): Schedule = {
 		producer.computeRoot = true
 		producer.storeRoot = true
 
 		val deInlinedSched = if (producer.inlined) {
 			producer.inlined = false
-			val cn: ComputeNode[Func, Dim] = ComputeNode[Func, Dim](producer, List())
-			val xLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](producer.x, producer,
-												Sequential, List(cn))
-			val yLoop: LoopNode[Func, Dim] = LoopNode[Func, Dim](producer.y, producer,
-												Sequential, List(xLoop))
+			val cn: ComputeNode[T] = ComputeNode(producer, List())
+			val xLoop: LoopNode[T] = LoopNode(producer.x, producer, Sequential, List(cn))
+			val yLoop: LoopNode[T] = LoopNode(producer.y, producer, Sequential, List(xLoop))
 			sched.withChildren(StorageNode(producer, yLoop::sched.getChildren))
 		} else sched
 
@@ -201,7 +201,7 @@ trait AstOps {
 		insertComputeAtNode(schedLessProducer, producer, newProducerSchedule, newParent)
 	}
 
-	def computefAtX(sched: Schedule, producer: Func, consumer: Func, s: String): Schedule = {
+	def computefAtX[T:Typ:Numeric:SepiaNum, U:Typ:Numeric:SepiaNum](sched: Schedule, producer: Func[T], consumer: Func[U], s: String): Schedule = {
 		// If f is inlined, create a new sched tree for it.
 		// Else, cut out the current f tree
 		// TODO: Producer consumer checks
@@ -224,7 +224,7 @@ trait AstOps {
 		insertComputeAtNode(schedLessProducer, producer, newProducerSchedule, newParent)
 	}
 
-	def cutOutNode(sched: Schedule, node: ScheduleNode[Func, Dim]): Schedule = {
+	def cutOutNode(sched: N, node: N): N = {
 		sched match {
 			case RootNode(children) => {
 				if(children.exists(_ == node)) {
@@ -253,16 +253,17 @@ trait AstOps {
 		}
 	}
 
-	def spliceInNewNode(nodeToInsert: ScheduleNode[Func, Dim],
-											newParent: ScheduleNode[Func, Dim],
-											oldParent: ScheduleNode[Func, Dim],
-											sched: Schedule) = {
+	def spliceInNewNode(nodeToInsert: ScheduleNode,
+											newParent: ScheduleNode,
+											oldParent: ScheduleNode,
+											sched: ScheduleNode) = {
 		sched.findAndTransform(newParent,
-			(n: ScheduleNode[Func, Dim]) => n.mapChildren(c => if (c == oldParent) nodeToInsert.withChildren(oldParent) else c)
+			(n: ScheduleNode) => n.mapChildren(c => if (c == oldParent) nodeToInsert.withChildren(oldParent) else c)
 		)
 	}
 
-	def storefAtX(sched: Schedule, producer: Func, consumer: Func, s: String): Schedule = {
+	def storefAtX[T:Typ:Numeric:SepiaNum, U:Typ:Numeric:SepiaNum](sched: N,
+							  producer: Func[T], consumer: Func[U], s: String): N = {
 		val storeAtDim: Dim = if (s == "x") consumer.x
 														else if (s == "y") consumer.y
 														else throw new InvalidSchedule(f"Invalid computeAt var $s")
@@ -273,15 +274,15 @@ trait AstOps {
 		storeAtNode(sched, producer, newParent)
 	}
 
-	def storeAtRoot(sched: Schedule, producer: Func): Schedule = {
+	def storeAtRoot[T:Typ:Numeric:SepiaNum](sched: N, producer: Func[T]): N = {
 		val newParent = sched
 		producer.storeRoot = true
 		storeAtNode(sched, producer, newParent)
 	}
 
-	def storeAtNode(sched: Schedule, producer: Func, newParent: Schedule) = {
-		def findStoreNode(sched: Schedule, producer: Func): Option[Schedule] = {
-			def r(children: List[Schedule]) = listToOption(children.map(findStoreNode(_, producer)).filter(_.isDefined))
+	def storeAtNode[T:Typ:Numeric:SepiaNum](sched: ScheduleNode, producer: Func[T], newParent: ScheduleNode) = {
+		def findStoreNode(sched: ScheduleNode, producer: Func[T]): Option[ScheduleNode] = {
+			def r(children: List[ScheduleNode]) = listToOption(children.map(findStoreNode(_, producer)).filter(_.isDefined))
 			sched match {
 				case RootNode(children) => r(children)
 				case ComputeNode(_, children) => r(children)
@@ -293,10 +294,10 @@ trait AstOps {
 			}
 		}
 
-		val storageNode = findStoreNode(sched, producer).getOrElse(StorageNode(producer, List()))
+		val storageNode: ScheduleNode = findStoreNode(sched, producer).getOrElse(StorageNode(producer, List()))
 		val oldChildren = newParent.getChildren
 		val oldParent = oldChildren.filter(_.exists(n => n == storageNode))(0)
-		spliceInNewNode(StorageNode(producer, List()),
+		spliceInNewNode(StorageNode[T](producer, List()),
 										cutOutNode(newParent, storageNode),
 										cutOutNode(oldParent, storageNode),
 										cutOutNode(sched, storageNode))

@@ -60,19 +60,23 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case ShortTimes(a, b)							=> f(List(a, b).map(m))
 			case ShortConvert(a)				  		=> f(List(a).map(m))
 			case IntConvert(a)				  	  	=> f(List(a).map(m))
+			case NumericDivide(a, b)					=> f(List(a, b).map(m))
+			case NumericPlus(a, b)					  => f(List(a, b).map(m))
+			case NumericTimes(a, b)           => f(List(a, b).map(m))
+			case NumericMinus(a, b)						=> f(List(a, b).map(m))
 
   }
 
-	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal, Int] = Map()
+	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
 	private var id = 0
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func = {
+	def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
 		funcsToId += (f -> id)
 		id += 1
 		mkFunc(f, dom, id)
 	}
 
-	override def toFuncSansDomain(f: (Rep[Int], Rep[Int]) => RGBVal): Func = {
+	override def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
 		toFunc(f, ((0, 0), (0, 0)))
 	}
 
@@ -117,7 +121,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		Map("x" -> xTransformation, "y" -> yTransformation)
 	}
 
-	def getInputTransformations(v: RGBVal): Map[Int, Map[String, Bound]] = {
+	def getInputTransformations(v: RGBVal[_]): Map[Int, Map[String, Bound]] = {
 		mergeBoundsMaps(getInputTransformations(v.red),
 										mergeBoundsMaps(getInputTransformations(v.blue),
 																		getInputTransformations(v.green)))
@@ -159,10 +163,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 				funcsToId(finalFunc.getOrElse(throw new InvalidAlgorithm("Error: No final func"))))
 	}
 
-	class UselessFuncOps(f: Func) extends FuncOps(f) {
+	class UselessFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) extends FuncOps(f) {
 		// Just convert sched ops to no-ops in the analysis phase
-		override def computeAt(consumer: Func, s: String): Unit = return
-		override def storeAt(consumer: Func, s: String): Unit = return
+		override def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String): Unit = return
+		override def storeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String): Unit = return
 		override def storeRoot(): Unit = return
 		override def computeRoot(): Unit = return
 		override def split(v: String, outer: String, inner: String, splitFactor: Int): Unit = return
@@ -174,5 +178,5 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
 	}
 
-	override implicit def toFuncOps(f: Func) = new UselessFuncOps(f)
+	override implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) = new UselessFuncOps(f)
 }
