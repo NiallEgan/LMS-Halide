@@ -62,12 +62,12 @@ class CompilerSpec extends FlatSpec {
 		val gradProgAnalysis = new GradProg with TestPipelineAnalysis
 
 	 	gradProg.compile(gradProgAnalysis.getBoundsGraph, "simple_grad")
-	 	val correctAst: ScheduleNode[String, String] =
-	 		new RootNode(List(
-	 			new StorageNode("f",List(
-	 				new LoopNode("y", "f", Sequential, List(
-	 					new LoopNode("x", "f", Sequential, List(
-	 						new ComputeNode("f", List())
+	 	val correctAst: TNode =
+	 		new TRootNode(List(
+	 			new TStorageNode("f",List(
+	 				new TLoopNode("y", "f", Sequential, List(
+	 					new TLoopNode("x", "f", Sequential, List(
+	 						new TComputeNode("f", List())
 	 					))
 	 				))
 	 			))
@@ -84,12 +84,12 @@ class CompilerSpec extends FlatSpec {
 		val gradProgAnalysis = new BlurredGradProg with TestPipelineAnalysis
 
 		gradProg.compile(gradProgAnalysis.getBoundsGraph, "blurred_grad")
-		val correctAst: ScheduleNode[String, String] =
-			new RootNode(List(
-				new StorageNode("g",List(
-					new LoopNode("y", "g", Sequential, List(
-						new LoopNode("x", "g", Sequential, List(
-							new ComputeNode("g", List())
+		val correctAst: TNode =
+			new TRootNode(List(
+				new TStorageNode("g",List(
+					new TLoopNode("y", "g", Sequential, List(
+						new TLoopNode("x", "g", Sequential, List(
+							new TComputeNode("g", List())
 						))
 					))
 				))
@@ -105,18 +105,18 @@ class CompilerSpec extends FlatSpec {
 		val gradProgAnalysis = new BlurredGradProgComputeAt with TestPipelineAnalysis
 		gradProg.compile(gradProgAnalysis.getBoundsGraph, "blurred_grad_compute_at")
 
-		val correctAst: ScheduleNode[String, String] =
-			new RootNode(List(
-				new StorageNode("g",List(
-					new LoopNode("y", "g", Sequential, List(
-						new StorageNode("f", List(
-							new LoopNode("y", "f", Sequential, List(
-								new LoopNode("x", "f", Sequential, List(
-									new ComputeNode("f", List())
+		val correctAst: TNode =
+			new TRootNode(List(
+				new TStorageNode("g",List(
+					new TLoopNode("y", "g", Sequential, List(
+						new TStorageNode("f", List(
+							new TLoopNode("y", "f", Sequential, List(
+								new TLoopNode("x", "f", Sequential, List(
+									new TComputeNode("f", List())
 								))
 							)),
-							new LoopNode("x", "g", Sequential, List(
-								new ComputeNode("g", List())
+							new TLoopNode("x", "g", Sequential, List(
+								new TComputeNode("g", List())
 							))
 						))
 					))
@@ -134,18 +134,18 @@ class CompilerSpec extends FlatSpec {
 		val gradProgAnalysis = new BlurredGradStoreRoot with TestPipelineAnalysis
 		gradProg.compile(gradProgAnalysis.getBoundsGraph, "blurred_grad_store_root")
 
-		val correctAst: ScheduleNode[String, String] =
-			new RootNode(List(
-				new StorageNode("f", List(
-					new StorageNode("g",List(
-						new LoopNode("y", "g", Sequential, List(
-							new LoopNode("y", "f", Sequential, List(
-								new LoopNode("x", "f", Sequential, List(
-									new ComputeNode("f", List())
+		val correctAst: TNode =
+			new TRootNode(List(
+				new TStorageNode("f", List(
+					new TStorageNode("g",List(
+						new TLoopNode("y", "g", Sequential, List(
+							new TLoopNode("y", "f", Sequential, List(
+								new TLoopNode("x", "f", Sequential, List(
+									new TComputeNode("f", List())
 								))
 							)),
-							new LoopNode("x", "g", Sequential, List(
-								new ComputeNode("g", List())
+							new TLoopNode("x", "g", Sequential, List(
+								new TComputeNode("g", List())
 							))
 						))
 					))
@@ -165,12 +165,12 @@ class CompilerSpec extends FlatSpec {
 
 		println("Three stage box blur:")
 		gradProg.compile(gradProgAnalysis.getBoundsGraph, "three_stage_box_blur")
-		val correctAst: ScheduleNode[String, String] =
-			new RootNode(List(
-				new StorageNode("i",List(
-					new LoopNode("y", "i", Sequential, List(
-						new LoopNode("x", "i", Sequential, List(
-							new ComputeNode("i", List())
+		val correctAst: TNode =
+			new TRootNode(List(
+				new TStorageNode("i",List(
+					new TLoopNode("y", "i", Sequential, List(
+						new TLoopNode("x", "i", Sequential, List(
+							new TComputeNode("i", List())
 						))
 					))
 				))
@@ -185,18 +185,18 @@ class CompilerSpec extends FlatSpec {
 		val blurProgAnalysis = new ThreeStageBoxBlurWithComputeAt with TestPipelineAnalysis
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "three_stage_box_blur_with_compute_at")
 
-		val correctAst: ScheduleNode[String, String] =
-			new RootNode(List(
-				new StorageNode("i",List(
-					new LoopNode("y", "i", Sequential, List(
-						new StorageNode("f", List(
-							new LoopNode("y", "f", Sequential, List(
-								new LoopNode("x", "f", Sequential, List(
-									new ComputeNode("f", List())
+		val correctAst: TNode =
+			new TRootNode(List(
+				new TStorageNode("i",List(
+					new TLoopNode("y", "i", Sequential, List(
+						new TStorageNode("f", List(
+							new TLoopNode("y", "f", Sequential, List(
+								new TLoopNode("x", "f", Sequential, List(
+									new TComputeNode("f", List())
 								))
 							)),
-							new LoopNode("x", "i", Sequential, List(
-								new ComputeNode("i", List())
+							new TLoopNode("x", "i", Sequential, List(
+								new TComputeNode("i", List())
 							))
 						))
 					))
@@ -211,17 +211,17 @@ class CompilerSpec extends FlatSpec {
 		val blurProg = new TwoStageBoxBlurStoreAt with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new TwoStageBoxBlurStoreAt with TestPipelineAnalysis
 
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("i", List(
-				new LoopNode("y", "i", Sequential, List(
-					new StorageNode("g", List(
-						new LoopNode("x", "i", Sequential, List(
-							new LoopNode("y", "g", Sequential, List(
-								new LoopNode("x", "g", Sequential, List(
-									new ComputeNode("g", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("y", "i", Sequential, List(
+					new TStorageNode("g", List(
+						new TLoopNode("x", "i", Sequential, List(
+							new TLoopNode("y", "g", Sequential, List(
+								new TLoopNode("x", "g", Sequential, List(
+									new TComputeNode("g", List())
 								))
 							)),
-							new ComputeNode("i", List())
+							new TComputeNode("i", List())
 						))
 					))
 				))
@@ -238,17 +238,17 @@ class CompilerSpec extends FlatSpec {
 		val blurProg = new TwoStageBoxBlurStoreAtReflected with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new TwoStageBoxBlurStoreAtReflected with TestPipelineAnalysis
 
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("i", List(
-				new LoopNode("y", "i", Sequential, List(
-					new StorageNode("g", List(
-						new LoopNode("x", "i", Sequential, List(
-							new LoopNode("y", "g", Sequential, List(
-								new LoopNode("x", "g", Sequential, List(
-									new ComputeNode("g", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("y", "i", Sequential, List(
+					new TStorageNode("g", List(
+						new TLoopNode("x", "i", Sequential, List(
+							new TLoopNode("y", "g", Sequential, List(
+								new TLoopNode("x", "g", Sequential, List(
+									new TComputeNode("g", List())
 								))
 							)),
-							new ComputeNode("i", List())
+							new TComputeNode("i", List())
 						))
 					))
 				))
@@ -266,17 +266,17 @@ class CompilerSpec extends FlatSpec {
 		val blurProg = new TwoStageBoxBlurComputeAtX with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new TwoStageBoxBlurComputeAtX with TestPipelineAnalysis
 
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("i", List(
-				new LoopNode("y", "i", Sequential, List(
-					new LoopNode("x", "i", Sequential, List(
-						new StorageNode("g", List(
-							new LoopNode("y", "g", Sequential, List(
-								new LoopNode("x", "g", Sequential, List(
-									new ComputeNode("g", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("y", "i", Sequential, List(
+					new TLoopNode("x", "i", Sequential, List(
+						new TStorageNode("g", List(
+							new TLoopNode("y", "g", Sequential, List(
+								new TLoopNode("x", "g", Sequential, List(
+									new TComputeNode("g", List())
 								))
 							)),
-							new ComputeNode("i", List())
+							new TComputeNode("i", List())
 						))
 					))
 				))
@@ -292,17 +292,17 @@ class CompilerSpec extends FlatSpec {
 		val blurProg = new TwoStageBoxBlurComputeRoot with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new TwoStageBoxBlurComputeRoot with TestPipelineAnalysis
 
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("g", List(
-				new LoopNode("y", "g", Sequential, List(
-					new LoopNode("x", "g", Sequential, List(
-						new ComputeNode("g", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("g", List(
+				new TLoopNode("y", "g", Sequential, List(
+					new TLoopNode("x", "g", Sequential, List(
+						new TComputeNode("g", List())
 					))
 				)),
-				new StorageNode("i", List(
-					new LoopNode("y", "i", Sequential, List(
-						new LoopNode("x", "i", Sequential, List(
-							new ComputeNode("i", List())
+				new TStorageNode("i", List(
+					new TLoopNode("y", "i", Sequential, List(
+						new TLoopNode("x", "i", Sequential, List(
+							new TComputeNode("i", List())
 						))
 					))
 				))
@@ -317,12 +317,12 @@ class CompilerSpec extends FlatSpec {
 		println("Grad x split: ")
 		val gradProg = new GradSplit with CompilerInstance with TestAstOps
 		val gradProgAnalysis = new GradSplit with TestPipelineAnalysis
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("f", List(
-				new LoopNode("y", "f", Sequential, List(
-					new LoopNode("x_outer", "f", Sequential, List(
-						new LoopNode("x_inner", "f", Sequential, List(
-							new ComputeNode("f", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("f", List(
+				new TLoopNode("y", "f", Sequential, List(
+					new TLoopNode("x_outer", "f", Sequential, List(
+						new TLoopNode("x_inner", "f", Sequential, List(
+							new TComputeNode("f", List())
 						))
 					))
 				))
@@ -337,13 +337,13 @@ class CompilerSpec extends FlatSpec {
 		println("Grad x and y split: ")
 		val gradProg = new DoubleGradSplit with CompilerInstance with TestAstOps
 		val gradProgAnalysis = new DoubleGradSplit with TestPipelineAnalysis
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("f", List(
-				new LoopNode("y_outer", "f", Sequential, List(
-					new LoopNode("y_inner", "f", Sequential, List(
-						new LoopNode("x_outer", "f", Sequential, List(
-							new LoopNode("x_inner", "f", Sequential, List(
-								new ComputeNode("f", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("f", List(
+				new TLoopNode("y_outer", "f", Sequential, List(
+					new TLoopNode("y_inner", "f", Sequential, List(
+						new TLoopNode("x_outer", "f", Sequential, List(
+							new TLoopNode("x_inner", "f", Sequential, List(
+								new TComputeNode("f", List())
 							))
 						))
 					))
@@ -359,19 +359,19 @@ class CompilerSpec extends FlatSpec {
 		println("Box blur split: ")
 		val gradProg = new TwoStageBoxBlurWithSplitVar with CompilerInstance with TestAstOps
 		val gradProgAnalysis = new TwoStageBoxBlurWithSplitVar with TestPipelineAnalysis
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("i", List(
-				new LoopNode("y", "i", Sequential, List(
-					new StorageNode("g", List(
-						new LoopNode("y_outer", "g", Sequential, List(
-							new LoopNode("y_inner", "g", Sequential, List(
-								new LoopNode("x", "g", Sequential, List(
-									new ComputeNode("g", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("y", "i", Sequential, List(
+					new TStorageNode("g", List(
+						new TLoopNode("y_outer", "g", Sequential, List(
+							new TLoopNode("y_inner", "g", Sequential, List(
+								new TLoopNode("x", "g", Sequential, List(
+									new TComputeNode("g", List())
 								))
 							))
 						)),
-						new LoopNode("x", "i", Sequential, List(
-							new ComputeNode("i", List())
+						new TLoopNode("x", "i", Sequential, List(
+							new TComputeNode("i", List())
 						))
 					))
 				))
@@ -386,19 +386,19 @@ class CompilerSpec extends FlatSpec {
 		println("Box blur split, store root: ")
 		val gradProg = new TwoStageBoxBlurStoreRootSplit with CompilerInstance with TestAstOps
 		val gradProgAnalysis = new TwoStageBoxBlurStoreRootSplit with TestPipelineAnalysis
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("f", List(
-				new StorageNode("g", List(
-					new LoopNode("y", "g", Sequential, List(
-						new LoopNode("y_outer", "f", Sequential, List(
-							new LoopNode("y_inner", "f", Sequential, List(
-								new LoopNode("x", "f", Sequential, List(
-									new ComputeNode("f", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("f", List(
+				new TStorageNode("g", List(
+					new TLoopNode("y", "g", Sequential, List(
+						new TLoopNode("y_outer", "f", Sequential, List(
+							new TLoopNode("y_inner", "f", Sequential, List(
+								new TLoopNode("x", "f", Sequential, List(
+									new TComputeNode("f", List())
 								))
 							))
 						)),
-						new LoopNode("x", "g", Sequential, List(
-							new ComputeNode("g", List())
+						new TLoopNode("x", "g", Sequential, List(
+							new TComputeNode("g", List())
 						))
 					))
 				))
@@ -415,11 +415,11 @@ class CompilerSpec extends FlatSpec {
 									 with TestAstOps
 		val blurProgAnalysis = new OneStageBoxBlurSplitLoopsReordered
 													 with TestPipelineAnalysis
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("i", List(
-				new LoopNode("x", "i", Sequential, List(
-					new LoopNode("y", "i", Sequential, List(
-						new ComputeNode("i", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("x", "i", Sequential, List(
+					new TLoopNode("y", "i", Sequential, List(
+						new TComputeNode("i", List())
 					))
 				))
 			))
@@ -435,13 +435,13 @@ class CompilerSpec extends FlatSpec {
 									 with TestAstOps
 		val blurProgAnalysis = new SimpleGradTiled
 													 with TestPipelineAnalysis
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("f", List(
-				new LoopNode("y_outer", "f", Sequential, List(
-					new LoopNode("x_outer", "f", Sequential, List(
-						new LoopNode("y_inner", "f", Sequential, List(
-							new LoopNode("x_inner", "f", Sequential, List(
-								new ComputeNode("f", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("f", List(
+				new TLoopNode("y_outer", "f", Sequential, List(
+					new TLoopNode("x_outer", "f", Sequential, List(
+						new TLoopNode("y_inner", "f", Sequential, List(
+							new TLoopNode("x_inner", "f", Sequential, List(
+								new TComputeNode("f", List())
 							))
 						))
 					))
@@ -459,10 +459,10 @@ class CompilerSpec extends FlatSpec {
 									 with TestAstOps
 		val blurProgAnalysis = new FusedBlur with TestPipelineAnalysis
 
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("i", List(
-				new LoopNode("xy", "i", Sequential, List(
-					new ComputeNode("i", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("xy", "i", Sequential, List(
+					new TComputeNode("i", List())
 				))
 			))
 		))
@@ -477,15 +477,15 @@ class CompilerSpec extends FlatSpec {
 									 with TestAstOps
 		val blurProgAnalysis = new TwoStageBlurInnerFused with TestPipelineAnalysis
 
-		val correctAst: ScheduleNode[String, String] = new RootNode(List(
-			new StorageNode("g", List(
-				new LoopNode("y", "g", Sequential, List(
-					new StorageNode("f", List(
-						new LoopNode("xy", "f", Sequential, List(
-							new ComputeNode("f", List())
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("g", List(
+				new TLoopNode("y", "g", Sequential, List(
+					new TStorageNode("f", List(
+						new TLoopNode("xy", "f", Sequential, List(
+							new TComputeNode("f", List())
 						)),
-						new LoopNode("x", "g", Sequential, List(
-							new ComputeNode("g", List())
+						new TLoopNode("x", "g", Sequential, List(
+							new TComputeNode("g", List())
 						))
 					))
 				))
@@ -519,6 +519,15 @@ class CompilerSpec extends FlatSpec {
 			new OneStageBoxBlur with CompilerInstance with TestAstOps
 		val blurProgAnalysis = new OneStageBoxBlur with TestPipelineAnalysis
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur")
+	}
+
+	"LowPassEdgeFilter" should "make a gaussian blur program" in {
+		println("one stage blur (simple)")
+
+		val blurProg =
+			new EdgeFilter with CompilerInstance with TestAstOps
+		val blurProgAnalysis = new EdgeFilter with TestPipelineAnalysis
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "edge_filter")
 	}
 
 	"Cropper" should "" in {

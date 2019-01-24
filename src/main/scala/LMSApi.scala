@@ -53,6 +53,8 @@ trait DslGenC extends CGenNumericOps
         }
         case MemCpy(src, dest, size) => stream.println(
           src"memcpy($dest, $src, $size);")
+        case IntToDoubleConversion(a) => emitValDef(sym, src"(double) $a")
+        case DoubleToIntConversion(a) => emitValDef(sym, src"(int32_t) $a")
         case _ => super.emitNode(sym, rhs)
       }
     }

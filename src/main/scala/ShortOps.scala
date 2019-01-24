@@ -15,8 +15,8 @@ trait ShortOps extends PrimitiveOps {
   def short_divide(a: Rep[Short], b: Rep[Short]): Rep[Short]
 
   def i2s(a: Rep[Int]): Rep[Short]
-
   def s2i(a: Rep[Short]): Rep[Int]
+  def d2s(a: Rep[Double]): Rep[Short]
 
   implicit def i2reps(i: Int) = unit(i.toShort)
 
@@ -30,6 +30,7 @@ trait ShortOpsExp extends ShortOps with BaseExp {
 
   case class ShortConvert(a: Exp[Int]) extends Def[Short]
   case class IntConvert(a: Exp[Short]) extends Def[Int]
+  case class DoubleToShortConversion(a: Exp[Double]) extends Def[Short]
 
 
   override def short_minus(a: Exp[Short], b: Exp[Short]) = ShortMinus(a, b)
@@ -39,6 +40,7 @@ trait ShortOpsExp extends ShortOps with BaseExp {
 
   override def i2s(a: Exp[Int]) = ShortConvert(a)
   override def s2i(a: Exp[Short]) = IntConvert(a)
+  override def d2s(a: Exp[Double]) = DoubleToShortConversion(a)
 
 }
 
@@ -74,7 +76,7 @@ trait ShortOpsExpOpt extends ShortOpsExp {
 
 trait CGenShortOps extends CGenBase {
   val IR: ShortOpsExp
-  import IR._
+  import IR._ 
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
     rhs match {
@@ -83,7 +85,8 @@ trait CGenShortOps extends CGenBase {
       case ShortMinus(a, b) => emitValDef(sym, src"$a - $b")
       case ShortDivide(a, b) => emitValDef(sym, src"$a / $b")
       case ShortConvert(a) => emitValDef(sym, src"$a")
-      case IntConvert(a) => emitValDef(sym, src"(int) $a") // This is unsafe. Is there a way round this?
+      case IntConvert(a) => emitValDef(sym, src"(int) $a") // unsafe...
+      case DoubleToShortConversion(a) => emitValDef(sym, src"(UCHAR) $a")
       case _ => super.emitNode(sym, rhs)
     }
   }

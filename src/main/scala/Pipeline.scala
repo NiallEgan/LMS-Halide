@@ -2,7 +2,7 @@ package sepia
 
 trait Pipeline extends SimpleFuncOps {
 	// The trait the user mixes in to create their program
-	var finalFunc: Option[Func] = None
+	var finalFunc: Option[Func[_]] = None
 
 	def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit]
 
@@ -11,24 +11,24 @@ trait Pipeline extends SimpleFuncOps {
 		prog(Buffer(w, h, in), w, h)
 	}
 
-	class FOps(f: (Rep[Int], Rep[Int]) => RGBVal) {
-		def withDomain(w: Rep[Int], h: Rep[Int]): Func = withNZDomain((0, w), (0, h))
-		def withNZDomain(bl: (Rep[Int], Rep[Int]), tr: (Rep[Int], Rep[Int])): Func = toFunc(f, (bl, tr))
+	class FOps[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]) {
+		def withDomain(w: Rep[Int], h: Rep[Int]): Func[T] = withNZDomain((0, w), (0, h))
+		def withNZDomain(bl: (Rep[Int], Rep[Int]), tr: (Rep[Int], Rep[Int])): Func[T] = toFunc(f, (bl, tr))
 	}
 
-	implicit def toFOps(f: (Rep[Int], Rep[Int]) => RGBVal): FOps = {
+	implicit def toFOps[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): FOps[T] = {
 		new FOps(f)
 	}
 
-	implicit def intFToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps = {
+	implicit def intFToFOps(f: (Rep[Int], Rep[Int]) => Rep[Int]): FOps[Int] = {
 		// This is for converting something like f(x, y) => x + y
 		new FOps((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y),
 																									f(x, y), f(x, y)))
 	}
 
-	abstract class FuncOps(f: Func) {
-		def computeAt(consumer: Func, v: String): Unit
-		def storeAt(consumer: Func, v: String): Unit
+	abstract class FuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) {
+		def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], v: String): Unit
+		def storeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], v: String): Unit
 		def split(v: String, outer: String, inner: String, splitFactor: Int): Unit
 		def fuse(v: String, outer: String, inner: String): Unit
 		def reorder(v1: String, v2: String): Unit
@@ -45,15 +45,15 @@ trait Pipeline extends SimpleFuncOps {
 		}
 	}
 
-	implicit def toFuncOps(f: Func): FuncOps
+	implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]): FuncOps[T]
 
-	implicit def toFuncSansDomain(f: (Rep[Int], Rep[Int]) => RGBVal): Func
+	implicit def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T]
 
-	implicit def itoFuncSansDomain(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func = {
+	implicit def itoFuncSansDomain(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func[Int] = {
 		toFuncSansDomain((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y), f(x, y), f(x, y)))
 	}
 
-	def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func
+	def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T]
 }
 
 trait PipelineForCompiler extends Pipeline
@@ -63,7 +63,7 @@ trait PipelineForCompiler extends Pipeline
 	// schedule manipulations, which can then be passed to a compiler
 	private var schedule: Option[Schedule] = None
 	private var id = 0
-	var idToFunc: Map[Int, Func] = Map()
+	var idToFunc: Map[Int, Func[_]] = Map()
 	var w: Rep[Int]
 	var h: Rep[Int]
 	var callGraph: CallGraph
@@ -92,25 +92,25 @@ trait PipelineForCompiler extends Pipeline
 		 getSingleVariableDomain(callGraph, fId, "y", h))
 	}
 
-	override def toFunc(f: (Rep[Int], Rep[Int]) => RGBVal, dom: Domain): Func = {
-		val func: Func = mkFunc(f, dom, id)
+	override def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
+		val func: Func[T] = mkFunc(f, dom, id)
 		idToFunc += id -> func
 		id += 1
 		schedule = Some(newSimpleSched(func))
 		func
 	}
 
-	implicit def toFuncSansDomain(f: (Rep[Int], Rep[Int]) => RGBVal): Func = {
+	implicit def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
 		toFunc(f, getDomain(id))
 	}
 
 
-	class FuncOpsImp(f: Func) extends FuncOps(f) {
-		override def computeAt(consumer: Func, s: String) = {
+	class FuncOpsImp[T:Typ:Numeric:SepiaNum](f: Func[T]) extends FuncOps(f) {
+		override def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String) = {
 			schedule = Some(computefAtX(sched, f, consumer, s))
 		}
 
-		override def storeAt(consumer: Func, s: String) = {
+		override def storeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String) = {
 			schedule = Some(storefAtX(sched, f, consumer, s))
 		}
 
@@ -153,7 +153,7 @@ trait PipelineForCompiler extends Pipeline
 		Buffer(finalBuffer.width, finalBuffer.height, out).memcpy(finalBuffer)
 	}
 
-	override implicit def toFuncOps(f: Func): FuncOps = new FuncOpsImp(f)
+	override implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]): FuncOps[T] = new FuncOpsImp(f)
 
 	def sched(): Schedule = schedule.getOrElse(throw new Exception("No schedule tree generated"))
 }

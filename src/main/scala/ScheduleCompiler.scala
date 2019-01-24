@@ -1,10 +1,10 @@
 package sepia
 
 
-trait ScheduleCompiler extends CompilerFuncOps {
-	def computeLoopBounds(variable: Dim, stage: Func,
+trait ScheduleCompiler extends CompilerFuncOps with AstOps {
+	def computeLoopBounds(variable: Dim, stage: Func[_],
 												boundsGraph: CallGraph,
-												enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
+												enclosingLoops: Map[(Func[_], String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (variable.isInstanceOf[FusedDim]) {
 			val fusedVariable = variable.asInstanceOf[FusedDim]
 			val innerBounds = computeSimpleLoopBounds(fusedVariable.inner, stage,
@@ -24,9 +24,9 @@ trait ScheduleCompiler extends CompilerFuncOps {
 		} else computeSimpleLoopBounds(variable, stage, boundsGraph, enclosingLoops)
 	}
 
-	def computeSimpleLoopBounds(variable: Dim, stage: Func,
+	def computeSimpleLoopBounds(variable: Dim, stage: Func[_],
 															boundsGraph: CallGraph,
-															enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
+															enclosingLoops: Map[(Func[_], String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
 		else if (stage.computeRoot) {
 			variable.looplb_=(variable.min)
@@ -60,9 +60,9 @@ trait ScheduleCompiler extends CompilerFuncOps {
 		}
 	}
 
-	def computeStorageBounds(stage: Func,
+	def computeStorageBounds(stage: Func[_],
 													 boundsGraph: CallGraph,
-												 	 enclosingLoops: Map[(Func, String), Dim]): (Rep[Int], Rep[Int]) = {
+												 	 enclosingLoops: Map[(Func[_], String), Dim]): (Rep[Int], Rep[Int]) = {
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no storage")
 		else if (stage.storeRoot) (stage.domWidth, stage.domHeight)
 		else {
@@ -89,22 +89,22 @@ trait ScheduleCompiler extends CompilerFuncOps {
 		}
 	}
 
-	def red(children: List[ScheduleNode[Func, Dim]],
-					f: ScheduleNode[Func, Dim] => Map[(Func, String), Dim]) = {
-		children.map(f(_)).foldLeft(Map[(Func, String), Dim]())(_ ++ _)
+	def red(children: List[ScheduleNode],
+					f: ScheduleNode => Map[(Func[_], String), Dim]) = {
+		children.map(f(_)).foldLeft(Map[(Func[_], String), Dim]())(_ ++ _)
 	}
 
-	def getLoopsAfterSN(stage: Func, completeTree: ScheduleNode[Func, Dim]): Map[(Func, String), Dim] = {
+	def getLoopsAfterSN(stage: Func[_], completeTree: ScheduleNode): Map[(Func[_], String), Dim] = {
 		// Collect all of the loop nodes on the path from the storage node for f to its compute node
 
-		def cnIsChild(node: ScheduleNode[Func, Dim]): Boolean = {
-			node.exists((n: ScheduleNode[Func, Dim]) => n match {
+		def cnIsChild(node: ScheduleNode): Boolean = {
+			node.exists((n: ScheduleNode) => n match {
 				case ComputeNode(_, _) => n.belongsTo(stage)
 				case _ => false
 			})
 		}
 
-		def collectLoops(node: ScheduleNode[Func, Dim]): Map[(Func, String), Dim] = node match {
+		def collectLoops(node: ScheduleNode): Map[(Func[_], String), Dim] = node match {
 			case LoopNode(v, stage, _, children) => {
 				if (cnIsChild(node)) red(children, collectLoops) + ((stage, v.name) -> v)
 				else Map()
@@ -127,13 +127,13 @@ trait ScheduleCompiler extends CompilerFuncOps {
 		}
 	}
 
-	def notPreviouslyComputed(stage: Func,
-												    completeTree: ScheduleNode[Func, Dim],
+	def notPreviouslyComputed(stage: Func[_],
+												    completeTree: ScheduleNode,
 											 	    boundsGraph: CallGraph,
-														enclosingLoops: Map[(Func, String), Dim]): Rep[Boolean] = {
+														enclosingLoops: Map[(Func[_], String), Dim]): Rep[Boolean] = {
 			if (stage.computeRoot) true
 			else {
-				val computeAtFunc: Func = stage.computeAt.getOrElse(throw new InvalidSchedule("non-inlined function has no compute at")).f
+				val computeAtFunc: Func[_] = stage.computeAt.getOrElse(throw new InvalidSchedule("non-inlined function has no compute at")).f
 				val relevantEnclosingLoops = getLoopsAfterSN(stage, completeTree).filterKeys(_._1 == computeAtFunc)
 
 				val relevantBounds: Map[String, Bound] =
@@ -162,8 +162,8 @@ trait ScheduleCompiler extends CompilerFuncOps {
 			 }
 	}
 
-	def getOffsets(enclosingLoops: Map[(Func, String), Dim],
-								 sn: ScheduleNode[Func, Dim],
+	def getOffsets(enclosingLoops: Map[(Func[_], String), Dim],
+								 sn: ScheduleNode,
 							 	 boundsGraph: CallGraph): List[(String, Rep[Int])] = {
 			sn match {
 				case StorageNode(f, _) => {
@@ -173,7 +173,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 					} else {
 						// if a loop node is above sn, offset = lb
 						// otherwise, offset = variable.min
-						def getAdjustment(consumer: Func, name: String) = {
+						def getAdjustment(consumer: Func[_], name: String) = {
 							val baseVar = enclosingLoops((consumer, name))
 							val bound = BoundsAnalysis
 									 .boundsForProdInCon(boundsGraph, f.id, consumer.id, name)
@@ -190,10 +190,10 @@ trait ScheduleCompiler extends CompilerFuncOps {
 			}
 	}
 
-	def evalSched(node: ScheduleNode[Func, Dim],
+	def evalSched(node: ScheduleNode,
 								boundsGraph: CallGraph,
-								enclosingLoops: Map[(Func, String), Dim],
-							  completeTree: ScheduleNode[Func, Dim]): Rep[Unit] = node match {
+								enclosingLoops: Map[(Func[_], String), Dim],
+							  completeTree: ScheduleNode): Rep[Unit] = node match {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, enclosingLoops)
       loopType match {
@@ -215,8 +215,7 @@ trait ScheduleCompiler extends CompilerFuncOps {
 
     case ComputeNode(stage, children) => {
 			if (notPreviouslyComputed(stage, completeTree, boundsGraph, enclosingLoops)) {
-	      val v: RGBVal = stage.compute()
-	      stage.storeInBuffer(v)
+	      stage.storeInBuffer(stage.compute())
 			}
       for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
     }
