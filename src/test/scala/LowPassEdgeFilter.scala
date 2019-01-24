@@ -25,17 +25,18 @@ trait EdgeFilter extends TestPipeline {
          kernel(3) * (in(x, y-3) + in(x, y+3)))
 
     val blur_x: Func[Double] = (x: Rep[Int], y: Rep[Int]) =>
-       (kernel(0) * in(x, y) +
-        kernel(1) * (in(x-1, y) + in(x+1, y)) +
-        kernel(2) * (in(x-2, y) + in(x+2, y)) +
-        kernel(3) * (in(x-3, y) + in(x+3, y)))
+       (kernel(0) * blur_y(x, y) +
+        kernel(1) * (blur_y(x-1, y) + blur_y(x+1, y)) +
+        kernel(2) * (blur_y(x-2, y) + blur_y(x+2, y)) +
+        kernel(3) * (blur_y(x-3, y) + blur_y(x+3, y)))
 
     val edge_detection = simpleConvolution(
-      List(List(-1, -1, -1),
-           List(-1, 8, -1),
-           List(-1, -1, -1)),
+      List(List(0, 1, 0),
+           List(1, -4, 1),
+           List(0, 1, 0)),
       blur_x
     )
+    blur_x.computeRoot()
     edge_detection.realize()
   }
 }
