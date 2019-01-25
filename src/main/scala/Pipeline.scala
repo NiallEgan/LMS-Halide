@@ -6,7 +6,7 @@ trait Pipeline extends SimpleFuncOps {
 
 	def prog(in: Buffer, w: Rep[Int], h: Rep[Int]): Rep[Unit]
 
-	def compilerProg(in: Rep[Array[UShort]], out: Rep[Array[UShort]],
+	def compilerProg(in: Rep[Array[UChar]], out: Rep[Array[UChar]],
 										w: Rep[Int], h: Rep[Int]) = {
 		prog(Buffer(w, h, in), w, h)
 	}
@@ -148,7 +148,7 @@ trait PipelineForCompiler extends Pipeline
 
 	}
 
-	def assignOutArray(out: Rep[Array[UShort]]): Rep[Unit] = {
+	def assignOutArray(out: Rep[Array[UChar]]): Rep[Unit] = {
 		val finalBuffer: Buffer = finalFunc.getOrElse(throw new InvalidAlgorithm("No final function has been realized"))
 															.buffer.getOrElse(throw new InvalidSchedule("Final func has no storage allocated"))
 		Buffer(finalBuffer.width, finalBuffer.height, out).memcpy(finalBuffer)

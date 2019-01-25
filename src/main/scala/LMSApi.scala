@@ -3,6 +3,8 @@ package sepia
 import java.io.PrintWriter
 
 import scala.lms.common._
+import ch.ethz.acl.passera.unsigned._
+import ch.ethz.acl.intrinsics._
 
 trait Dsl extends PrimitiveOps with NumericOps
           with BooleanOps with LiftPrimitives
@@ -19,14 +21,22 @@ trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with RangeOpsExp with FractionalOpsExp
              with EqualExpBridgeOpt with ArrayOpsExpOpt
              with SeqOpsExp with ImageBufferOpsExp
-             with ShortOpsExpOpt with OrderingOpsExpOpt {}
+             with ShortOpsExpOpt with OrderingOpsExpOpt
+             with VectorOpsExp {
+   // todo: Move this to intrinsics?
+   implicit def anyTyp    : Typ[Any]    = manifestTyp
+   implicit def uByteTyp  : Typ[UByte]  = manifestTyp
+   implicit def uIntTyp   : Typ[UInt]   = manifestTyp
+   implicit def uLongTyp  : Typ[ULong]  = manifestTyp
+   implicit def uShortTyp : Typ[UShort] = manifestTyp
+}
 
 trait DslGenC extends CGenNumericOps
   with CGenPrimitiveOps with CGenBooleanOps
   with CGenIfThenElse with CGenEqual
   with CGenRangeOps with CGenFractionalOps
   with CGenShortOps with CGenArrayOps
-  with CGenOrderingOps  {
+  with CGenOrderingOps with CGenAVX {
     val IR: DslExp
     import IR._
 

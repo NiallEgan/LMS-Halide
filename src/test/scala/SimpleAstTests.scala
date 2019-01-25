@@ -32,7 +32,7 @@ trait CompilerInstance extends ScheduleCompiler
 	}
 
 	def ev(boundsGraph: CallGraph)
-				(in: Rep[Array[UShort]], out: Rep[Array[UShort]], width: Rep[Int], height: Rep[Int]) = {
+				(in: Rep[Array[UChar]], out: Rep[Array[UChar]], width: Rep[Int], height: Rep[Int]) = {
 		callGraph = boundsGraph
 		w = width
 		h = height

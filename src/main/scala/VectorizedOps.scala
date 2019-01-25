@@ -47,7 +47,7 @@ trait VectorOps extends IntrinsicsBaseOps {
   def vector_times_mm256d(a: Rep[__m256d], b: Rep[__m256d]): Rep[__m256d]
 
   def vector_divide_mm256(a: Rep[__m256], b: Rep[__m256]): Rep[__m256]
-  def vector_divide_mm256i(a: Rep[__m256i], b: Rep[__m256i]): Rep[__m256i]
+  //def vector_divide_mm256i(a: Rep[__m256i], b: Rep[__m256i]): Rep[__m256i]
   def vector_divide_mm256d(a: Rep[__m256d], b: Rep[__m256d]): Rep[__m256d]
 }
 
@@ -78,7 +78,7 @@ trait VectorOpsExp extends AVX2 with AVX with IntrinsicsArrays with VectorOps {
   override def vector_times_mm256(a: Exp[__m256], b: Exp[__m256]): Exp[__m256] = {
     _mm256_mul_ps(a, b)
   }
-  override def vector_times_mm256i(a: Exp[__m256i], b: Exp[__m256i]): Exp[__m256i]
+  override def vector_times_mm256i(a: Exp[__m256i], b: Exp[__m256i]): Exp[__m256i] = ???
   override def vector_times_mm256d(a: Exp[__m256d], b: Exp[__m256d]): Exp[__m256d] = {
     _mm256_mul_pd(a, b)
   }
@@ -113,7 +113,6 @@ trait VectorOpsExp extends AVX2 with AVX with IntrinsicsArrays with VectorOps {
 
   override def vector_load_mm256(a: Exp[Array[Float]], offset: Exp[Int]): Exp[__m256] = {
     _mm256_load_ps(a, offset)
-
   }
 
   def castTo_mm256i(a: Exp[Array[Int]]): Exp[Array[__m256i]] = IntsTomm256i(a)
@@ -124,5 +123,4 @@ trait VectorOpsExp extends AVX2 with AVX with IntrinsicsArrays with VectorOps {
   override def vector_load_mm256d(a: Exp[Array[Double]], offset: Exp[Int]): Exp[__m256d] = {
     _mm256_load_pd(a, offset)
   }
-
 }
