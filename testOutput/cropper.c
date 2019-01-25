@@ -7,7 +7,7 @@ int32_t x5 = x3 - 1;
 int32_t x7 = x5 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
-UCHAR x10[x9];
+UCHAR *x10 = malloc(sizeof(UCHAR) * x9);
 for(int x12=1; x12 < x5; x12++) {
 int32_t x27 = x12 - 1;
 int32_t x28 = x6 * x27;
@@ -39,6 +39,7 @@ x10[x30] = x37;
 
 }
 memcpy(x1, x10, x9);
+free(x10);
 }
 int32_t WIDTH_OUT_DIFF = 0;
 int32_t HEIGHT_OUT_DIFF = 0;

@@ -117,6 +117,7 @@ trait PipelineForCompiler extends Pipeline
 		override def realize(): Unit = {
 			finalFunc = Some(f)
 			f.inlined = false
+			f.finalFunc = true
 			f.computeRoot = true
 			f.storeRoot = true
 		}
@@ -151,6 +152,7 @@ trait PipelineForCompiler extends Pipeline
 		val finalBuffer: Buffer = finalFunc.getOrElse(throw new InvalidAlgorithm("No final function has been realized"))
 															.buffer.getOrElse(throw new InvalidSchedule("Final func has no storage allocated"))
 		Buffer(finalBuffer.width, finalBuffer.height, out).memcpy(finalBuffer)
+		finalBuffer.free()
 	}
 
 	override implicit def toFuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]): FuncOps[T] = new FuncOpsImp(f)

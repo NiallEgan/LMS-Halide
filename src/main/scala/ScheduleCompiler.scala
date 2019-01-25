@@ -226,6 +226,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 			val offsets = getOffsets(enclosingLoops, node, boundsGraph)
 			stage.setOffsets(offsets)
    	 	for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
+			stage.deallocBuffer()
  	  }
 
     case RootNode(children) => {

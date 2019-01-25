@@ -9,11 +9,11 @@ int32_t x7 = MIN(x6, x3);
 int32_t x9 = x7 - 1;
 int32_t x10 = x8 * x9;
 int32_t x11 = x10 * 3;
-UCHAR x12[x11];
+UCHAR *x12 = malloc(sizeof(UCHAR) * x11);
 int32_t x15 = x2 * 3;
 int32_t x16 = x15 * 3;
 for(int x14=1; x14 < x7; x14++) {
-UCHAR x17[x16];
+UCHAR *x17 = malloc(sizeof(UCHAR) * x16);
 int32_t x18 = x14 + -1;
 int32_t x19 = x14 + 1;
 int32_t x20 = x19 + 1;
@@ -174,9 +174,11 @@ UCHAR x177 = x167;
 x12[x170] = x177;
 
 }
+free(x17);
 
 }
 memcpy(x1, x12, x11);
+free(x12);
 }
 int32_t WIDTH_OUT_DIFF = 0;
 int32_t HEIGHT_OUT_DIFF = 0;

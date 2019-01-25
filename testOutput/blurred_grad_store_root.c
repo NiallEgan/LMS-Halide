@@ -3,14 +3,14 @@
 void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
 int32_t x8 = x2 * x3;
 int32_t x9 = x8 * 3;
-UCHAR x10[x9];
+UCHAR *x10 = malloc(sizeof(UCHAR) * x9);
 int32_t x4 = x2 - 1;
 int32_t x5 = MIN(x4, x2);
 int32_t x6 = x3 - 1;
 int32_t x7 = MIN(x6, x3);
 int32_t x11 = x5 * x7;
 int32_t x12 = x11 * 3;
-UCHAR x13[x12];
+UCHAR *x13 = malloc(sizeof(UCHAR) * x12);
 for(int x15=0; x15 < x7; x15++) {
 int32_t x16 = x15 + 1;
 int32_t x17 = x16 + 1;
@@ -107,7 +107,9 @@ x13[x100] = x107;
 }
 
 }
+free(x10);
 memcpy(x1, x13, x12);
+free(x13);
 }
 int32_t WIDTH_OUT_DIFF = 0;
 int32_t HEIGHT_OUT_DIFF = 0;

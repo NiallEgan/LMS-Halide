@@ -7,10 +7,10 @@ int32_t x4 = x3 - 1;
 int32_t x7 = x4 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
-UCHAR x10[x9];
+UCHAR *x10 = malloc(sizeof(UCHAR) * x9);
 int32_t x13 = x2 * 3;
 for(int x12=1; x12 < x4; x12++) {
-UCHAR x14[x13];
+UCHAR *x14 = malloc(sizeof(UCHAR) * x13);
 int32_t x17 = x12 + 1;
 int32_t x127 = x12 - 1;
 int32_t x128 = x6 * x127;
@@ -135,9 +135,11 @@ UCHAR x137 = x126;
 x10[x130] = x137;
 
 }
+free(x14);
 
 }
 memcpy(x1, x10, x9);
+free(x10);
 }
 int32_t WIDTH_OUT_DIFF = 2;
 int32_t HEIGHT_OUT_DIFF = 2;
