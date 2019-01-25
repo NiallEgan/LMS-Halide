@@ -125,13 +125,11 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     override val pseudoLoops = inner.pseudoLoops ++ outer.pseudoLoops
   }
 
-
-
-
   class CompilerFunc[T:Typ:Numeric:SepiaNum](val f: (Rep[Int], Rep[Int]) => RGBVal[T],
                      dom: Domain, val id: Int) {
     def x = vars("x")
     def y = vars("y")
+    var finalFunc: Boolean = false
 
     val domain = Map("x" -> dom._1, "y" -> dom._2)
 
@@ -157,6 +155,11 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     def allocateNewBuffer() {
       buffer = Some(NewBuffer(x.max - x.min, y.max - y.min))
+    }
+
+    def deallocBuffer() {
+      if (!finalFunc) buffer.getOrElse(throw new Exception("Error: Trying to free unalloced buffer")).free()
+      else ()
     }
 
     def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {

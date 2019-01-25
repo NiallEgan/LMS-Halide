@@ -49,8 +49,11 @@ trait DslGenC extends CGenNumericOps
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
         case a@ArrayNew(m) => {
           val arrType = remap(a.m)
-          stream.println(f"$arrType ${quote(sym)}[${quote(m)}];")
+          //stream.println(f"$arrType ${quote(sym)}[${quote(m)}];")
+          stream.println(f"$arrType *${quote(sym)} = malloc(sizeof($arrType) * ${quote(m)});")
+          //emitValDef(sym, f"")
         }
+        case ArrayFree(a) => stream.println(src"free($a);")
         case MemCpy(src, dest, size) => stream.println(
           src"memcpy($dest, $src, $size);")
         case IntToDoubleConversion(a) => emitValDef(sym, src"(double) $a")
