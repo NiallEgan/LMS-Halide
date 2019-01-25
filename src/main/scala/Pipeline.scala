@@ -11,12 +11,12 @@ trait Pipeline extends SimpleFuncOps {
 		prog(Buffer(w, h, in), w, h)
 	}
 
-	class FOps[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]) {
+	class FOps[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T]) {
 		def withDomain(w: Rep[Int], h: Rep[Int]): Func[T] = withNZDomain((0, w), (0, h))
 		def withNZDomain(bl: (Rep[Int], Rep[Int]), tr: (Rep[Int], Rep[Int])): Func[T] = toFunc(f, (bl, tr))
 	}
 
-	implicit def toFOps[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): FOps[T] = {
+	implicit def toFOps[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T]): FOps[T] = {
 		new FOps(f)
 	}
 
@@ -26,9 +26,9 @@ trait Pipeline extends SimpleFuncOps {
 																									f(x, y), f(x, y)))
 	}
 
-	abstract class FuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) {
-		def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], v: String): Unit
-		def storeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], v: String): Unit
+	abstract class FuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]) {
+		def computeAt[U:Typ:Numeric:ScalarConvertable](consumer: Func[U], v: String): Unit
+		def storeAt[U:Typ:Numeric:ScalarConvertable](consumer: Func[U], v: String): Unit
 		def split(v: String, outer: String, inner: String, splitFactor: Int): Unit
 		def fuse(v: String, outer: String, inner: String): Unit
 		def reorder(v1: String, v2: String): Unit
@@ -45,15 +45,15 @@ trait Pipeline extends SimpleFuncOps {
 		}
 	}
 
-	implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]): FuncOps[T]
+	implicit def toFuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]): FuncOps[T]
 
-	implicit def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T]
+	implicit def toFuncSansDomain[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T]
 
 	implicit def itoFuncSansDomain(f: (Rep[Int], Rep[Int]) => Rep[Int]): Func[Int] = {
 		toFuncSansDomain((x: Rep[Int], y: Rep[Int]) => RGBVal(f(x, y), f(x, y), f(x, y)))
 	}
 
-	def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T]
+	def toFunc[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T]
 }
 
 trait PipelineForCompiler extends Pipeline
@@ -92,7 +92,7 @@ trait PipelineForCompiler extends Pipeline
 		 getSingleVariableDomain(callGraph, fId, "y", h))
 	}
 
-	override def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
+	override def toFunc[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
 		val func: Func[T] = mkFunc(f, dom, id)
 		idToFunc += id -> func
 		id += 1
@@ -100,17 +100,17 @@ trait PipelineForCompiler extends Pipeline
 		func
 	}
 
-	implicit def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
+	implicit def toFuncSansDomain[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
 		toFunc(f, getDomain(id))
 	}
 
 
-	class FuncOpsImp[T:Typ:Numeric:SepiaNum](f: Func[T]) extends FuncOps(f) {
-		override def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String) = {
+	class FuncOpsImp[T:Typ:Numeric:ScalarConvertable](f: Func[T]) extends FuncOps(f) {
+		override def computeAt[U:Typ:Numeric:ScalarConvertable](consumer: Func[U], s: String) = {
 			schedule = Some(computefAtX(sched, f, consumer, s))
 		}
 
-		override def storeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String) = {
+		override def storeAt[U:Typ:Numeric:ScalarConvertable](consumer: Func[U], s: String) = {
 			schedule = Some(storefAtX(sched, f, consumer, s))
 		}
 
@@ -153,7 +153,7 @@ trait PipelineForCompiler extends Pipeline
 		Buffer(finalBuffer.width, finalBuffer.height, out).memcpy(finalBuffer)
 	}
 
-	override implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]): FuncOps[T] = new FuncOpsImp(f)
+	override implicit def toFuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]): FuncOps[T] = new FuncOpsImp(f)
 
 	def sched(): Schedule = schedule.getOrElse(throw new Exception("No schedule tree generated"))
 }

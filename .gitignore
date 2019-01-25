@@ -1,6 +1,6 @@
 *.class
 *.log
-project/
+project/target/
 target/
 *.BMP
 *.out

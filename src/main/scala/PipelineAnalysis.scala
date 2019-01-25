@@ -72,13 +72,13 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
 	private var id = 0
 
-	def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
+	def toFunc[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
 		funcsToId += (f -> id)
 		id += 1
 		mkFunc(f, dom, id)
 	}
 
-	override def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
+	override def toFuncSansDomain[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
 		toFunc(f, ((0, 0), (0, 0)))
 	}
 
@@ -165,10 +165,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 				funcsToId(finalFunc.getOrElse(throw new InvalidAlgorithm("Error: No final func"))))
 	}
 
-	class UselessFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) extends FuncOps(f) {
+	class UselessFuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]) extends FuncOps(f) {
 		// Just convert sched ops to no-ops in the analysis phase
-		override def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String): Unit = return
-		override def storeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String): Unit = return
+		override def computeAt[U:Typ:Numeric:ScalarConvertable](consumer: Func[U], s: String): Unit = return
+		override def storeAt[U:Typ:Numeric:ScalarConvertable](consumer: Func[U], s: String): Unit = return
 		override def storeRoot(): Unit = return
 		override def computeRoot(): Unit = return
 		override def split(v: String, outer: String, inner: String, splitFactor: Int): Unit = return
@@ -180,5 +180,5 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
 	}
 
-	override implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) = new UselessFuncOps(f)
+	override implicit def toFuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]) = new UselessFuncOps(f)
 }

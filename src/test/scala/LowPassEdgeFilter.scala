@@ -2,7 +2,7 @@ import sepia._
 import scala.math._
 
 trait EdgeFilter extends TestPipeline {
-  def simpleConvolution[T:Typ:Numeric:SepiaNum](k: List[List[Rep[Int]]],
+  def simpleConvolution[T:Typ:Numeric:ScalarConvertable](k: List[List[Rep[Int]]],
                         input: Func[T]): Func[T] = {
     (x: Rep[Int], y: Rep[Int]) => {
       k(0)(0) * input(x-1, y-1) + k(0)(1) * input(x, y-1) + k(0)(2) * input(x+1, y-1) +

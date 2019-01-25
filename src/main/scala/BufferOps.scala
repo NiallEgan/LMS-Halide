@@ -6,11 +6,31 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
                      with ShortOps with NumericOps {
   type UShort = Short
 
-  trait SepiaNum[T] {
+  trait ScalarConvertable[T] {
     implicit def int2T(v: Rep[Int]): Rep[T]
     implicit def T2Double(v: Rep[T]): Rep[Double]
     implicit def T2short(v: Rep[T]): Rep[Short]
   }
+
+  trait CNumeric[T] {
+    def plus(a: Rep[T], b: Rep[T]): Rep[T]
+    def times(a: Rep[T], b: Rep[T]): Rep[T]
+    def divide(a: Rep[T], b: Rep[T]): Rep[T]
+    def minus(a: Rep[T], b: Rep[T]): Rep[T]
+  }
+
+  def makeCNumeric[T:Numeric:Typ]: CNumeric[T] = {
+    new CNumeric[T] {
+      override def plus(a: Rep[T], b: Rep[T]) =  numeric_plus(a, b)
+      override def times(a: Rep[T], b: Rep[T]) = numeric_times(a, b)
+      override def divide(a: Rep[T], b: Rep[T]) = numeric_divide(a, b)
+      override def minus(a: Rep[T], b: Rep[T]) = numeric_minus(a, b)
+    }
+  }
+
+  //val __mm128Numeric = new CNumeric[__mm128] {
+
+  //}
 
   def int2double(v: Rep[Int]): Rep[Double]
   def double2int(v: Rep[Double]): Rep[Int]
@@ -18,19 +38,19 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
   def int2short(v: Rep[Int]): Rep[Short]
 
 
-  class SepiaNumDouble extends SepiaNum[Double] {
+  class ScalarConvertableDouble extends ScalarConvertable[Double] {
     override def int2T(v: Rep[Int]): Rep[Double] = int2double(v)
     override def T2Double(v: Rep[Double]): Rep[Double] = v
     override def T2short(v: Rep[Double]): Rep[Short] = double2short(v)
   }
-  class SepiaNumInt extends SepiaNum[Int] {
+  class ScalarConvertableInt extends ScalarConvertable[Int] {
     override def int2T(v: Rep[Int]): Rep[Int] = v
     override def T2Double(v: Rep[Int]): Rep[Double] = int2double(v)
     override def T2short(v: Rep[Int]): Rep[Short] = int2short(v)
 
   }
-  implicit val sepiaNumDouble = new SepiaNumDouble()
-  implicit val sepiaNumInt = new SepiaNumInt()
+  implicit val scalarConvertableDouble = new ScalarConvertableDouble()
+  implicit val scalarConvertableInt = new ScalarConvertableInt()
 
 
   case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UShort]]) {
@@ -38,9 +58,9 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
       bufferApply(this, x, y)
   }
 
-  class RGBValOps[T:Numeric:Typ:SepiaNum](v: RGBVal[T]) {
-    val sepiaNum = implicitly[SepiaNum[T]]
-    import sepiaNum._
+  class RGBValOps[T:Numeric:Typ:ScalarConvertable](v: RGBVal[T]) {
+    val scalarConvertable = implicitly[ScalarConvertable[T]]
+    import scalarConvertable._
     def +(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red + other.red,
                                           v.green + other.green,
                                           v.blue + other.blue)
@@ -85,57 +105,57 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
                                        v.blue / other)
   }
 
-  implicit def RGBValToOps[T:Typ:Numeric:SepiaNum](v: RGBVal[T]): RGBValOps[T] = new RGBValOps(v)
+  implicit def RGBValToOps[T:Typ:Numeric:ScalarConvertable](v: RGBVal[T]): RGBValOps[T] = new RGBValOps(v)
 
   implicit class RGBEnrichedDoubles(v: Rep[Double]) {
-    def makeRGBValOp[T:Typ:Numeric:SepiaNum](f: (Rep[Double], Rep[Double]) => Rep[Double])(rgb: RGBVal[T]): RGBVal[Double] = {
-      val sNum = implicitly[SepiaNum[T]]
+    def makeRGBValOp[T:Typ:Numeric:ScalarConvertable](f: (Rep[Double], Rep[Double]) => Rep[Double])(rgb: RGBVal[T]): RGBVal[Double] = {
+      val sNum = implicitly[ScalarConvertable[T]]
       RGBVal(f(v,sNum.T2Double(rgb.red)),
              f(v, sNum.T2Double(rgb.green)),
              f(v, sNum.T2Double(rgb.blue)))
     }
-    def *[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+    def *[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[Double] = {
       makeRGBValOp[T](numeric_times)(rgb)
     }
 
-    def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+    def /[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[Double] = {
       makeRGBValOp[T](numeric_divide)(rgb)
     }
 
-    def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+    def -[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[Double] = {
       makeRGBValOp[T](numeric_minus)(rgb)
     }
 
-    def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
+    def +[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[Double] = {
       makeRGBValOp[T](numeric_plus)(rgb)
     }
   }
 
   implicit class RGBEnrichedInts(v: Rep[Int]) {
-    def makeRGBValOp[T:Typ:Numeric:SepiaNum](f: (Rep[T], Rep[T]) => Rep[T])(rgb: RGBVal[T]): RGBVal[T] = {
-      val sNum = implicitly[SepiaNum[T]]
+    def makeRGBValOp[T:Typ:Numeric:ScalarConvertable](f: (Rep[T], Rep[T]) => Rep[T])(rgb: RGBVal[T]): RGBVal[T] = {
+      val sNum = implicitly[ScalarConvertable[T]]
       RGBVal(f(sNum.int2T(v),rgb.red),
              f(sNum.int2T(v), rgb.green),
              f(sNum.int2T(v), rgb.blue))
     }
-    def *[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+    def *[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[T] = {
       makeRGBValOp[T](numeric_times)(rgb)
     }
 
-    def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+    def /[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[T] = {
       makeRGBValOp[T](numeric_divide)(rgb)
     }
 
-    def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+    def -[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[T] = {
       makeRGBValOp[T](numeric_minus)(rgb)
     }
 
-    def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
+    def +[T:Typ:Numeric:ScalarConvertable](rgb: RGBVal[T]): RGBVal[T] = {
       makeRGBValOp[T](numeric_plus)(rgb)
     }
   }
 
-  case class RGBVal[T:Typ:Numeric:SepiaNum](red: Rep[T], green: Rep[T], blue: Rep[T])
+  case class RGBVal[T:Typ:Numeric:ScalarConvertable](red: Rep[T], green: Rep[T], blue: Rep[T])
 
   def bufferApply(b: Buffer, x: Rep[Int], y: Rep[Int]): RGBVal[Int]
 }
@@ -148,12 +168,12 @@ trait CompilerImageOps extends ImageBufferOps {
   implicit def bufferToBufferOps(b: Buffer): BufferOps = new BufferOps(b)
 
   class BufferOps(b: Buffer) {
-    def update[T:Typ:Numeric:SepiaNum](x: Rep[Int], y: Rep[Int], v: RGBVal[T]) = bufferUpdate(b, x, y, v)
+    def update[T:Typ:Numeric:ScalarConvertable](x: Rep[Int], y: Rep[Int], v: RGBVal[T]) = bufferUpdate(b, x, y, v)
     def memcpy(src: Buffer) = bufferMemCpy(src, b)
   }
 
   def newBuffer(width: Rep[Int], height: Rep[Int]): Buffer
-  def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer, x: Rep[Int], y: Rep[Int], v: RGBVal[T]): Rep[Unit]
+  def bufferUpdate[T:Typ:Numeric:ScalarConvertable](b: Buffer, x: Rep[Int], y: Rep[Int], v: RGBVal[T]): Rep[Unit]
   def bufferMemCpy(src: Buffer, dest: Buffer): Rep[Unit]
 
 }
@@ -177,11 +197,11 @@ trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
            s2i(array_apply(b.a, 3 * (x + b.width * y))))
   }
 
-  override def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer, x: Exp[Int], y: Exp[Int], v: RGBVal[T]) = {
-    val sepiaNum = implicitly[SepiaNum[T]]
-    array_update(b.a, 3 * (x + b.width * y) + 2, sepiaNum.T2short(v.red))
-    array_update(b.a, 3 * (x + b.width * y) + 1, sepiaNum.T2short(v.green))
-    array_update(b.a, 3 * (x + b.width * y), sepiaNum.T2short(v.blue))
+  override def bufferUpdate[T:Typ:Numeric:ScalarConvertable](b: Buffer, x: Exp[Int], y: Exp[Int], v: RGBVal[T]) = {
+    val scalarConvertable = implicitly[ScalarConvertable[T]]
+    array_update(b.a, 3 * (x + b.width * y) + 2, scalarConvertable.T2short(v.red))
+    array_update(b.a, 3 * (x + b.width * y) + 1, scalarConvertable.T2short(v.green))
+    array_update(b.a, 3 * (x + b.width * y), scalarConvertable.T2short(v.blue))
   }
 
   override def bufferMemCpy(src: Buffer, dest: Buffer) = {

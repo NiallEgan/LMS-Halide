@@ -8,7 +8,7 @@ trait AstOps extends Ast {
 	type Schedule = ScheduleNode
 	type N = ScheduleNode
 
-	private def simpleFuncTree[T:Typ:Numeric:SepiaNum](f: Func[T]): ScheduleNode = {
+	private def simpleFuncTree[T:Typ:Numeric:ScalarConvertable](f: Func[T]): ScheduleNode = {
 		val cn: ComputeNode[T] = ComputeNode[T](f, List())
 		val xLoop: LoopNode[T] = LoopNode[T](f.x, f,
 											Sequential, List(cn))
@@ -16,7 +16,7 @@ trait AstOps extends Ast {
 	  StorageNode[T](f, List(yLoop))
 	}
 
-	def newSimpleSched[T:Typ:Numeric:SepiaNum](stage: Func[T]): Schedule = {
+	def newSimpleSched[T:Typ:Numeric:ScalarConvertable](stage: Func[T]): Schedule = {
 		// A simple function for now that just returns
 		// a new tree for stage. This assumes that everything is inlined
 		// etc
@@ -121,7 +121,7 @@ trait AstOps extends Ast {
 			case _ => false
 		}
 
-	private def deInline[T:Typ:Numeric:SepiaNum, U:Typ:Numeric:SepiaNum]
+	private def deInline[T:Typ:Numeric:ScalarConvertable, U:Typ:Numeric:ScalarConvertable]
 											(producer: Func[T], consumer: Func[U], sched: Schedule) = {
 		def findParentOfCnFor(consumer: Func[U], sched: Schedule): Option[ScheduleNode] =
 			if (sched.getChildren.exists(isComputeNode(_, consumer))) Some(sched)
@@ -140,7 +140,7 @@ trait AstOps extends Ast {
 		)
 	}
 
-	def isolateProducer[T:Typ:Numeric:SepiaNum](producer: Func[T], sched: Schedule): Option[Schedule] = {
+	def isolateProducer[T:Typ:Numeric:ScalarConvertable](producer: Func[T], sched: Schedule): Option[Schedule] = {
 		// We find the first node s.t. there is a path of only producer nodes to the producer cn
 		def goesToCn(node: Schedule): Boolean = {
 			if (isComputeNode(node, producer)) true
@@ -154,7 +154,7 @@ trait AstOps extends Ast {
 
 	}
 
-	def removeProducerSchedule[T:Typ:Numeric:SepiaNum](deInlinedSched: N, producer: Func[T]): (Schedule, Schedule) = {
+	def removeProducerSchedule[T:Typ:Numeric:ScalarConvertable](deInlinedSched: N, producer: Func[T]): (Schedule, Schedule) = {
 		val producerSchedule: N = isolateProducer(producer, deInlinedSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $deInlinedSched"))
 
 		val notMovingChildren = producerSchedule.getChildren.filter(!_.belongsTo(producer))
@@ -168,7 +168,7 @@ trait AstOps extends Ast {
 		(schedLessProducer, newProducerSchedule)
 	}
 
-	def insertComputeAtNode[T:Typ:Numeric:SepiaNum](schedLessProducer: Schedule,
+	def insertComputeAtNode[T:Typ:Numeric:ScalarConvertable](schedLessProducer: Schedule,
 													producer: Func[T],
 													newProducerSchedule: ScheduleNode,
 													newParent: ScheduleNode): Schedule = {
@@ -184,7 +184,7 @@ trait AstOps extends Ast {
 		else addLeastSibling(newProducerSchedule, newParent, schedLessProducer)
 	}
 
-	def computeAtRoot[T:Typ:Numeric:SepiaNum](sched: Schedule, producer: Func[T]): Schedule = {
+	def computeAtRoot[T:Typ:Numeric:ScalarConvertable](sched: Schedule, producer: Func[T]): Schedule = {
 		producer.computeRoot = true
 		producer.storeRoot = true
 
@@ -201,7 +201,7 @@ trait AstOps extends Ast {
 		insertComputeAtNode(schedLessProducer, producer, newProducerSchedule, newParent)
 	}
 
-	def computefAtX[T:Typ:Numeric:SepiaNum, U:Typ:Numeric:SepiaNum](sched: Schedule, producer: Func[T], consumer: Func[U], s: String): Schedule = {
+	def computefAtX[T:Typ:Numeric:ScalarConvertable, U:Typ:Numeric:ScalarConvertable](sched: Schedule, producer: Func[T], consumer: Func[U], s: String): Schedule = {
 		// If f is inlined, create a new sched tree for it.
 		// Else, cut out the current f tree
 		// TODO: Producer consumer checks
@@ -262,7 +262,7 @@ trait AstOps extends Ast {
 		)
 	}
 
-	def storefAtX[T:Typ:Numeric:SepiaNum, U:Typ:Numeric:SepiaNum](sched: N,
+	def storefAtX[T:Typ:Numeric:ScalarConvertable, U:Typ:Numeric:ScalarConvertable](sched: N,
 							  producer: Func[T], consumer: Func[U], s: String): N = {
 		val storeAtDim: Dim = if (s == "x") consumer.x
 														else if (s == "y") consumer.y
@@ -274,13 +274,13 @@ trait AstOps extends Ast {
 		storeAtNode(sched, producer, newParent)
 	}
 
-	def storeAtRoot[T:Typ:Numeric:SepiaNum](sched: N, producer: Func[T]): N = {
+	def storeAtRoot[T:Typ:Numeric:ScalarConvertable](sched: N, producer: Func[T]): N = {
 		val newParent = sched
 		producer.storeRoot = true
 		storeAtNode(sched, producer, newParent)
 	}
 
-	def storeAtNode[T:Typ:Numeric:SepiaNum](sched: ScheduleNode, producer: Func[T], newParent: ScheduleNode) = {
+	def storeAtNode[T:Typ:Numeric:ScalarConvertable](sched: ScheduleNode, producer: Func[T], newParent: ScheduleNode) = {
 		def findStoreNode(sched: ScheduleNode, producer: Func[T]): Option[ScheduleNode] = {
 			def r(children: List[ScheduleNode]) = listToOption(children.map(findStoreNode(_, producer)).filter(_.isDefined))
 			sched match {

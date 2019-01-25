@@ -14,8 +14,10 @@ libraryDependencies += "org.scala-lang.virtualized" % "scala-reflect" % "2.11.2"
 libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.2"
 
 libraryDependencies += "ch.ethz.acl" %% "scala-unsigned" % "0.1-SNAPSHOT"
-libraryDependencies += "ch.ethz.acl" %% "lms-intrinsics" % "0.0.5-SNAPSHOT"
+//libraryDependencies += "ch.ethz.acl" %% "lms-intrinsics" % "0.0.5-SNAPSHOT"
+lazy val intrinsics = RootProject(uri("https://github.com/NiallEgan/lms-intrinsics.git"))
 
+lazy val root = Project("partiiproject", file(".")) dependsOn(intrinsics)
 
 scalacOptions += "-Yvirtualize"
 scalacOptions += "-deprecation"

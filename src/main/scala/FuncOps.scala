@@ -8,16 +8,16 @@ trait SimpleFuncOps extends Dsl {
   type Func[T]
   type Domain = ((Rep[Int], Rep[Int]), (Rep[Int], Rep[Int]))
 
-  class FuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) {
+  class FuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]) {
     def apply(x: Rep[Int], y: Rep[Int]) =
       funcApply(f, x, y)
   }
 
-  implicit def funcToFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) = new FuncOps(f)
+  implicit def funcToFuncOps[T:Typ:Numeric:ScalarConvertable](f: Func[T]) = new FuncOps(f)
 
-  def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T]
+  def funcApply[T:Typ:Numeric:ScalarConvertable](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T]
 
-  def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T],
+  def mkFunc[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T],
              dom: Domain, id: Int): Func[T]
 }
 
@@ -128,7 +128,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
 
 
-  class CompilerFunc[T:Typ:Numeric:SepiaNum](val f: (Rep[Int], Rep[Int]) => RGBVal[T],
+  class CompilerFunc[T:Typ:Numeric:ScalarConvertable](val f: (Rep[Int], Rep[Int]) => RGBVal[T],
                      dom: Domain, val id: Int) {
     def x = vars("x")
     def y = vars("y")
@@ -192,17 +192,17 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
   type Func[T] = CompilerFunc[T]
 
-  override def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T] = {
-    val sepiaNum = implicitly[SepiaNum[T]]
+  override def funcApply[T:Typ:Numeric:ScalarConvertable](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T] = {
+    val ScalarConvertable = implicitly[ScalarConvertable[T]]
     if (f.inlined) f.f(x, y)
     else {
         val r = f.buffer
                 .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
-        new RGBVal(sepiaNum.int2T(r.red), sepiaNum.int2T(r.green), sepiaNum.int2T(r.blue))
+        new RGBVal(ScalarConvertable.int2T(r.red), ScalarConvertable.int2T(r.green), ScalarConvertable.int2T(r.blue))
     }
   }
 
-  def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain, id: Int): Func[T] = {
+  def mkFunc[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain, id: Int): Func[T] = {
     new CompilerFunc(f, dom, id)
   }
 }

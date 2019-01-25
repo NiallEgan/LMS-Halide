@@ -40,12 +40,12 @@ trait SymbolicFuncOpsExp extends SimpleFuncOps with SymbolicImageBufferOpsExp {
   // pipeline
   type Func[T] = (Rep[Int], Rep[Int]) => RGBVal[T]
 
-  override def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T],
+  override def mkFunc[T:Typ:Numeric:ScalarConvertable](f: (Rep[Int], Rep[Int]) => RGBVal[T],
                       dom: Domain, id: Int) = f
 
-  case class FuncApplication[T:Typ:Numeric:SepiaNum](f: Func[T], x: Exp[Int], y: Exp[Int]) extends Def[T]
+  case class FuncApplication[T:Typ:Numeric:ScalarConvertable](f: Func[T], x: Exp[Int], y: Exp[Int]) extends Def[T]
 
-  override def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Exp[Int], y: Exp[Int]) = {
+  override def funcApply[T:Typ:Numeric:ScalarConvertable](f: Func[T], x: Exp[Int], y: Exp[Int]) = {
    RGBVal(FuncApplication(f, x, y), FuncApplication(f, x, y), FuncApplication(f, x, y))
   }
 }
