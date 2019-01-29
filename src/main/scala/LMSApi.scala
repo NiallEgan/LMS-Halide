@@ -3,6 +3,8 @@ package sepia
 import java.io.PrintWriter
 
 import scala.lms.common._
+import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays}
+
 
 trait Dsl extends PrimitiveOps with NumericOps
           with BooleanOps with LiftPrimitives
@@ -11,15 +13,16 @@ trait Dsl extends PrimitiveOps with NumericOps
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
           with ImageBufferOps with ShortOps
-          with OrderingOps {
-}
+          with OrderingOps with VectorizedOps {}
 
 trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with BooleanOpsExpOpt with IfThenElseExpOpt
              with RangeOpsExp with FractionalOpsExp
              with EqualExpBridgeOpt with ArrayOpsExpOpt
              with SeqOpsExp with ImageBufferOpsExp
-             with ShortOpsExpOpt with OrderingOpsExpOpt {}
+             with ShortOpsExpOpt with OrderingOpsExpOpt
+             with AVX with AVX2 with IntrinsicsArrays
+             with VectorizedOpsExp {}
 
 trait DslGenC extends CGenNumericOps
   with CGenPrimitiveOps with CGenBooleanOps
