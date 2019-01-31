@@ -1,5 +1,6 @@
 package sepia
 
+import scala.reflect.SourceContext
 import lms.common._
 import lms.internal._
 
@@ -10,24 +11,36 @@ trait VectorizedOps extends PrimitiveOps with RangeOps {
 
 trait VectorizedOpsExp extends VectorizedOps with BaseExp
                        with RangeOpsExp {
-  case class VectorForEach(start: Int, end: Int,
+ case class VectorForEach(start: Int, end: Int,
                            i: Sym[Int], body: Block[Unit]) extends Def[Unit]
+ case class VectorForEachUnvectorized(start: Int, end: Int,
+                                      i: Sym[Int], body: Block[Unit]) extends Def[Unit]
 
  def vectorized_loop(r: Range,
                      block: Exp[Int] => Exp[Unit]): Exp[Unit] = {
     val i = fresh[Int]
     val a = reifyEffects(block(i))
-    reflectEffect(VectorForEach(r.start, r.end, i, a), summarizeEffects(a).star)
+    reflectEffect(VectorForEachUnvectorized(r.start, r.end, i, a), summarizeEffects(a).star)
   }
 
   def vectorized_loop(start: Int, end: Int,
                       i: Sym[Int], body: Block[Unit]): Exp[Unit] = {
     // Needed because toAtom is protected
-    VectorForEach(start, end, i, body)
+    reflectEffect(VectorForEach(start, end, i, body), summarizeEffects(body).star)
   }
+
+  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+    case Reflect(VectorForEach(s, e, i, b), u, es) => reflectMirrored(Reflect(VectorForEach(s, e, f(i).asInstanceOf[Sym[Int]],f(b)), mapOver(f,u), f(es)))(mtyp1[A], pos)
+    case VectorForEach(s, e, i, b) => {
+      throw new Exception("hi")
+    }
+    case Reflect(VectorForEachUnvectorized(s, e, i, b), u, es) => reflectMirrored(Reflect(VectorForEachUnvectorized(s, e, f(i).asInstanceOf[Sym[Int]],f(b)), mapOver(f,u), f(es)))(mtyp1[A], pos)
+
+    case _ => super.mirror(e, f)
+  }).asInstanceOf[Exp[A]]
 }
 
-trait Vectorizer extends ForwardTransformer {
+trait Vectorizer extends RecursiveTransformer {
   val IR: DslExp
   import IR._
 
@@ -57,31 +70,74 @@ trait Vectorizer extends ForwardTransformer {
       }
       case Const(v) => make_constant_i32(n, v)
       case s@Sym(_) => {
-        if (s == indexSymbol) make_index_i32(start, end)
+        if (s == indexSymbol) {
+          println(s)
+          make_index_i32(start, end)
+        }
         else throw new Exception("Should never get here?")
       }
+    }
+  }
+
+  def stripIndex(n: Exp[Int], i: Sym[Int]): Exp[Int] = {
+    n match {
+      case s@Sym(_) if s == i => Const(0)  // Is this correct - multiplcation?
+      case _ => n
     }
   }
 
   def vectorizeBlock(body: Block[Unit], start: Int, end: Int, indexSymbol: Sym[Int]): Block[Unit] = {
     val e = reflectBlock(body)
     val vecExp = e match {
-      case Def(v) => v match {
-          case arr@ArrayUpdate(a, n, y) => {
+      case Def(v) => {
+         v match {
+          case Reflect(arr@ArrayUpdate(a, n, y), _, _) => {
             if (arr.m == typ[Int]) {
               val vectorizedExp: Exp[__m256i] = intVectorizer(y.asInstanceOf[Exp[Int]], start, end, indexSymbol)
-              _mm256_storeu_si256(a.asInstanceOf[Exp[Array[__m256i]]], vectorizedExp, n)
+              _mm256_storeu_si256(a.asInstanceOf[Exp[Array[__m256i]]], vectorizedExp, stripIndex(n, indexSymbol))
             } else ???
+          }
         }
       }
     }
     reifyEffects(vecExp)
   }
 
-  override def transformStm(stm: Stm): Exp[Any] = stm match {
-    case TP(s, VectorForEach(start, end, i, body)) => {
-      vectorized_loop(start, end, i, vectorizeBlock(body, start, end, i))
+  var isInVectorizedLoop = false
+  var s: Int = _
+  var e: Int = _
+  var i: Sym[Int] = _
+
+
+  /*override def transformStm(stm: Stm): Exp[Any] = stm match {
+    case TP(sym, node@Reflect(arr@ArrayUpdate(a, n, y), _, _)) if isInVectorizedLoop => {
+      println("Vectorizing")
+      throw new Exception()
+      vectorizeBlock(arr, s, e, i)
     }
-    case _ => super.transformStm(stm)
-  }
+    case TP(sym, Reflect(VectorForEachUnvectorized(start, end, indexSym, body), _, _)) => {
+      println("Transforming")
+      println(f"body: $body")
+      val saveFlag = isInVectorizedLoop
+      isInVectorizedLoop = true
+      s = start; e = end; i = indexSym
+      val r = reifyBlock(reflectBlock(body))
+      isInVectorizedLoop = saveFlag
+      vectorized_loop(start, end, indexSym, r)
+      //super.transformStm(stm)
+    }
+    case _ => {
+      println(f"stm $stm, $isInVectorizedLoop")
+      if (isInVectorizedLoop) throw new Exception()
+      else super.transformStm(stm)
+    }
+  }*/
+
+  override def transformDef[T](lhs: Sym[T], d: Def[T]): Option[() => Def[T]] = (d match {
+    case Reflect(VectorForEachUnvectorized(start, end, indexSym, body), _, _) => {
+      Some(() => VectorForEach(start, end, indexSym, vectorizeBlock(body, start, end, indexSym)))
+    }
+    case _ => super.transformDef(lhs, d)
+  }).asInstanceOf[Option[() => Def[T]]]
+
 }

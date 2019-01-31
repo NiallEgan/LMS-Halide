@@ -3,7 +3,9 @@ package sepia
 import java.io.PrintWriter
 
 import scala.lms.common._
-import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays}
+import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2}
+import ch.ethz.acl.passera.unsigned.{UByte, UInt, ULong, UShort}
+
 
 
 trait Dsl extends PrimitiveOps with NumericOps
@@ -21,15 +23,22 @@ trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with EqualExpBridgeOpt with ArrayOpsExpOpt
              with SeqOpsExp with ImageBufferOpsExp
              with ShortOpsExpOpt with OrderingOpsExpOpt
-             with AVX with AVX2 with IntrinsicsArrays
-             with VectorizedOpsExp {}
+             with AVX with AVX2 with VectorizedOpsExp
+             with IntrinsicsArrays {
+ implicit def anyTyp    : Typ[Any]    = manifestTyp
+ implicit def uByteTyp  : Typ[UByte]  = manifestTyp
+ implicit def uIntTyp   : Typ[UInt]   = manifestTyp
+ implicit def uLongTyp  : Typ[ULong]  = manifestTyp
+ implicit def uShortTyp : Typ[UShort] = manifestTyp
+}
 
 trait DslGenC extends CGenNumericOps
   with CGenPrimitiveOps with CGenBooleanOps
   with CGenIfThenElse with CGenEqual
   with CGenRangeOps with CGenFractionalOps
   with CGenShortOps with CGenArrayOps
-  with CGenOrderingOps  {
+  with CGenOrderingOps with CGenAVX
+  with CGenAVX2  {
     val IR: DslExp
     import IR._
 
@@ -47,6 +56,7 @@ trait DslGenC extends CGenNumericOps
     }
 
     override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
+      //println(rhs)
       rhs match {
         case ArrayApply(x, m) => emitValDef(sym, src"$x[$m]")
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
@@ -61,6 +71,7 @@ trait DslGenC extends CGenNumericOps
           src"memcpy($dest, $src, $size);")
         case IntToDoubleConversion(a) => emitValDef(sym, src"(double) $a")
         case DoubleToIntConversion(a) => emitValDef(sym, src"(int32_t) $a")
+        case VectorForEach(_, _, _, _) => stream.print("") // TODO: Don't let VectorForEach get this far
         case _ => super.emitNode(sym, rhs)
       }
     }
