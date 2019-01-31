@@ -38,9 +38,28 @@ trait VectorizedOpsExp extends VectorizedOps with BaseExp
 
     case _ => super.mirror(e, f)
   }).asInstanceOf[Exp[A]]
+
+
+  override def syms(e: Any): List[Sym[Any]] = e match {
+    case VectorForEach(start, end, a, body) => syms(a):::syms(body)
+    case VectorForEachUnvectorized(start, end, a, body) => syms(a):::syms(body)
+    case _ => super.syms(e)
+  }
+
+  override def boundSyms(e: Any): List[Sym[Any]] = e match {
+    case VectorForEach(start, end, x, body) => x :: effectSyms(body)
+    case VectorForEachUnvectorized(start, end, x, body) => x :: effectSyms(body)
+    case _ => super.boundSyms(e)
+  }
+
+  override def symsFreq(e: Any): List[(Sym[Any], Double)] = e match {
+    case VectorForEach(start, end, a, body) => freqNormal(a):::freqHot(body)
+    case VectorForEachUnvectorized(start, end, a, body) => freqNormal(a):::freqHot(body)
+    case _ => super.symsFreq(e)
+  }
 }
 
-trait Vectorizer extends RecursiveTransformer {
+trait Vectorizer extends ForwardTransformer {
   val IR: DslExp
   import IR._
 
@@ -87,8 +106,9 @@ trait Vectorizer extends RecursiveTransformer {
   }
 
   def vectorizeBlock(body: Block[Unit], start: Int, end: Int, indexSymbol: Sym[Int]): Block[Unit] = {
-    val e = reflectBlock(body)
-    val vecExp = e match {
+    reifyEffects {
+      val e = reflectBlock(body)
+      e match {
       case Def(v) => {
          v match {
           case Reflect(arr@ArrayUpdate(a, n, y), _, _) => {
@@ -99,8 +119,7 @@ trait Vectorizer extends RecursiveTransformer {
           }
         }
       }
-    }
-    reifyEffects(vecExp)
+    }}
   }
 
   var isInVectorizedLoop = false
@@ -109,35 +128,15 @@ trait Vectorizer extends RecursiveTransformer {
   var i: Sym[Int] = _
 
 
-  /*override def transformStm(stm: Stm): Exp[Any] = stm match {
-    case TP(sym, node@Reflect(arr@ArrayUpdate(a, n, y), _, _)) if isInVectorizedLoop => {
-      println("Vectorizing")
-      throw new Exception()
-      vectorizeBlock(arr, s, e, i)
-    }
+  override def transformStm(stm: Stm): Exp[Any] = stm match {
     case TP(sym, Reflect(VectorForEachUnvectorized(start, end, indexSym, body), _, _)) => {
-      println("Transforming")
-      println(f"body: $body")
-      val saveFlag = isInVectorizedLoop
-      isInVectorizedLoop = true
-      s = start; e = end; i = indexSym
-      val r = reifyBlock(reflectBlock(body))
-      isInVectorizedLoop = saveFlag
-      vectorized_loop(start, end, indexSym, r)
-      //super.transformStm(stm)
+      val a = vectorizeBlock(body, start, end, indexSym)
+      reflectEffect(
+        VectorForEach(start, end, indexSym, a),
+        summarizeEffects(a).star)
     }
     case _ => {
-      println(f"stm $stm, $isInVectorizedLoop")
-      if (isInVectorizedLoop) throw new Exception()
-      else super.transformStm(stm)
+      super.transformStm(stm)
     }
-  }*/
-
-  override def transformDef[T](lhs: Sym[T], d: Def[T]): Option[() => Def[T]] = (d match {
-    case Reflect(VectorForEachUnvectorized(start, end, indexSym, body), _, _) => {
-      Some(() => VectorForEach(start, end, indexSym, vectorizeBlock(body, start, end, indexSym)))
-    }
-    case _ => super.transformDef(lhs, d)
-  }).asInstanceOf[Option[() => Def[T]]]
-
+  }
 }
