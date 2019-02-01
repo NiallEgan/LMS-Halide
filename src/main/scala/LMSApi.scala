@@ -54,7 +54,7 @@ trait DslGenC extends CGenNumericOps
       case _ => super.remap(m)
 
     }
-
+    var seenArray: ArrayNew[Int] = null
     override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
       //println(rhs)
       rhs match {
@@ -62,16 +62,16 @@ trait DslGenC extends CGenNumericOps
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
         case a@ArrayNew(m) => {
           val arrType = remap(a.m)
-          //stream.println(f"$arrType ${quote(sym)}[${quote(m)}];")
           stream.println(f"$arrType *${quote(sym)} = malloc(sizeof($arrType) * ${quote(m)});")
-          //emitValDef(sym, f"")
         }
         case ArrayFree(a) => stream.println(src"free($a);")
         case MemCpy(src, dest, size) => stream.println(
           src"memcpy($dest, $src, $size);")
         case IntToDoubleConversion(a) => emitValDef(sym, src"(double) $a")
         case DoubleToIntConversion(a) => emitValDef(sym, src"(int32_t) $a")
-        case VectorForEach(_, _, _, _) => stream.print("") // TODO: Don't let VectorForEach get this far
+        case VectorForEach(_, _, _, body) => {
+          emitBlock(body) // TODO: Don't let VectorForEach get this far
+        }
         case _ => super.emitNode(sym, rhs)
       }
     }

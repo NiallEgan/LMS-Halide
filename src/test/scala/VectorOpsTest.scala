@@ -7,15 +7,17 @@ import sepia._
 trait VectorProgram extends Dsl {
   def prog() = {
     val a: Rep[Array[Int]] = array_obj_new[Int](4)
+    
     vectorized_loop(0 until 4,
                    (i: Rep[Int]) => a(i) = i)
+    a(1)
   }
 }
 
 trait Runner {
   val p: VectorProgram with DslExp
   def run() = {
-    import p.unitTyp
+    import p.{unitTyp, intTyp}
     val y = p.reifyEffects(p.prog())
     val codegen = new DslGenC {val IR: p.type = p}
     val trans = new Vectorizer {
