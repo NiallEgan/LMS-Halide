@@ -45,6 +45,16 @@ trait DslGenC extends CGenNumericOps
     override def isPrimitiveType(tpe: String) = tpe match {
       case "USHORT" => true
       case "UCHAR" => true
+      case "__m64" => true
+      case "__m128" => true
+      case "__m128d" => true
+      case "__m128i" => true
+      case "__m256" => true
+      case "__m256i" => true
+      case "__m256d" => true
+      case "__m512" => true
+      case "__m512d" => true
+      case "__m512i" => true
       case _ => super.isPrimitiveType(tpe)
     }
 

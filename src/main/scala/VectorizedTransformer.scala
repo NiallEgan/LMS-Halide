@@ -69,7 +69,7 @@ trait Vectorizer extends ForwardTransformer {
     val n = end - start
 
     def make_constant_i32(size: Int, v: Int) = {
-      val xs = for (i <- 0 until 8: Range) yield (if (i < size) 0 else v)
+      val xs = for (i <- 7 to -1 by -1: Range) yield (if (i < size) v else 0)
       _mm256_set_epi32(xs(0), xs(1), xs(2), xs(3), xs(4), xs(5), xs(6), xs(7))
     }
 
@@ -81,7 +81,10 @@ trait Vectorizer extends ForwardTransformer {
 
     exp match {
       case Def(v) => v match {
-        case IntPlus(a, b) => _mm256_add_epi32(intVectorizer(a, start, end, indexSymbol), intVectorizer(b, start, end, indexSymbol))
+        case IntPlus(a, b) => _mm256_add_epi32(intVectorizer(a, start, end, indexSymbol),
+                                intVectorizer(b, start, end, indexSymbol))
+        case IntMinus(a, b) => _mm256_sub_epi32(intVectorizer(a, start, end, indexSymbol),
+                                intVectorizer(b, start, end, indexSymbol))
       }
       case Const(v) => make_constant_i32(n, v)
       case s@Sym(_) => {
@@ -93,6 +96,58 @@ trait Vectorizer extends ForwardTransformer {
     }
   }
 
+  def doubleVectorizer(exp: Exp[Double], start: Int,
+                       end: Int, indexSymbol: Sym[Int]): Exp[__m256d] = {
+     val n = end - start
+
+     def make_constant_d32(size: Int, v: Exp[Double]) = {
+       val xs: IndexedSeq[Exp[Double]] = for (i <- 3 to -1 by -1: Range) yield (if (i < size) v else Const(0.0))
+       _mm256_set_pd(xs(0), xs(1), xs(2), xs(3))
+     }
+
+     def make_index_d32(start: Int, end: Int) = {
+       println("Making index:")
+       val size = end - start
+       val xs = for (i <- 0 until 4: Range) yield(if (i < size) i + start else 0)
+       _mm256_set_pd(xs(3), xs(2), xs(1), xs(0))
+     }
+
+     exp match {
+       case Def(v) => v match {
+         // todo: are all of these needed?
+         case NumericPlus(a, b) => _mm256_add_pd(doubleVectorizer(a.asInstanceOf[Exp[Double]], start, end, indexSymbol),
+                                                 doubleVectorizer(b.asInstanceOf[Exp[Double]], start, end, indexSymbol))
+         case NumericMinus(a, b) => _mm256_sub_pd(doubleVectorizer(a.asInstanceOf[Exp[Double]], start, end, indexSymbol),
+                                                  doubleVectorizer(b.asInstanceOf[Exp[Double]], start, end, indexSymbol))
+         case NumericTimes(a, b) => _mm256_mul_pd(doubleVectorizer(a.asInstanceOf[Exp[Double]], start, end, indexSymbol),
+                                                  doubleVectorizer(b.asInstanceOf[Exp[Double]], start, end, indexSymbol))
+         case NumericDivide(a, b) => _mm256_div_pd(doubleVectorizer(a.asInstanceOf[Exp[Double]], start, end, indexSymbol),
+                                                   doubleVectorizer(b.asInstanceOf[Exp[Double]], start, end, indexSymbol))
+         case DoublePlus(a, b) => _mm256_add_pd(doubleVectorizer(a, start, end, indexSymbol),
+                                                 doubleVectorizer(b, start, end, indexSymbol))
+         case DoubleMinus(a, b) => _mm256_sub_pd(doubleVectorizer(a, start, end, indexSymbol),
+                                                  doubleVectorizer(b, start, end, indexSymbol))
+         case DoubleTimes(a, b) => _mm256_mul_pd(doubleVectorizer(a, start, end, indexSymbol),
+                                                  doubleVectorizer(b, start, end, indexSymbol))
+         case DoubleDivide(a, b) => _mm256_div_pd(doubleVectorizer(a, start, end, indexSymbol),
+                                                   doubleVectorizer(b, start, end, indexSymbol))
+         case IntToDouble(a) => {
+          a match {
+             case s@Sym(_) if s == indexSymbol => make_index_d32(start, end)
+             case _ => make_constant_d32(n, a)
+           }
+         }
+      }
+       case Const(v) => make_constant_d32(n, v)
+       case s@Sym(_) => {
+         if (s == indexSymbol) {
+           make_index_d32(start, end)
+         }
+         else throw new Exception("Should never get here?")
+       }
+     }
+}
+
   def stripIndex(n: Exp[Int], i: Sym[Int]): Exp[Int] = {
     n match {
       case s@Sym(_) if s == i => Const(0)  // Is this correct - multiplcation?
@@ -102,7 +157,6 @@ trait Vectorizer extends ForwardTransformer {
 
   def vectorizeBlock(body: Block[Unit], start: Int, end: Int, indexSymbol: Sym[Int]): Block[Unit] = {
     val e = getBlockResult(body)
-
     reifyEffects {
       e match {
         case Def(v) => {
@@ -111,6 +165,9 @@ trait Vectorizer extends ForwardTransformer {
               if (arr.m == typ[Int]) {
                 val vectorizedExp: Exp[__m256i] = intVectorizer(y.asInstanceOf[Exp[Int]], start, end, indexSymbol)
                 _mm256_storeu_si256(a.asInstanceOf[Exp[Array[__m256i]]], vectorizedExp, stripIndex(n, indexSymbol))
+              } else if (arr.m == typ[Double]) {
+                val vectorizedExp: Exp[__m256d] = doubleVectorizer(y.asInstanceOf[Exp[Double]], start, end, indexSymbol)
+                _mm256_store_pd(a.asInstanceOf[Exp[Array[Double]]], vectorizedExp, stripIndex(n, indexSymbol))
               } else ???
             }
           }
