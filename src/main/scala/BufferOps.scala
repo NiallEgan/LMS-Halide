@@ -4,7 +4,7 @@ import lms.common._
 
 trait ImageBufferOps extends PrimitiveOps with ArrayOps
                      with ShortOps with NumericOps {
-  type UShort = Short
+  type UChar = Short
 
   trait SepiaNum[T] {
     implicit def int2T(v: Rep[Int]): Rep[T]
@@ -33,7 +33,7 @@ trait ImageBufferOps extends PrimitiveOps with ArrayOps
   implicit val sepiaNumInt = new SepiaNumInt()
 
 
-  case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UShort]]) {
+  case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UChar]]) {
     def apply(x: Rep[Int], y: Rep[Int]) =
       bufferApply(this, x, y)
     def free(): Rep[Unit] = bufferFree(this)
@@ -163,15 +163,15 @@ trait CompilerImageOps extends ImageBufferOps {
 trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
                         with ArrayOpsExpOpt with PrimitiveOpsExpOpt {
 
-  case class MemCpy(src: Rep[Array[UShort]], dest: Rep[Array[UShort]], size: Rep[Int])
+  case class MemCpy(src: Rep[Array[UChar]], dest: Rep[Array[UChar]], size: Rep[Int])
     extends Def[Unit]
   case class IntToDoubleConversion(x: Rep[Int]) extends Def[Double]
   case class DoubleToIntConversion(x: Rep[Double]) extends Def[Int]
-  case class ArrayFree(b: Rep[Array[UShort]]) extends Def[Unit]
+  case class ArrayFree(b: Rep[Array[UChar]]) extends Def[Unit]
 
 
   override def newBuffer(m: Exp[Int], n: Exp[Int]) = {
-    Buffer(m, n, array_obj_new[UShort](m * n * 3))
+    Buffer(m, n, array_obj_new[UChar](m * n * 3))
   }
 
   override def bufferApply(b: Buffer, x: Exp[Int], y: Exp[Int]) = {

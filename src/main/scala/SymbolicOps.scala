@@ -9,16 +9,16 @@ import lms.common._
 
 trait SymbolicOps extends Base with ImageBufferOps {
   def newSymbolicInt(s: String): Rep[Int]
-  def newSymbolicArray(): Rep[Array[UShort]]
+  def newSymbolicArray(): Rep[Array[UChar]]
 }
 
 trait SymbolicOpsExp extends SymbolicOps with PrimitiveOpsExpOpt {
   case class SymbolicInt(s: String) extends Def[Int]
-  case class SymbolicArray() extends Def[Array[UShort]]
+  case class SymbolicArray() extends Def[Array[UChar]]
   case class SymbolicArrayApplication(s: String, x: Exp[Int], y: Exp[Int]) extends Def[Int]
 
   override def newSymbolicInt(s: String): Rep[Int] = SymbolicInt(s)
-  override def newSymbolicArray(): Rep[Array[UShort]] =
+  override def newSymbolicArray(): Rep[Array[UChar]] =
     SymbolicArray()
 }
 
