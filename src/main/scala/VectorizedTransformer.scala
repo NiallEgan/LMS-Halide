@@ -146,7 +146,59 @@ trait Vectorizer extends ForwardTransformer {
          else throw new Exception("Should never get here?")
        }
      }
-}
+   }
+
+ def floatVectorizer(exp: Exp[Float], start: Int,
+                      end: Int, indexSymbol: Sym[Int]): Exp[__m256] = {
+    val n = end - start
+
+    def make_constant_32(size: Int, v: Exp[Float]) = {
+      val xs: IndexedSeq[Exp[Float]] = for (i <- 7 to -1 by -1: Range) yield (if (i < size) v else Const(0.0f))
+      _mm256_set_ps(xs(0), xs(1), xs(2), xs(3), xs(4), xs(5), xs(6), xs(7))
+    }
+
+    def make_index_32(start: Int, end: Int) = {
+      println("Making index:")
+      val size = end - start
+      val xs = for (i <- 0 until 8: Range) yield(if (i < size) i + start else 0)
+      _mm256_set_ps(xs(7), xs(6), xs(5), xs(4), xs(3), xs(2), xs(1), xs(0))
+    }
+
+    exp match {
+      case Def(v) => v match {
+        // todo: are all of these needed?
+        case NumericPlus(a, b) => _mm256_add_ps(floatVectorizer(a.asInstanceOf[Exp[Float]], start, end, indexSymbol),
+                                                floatVectorizer(b.asInstanceOf[Exp[Float]], start, end, indexSymbol))
+        case NumericMinus(a, b) => _mm256_sub_ps(floatVectorizer(a.asInstanceOf[Exp[Float]], start, end, indexSymbol),
+                                                 floatVectorizer(b.asInstanceOf[Exp[Float]], start, end, indexSymbol))
+        case NumericTimes(a, b) => _mm256_mul_ps(floatVectorizer(a.asInstanceOf[Exp[Float]], start, end, indexSymbol),
+                                                 floatVectorizer(b.asInstanceOf[Exp[Float]], start, end, indexSymbol))
+        case NumericDivide(a, b) => _mm256_div_ps(floatVectorizer(a.asInstanceOf[Exp[Float]], start, end, indexSymbol),
+                                                  floatVectorizer(b.asInstanceOf[Exp[Float]], start, end, indexSymbol))
+        case FloatPlus(a, b) => _mm256_add_ps(floatVectorizer(a, start, end, indexSymbol),
+                                                floatVectorizer(b, start, end, indexSymbol))
+        case FloatMinus(a, b) => _mm256_sub_ps(floatVectorizer(a, start, end, indexSymbol),
+                                                 floatVectorizer(b, start, end, indexSymbol))
+        case FloatTimes(a, b) => _mm256_mul_ps(floatVectorizer(a, start, end, indexSymbol),
+                                                 floatVectorizer(b, start, end, indexSymbol))
+        case FloatDivide(a, b) => _mm256_div_ps(floatVectorizer(a, start, end, indexSymbol),
+                                                  floatVectorizer(b, start, end, indexSymbol))
+        case IntToFloat(a) => {
+         a match {
+            case s@Sym(_) if s == indexSymbol => make_index_32(start, end)
+            case _ => make_constant_32(n, a)
+          }
+        }
+     }
+      case Const(v) => make_constant_32(n, v)
+      case s@Sym(_) => {
+        if (s == indexSymbol) {
+          make_index_32(start, end)
+        }
+        else throw new Exception("Should never get here?")
+      }
+    }
+  }
 
   def stripIndex(n: Exp[Int], i: Sym[Int]): Exp[Int] = {
     n match {
@@ -168,6 +220,9 @@ trait Vectorizer extends ForwardTransformer {
               } else if (arr.m == typ[Double]) {
                 val vectorizedExp: Exp[__m256d] = doubleVectorizer(y.asInstanceOf[Exp[Double]], start, end, indexSymbol)
                 _mm256_store_pd(a.asInstanceOf[Exp[Array[Double]]], vectorizedExp, stripIndex(n, indexSymbol))
+              } else if (arr.m == typ[Float]){
+                val vectorizedExp: Exp[__m256] = floatVectorizer(y.asInstanceOf[Exp[Float]], start, end, indexSymbol)
+                _mm256_store_ps(a.asInstanceOf[Exp[Array[Float]]], vectorizedExp, stripIndex(n, indexSymbol))
               } else ???
             }
           }

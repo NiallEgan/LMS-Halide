@@ -6,10 +6,10 @@ import sepia._
 
 trait VectorProgram extends Dsl {
   def prog() = {
-    val a: Rep[Array[Double]] = array_obj_new[Double](4)
+    val a: Rep[Array[Float]] = array_obj_new[Float](4)
 
     vectorized_loop(0 until 8,
-                   (i: Rep[Int]) => a(i) = i - 2)
+                   (i: Rep[Int]) => a(i) = i / 2)
     a(1)
   }
 }
@@ -17,7 +17,7 @@ trait VectorProgram extends Dsl {
 trait Runner {
   val p: VectorProgram with DslExp
   def run() = {
-    import p.{unitTyp, intTyp, doubleTyp}
+    import p.{unitTyp, intTyp, doubleTyp, floatTyp}
     val y = p.reifyEffects(p.prog())
     val codegen = new DslGenC {val IR: p.type = p}
     val trans = new Vectorizer {
