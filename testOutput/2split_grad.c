@@ -3,7 +3,7 @@
 void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
 int32_t x18 = x2 * x3;
 int32_t x19 = x18 * 3;
-UCHAR *x20 = malloc(sizeof(UCHAR) * x19);
+UCHAR *x57 = malloc(sizeof(UCHAR) * x19);
 int32_t x11 = x3 - 2;
 int32_t x12 = x11 % 2;
 bool x13 = x12 == 0;
@@ -58,10 +58,10 @@ int32_t x39 = 3 * x38;
 int32_t x40 = x39 + 2;
 int32_t x36 = x31 + x35;
 UCHAR x41 = x36;
-x20[x40] = x41;
+x57[x40] = x41;
 int32_t x43 = x39 + 1;
-x20[x43] = x41;
-x20[x39] = x41;
+x57[x43] = x41;
+x57[x39] = x41;
 
 }
 
@@ -70,8 +70,8 @@ x20[x39] = x41;
 }
 
 }
-memcpy(x1, x20, x19);
-free(x20);
+memcpy(x1, x57, x19);
+free(x57);
 }
 int32_t WIDTH_OUT_DIFF = 0;
 int32_t HEIGHT_OUT_DIFF = 0;

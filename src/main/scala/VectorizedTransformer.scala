@@ -34,9 +34,6 @@ trait VectorizedOpsExp extends VectorizedOps with BaseExp
       throw new Exception("hi")
     }
     case Reflect(VectorForEachUnvectorized(s, e, i, b), u, es) => reflectMirrored(Reflect(VectorForEachUnvectorized(s, e, f(i).asInstanceOf[Sym[Int]],f(b)), mapOver(f,u), f(es)))(mtyp1[A], pos)
-    case Reflect(ArrayNew(i), _, _) => {
-      super.mirror(e, f)
-    }
     case _ => super.mirror(e, f)
   }).asInstanceOf[Exp[A]]
 
@@ -176,13 +173,13 @@ trait Vectorizer extends ForwardTransformer {
         case NumericDivide(a, b) => _mm256_div_ps(floatVectorizer(a.asInstanceOf[Exp[Float]], start, end, indexSymbol),
                                                   floatVectorizer(b.asInstanceOf[Exp[Float]], start, end, indexSymbol))
         case FloatPlus(a, b) => _mm256_add_ps(floatVectorizer(a, start, end, indexSymbol),
-                                                floatVectorizer(b, start, end, indexSymbol))
+                                              floatVectorizer(b, start, end, indexSymbol))
         case FloatMinus(a, b) => _mm256_sub_ps(floatVectorizer(a, start, end, indexSymbol),
-                                                 floatVectorizer(b, start, end, indexSymbol))
+                                               floatVectorizer(b, start, end, indexSymbol))
         case FloatTimes(a, b) => _mm256_mul_ps(floatVectorizer(a, start, end, indexSymbol),
-                                                 floatVectorizer(b, start, end, indexSymbol))
+                                               floatVectorizer(b, start, end, indexSymbol))
         case FloatDivide(a, b) => _mm256_div_ps(floatVectorizer(a, start, end, indexSymbol),
-                                                  floatVectorizer(b, start, end, indexSymbol))
+                                                floatVectorizer(b, start, end, indexSymbol))
         case IntToFloat(a) => {
          a match {
             case s@Sym(_) if s == indexSymbol => make_index_32(start, end)

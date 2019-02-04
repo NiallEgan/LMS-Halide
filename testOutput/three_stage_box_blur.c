@@ -7,7 +7,7 @@ int32_t x5 = x3 - 1;
 int32_t x7 = x5 - 1;
 int32_t x8 = x6 * x7;
 int32_t x9 = x8 * 3;
-UCHAR *x10 = malloc(sizeof(UCHAR) * x9);
+UCHAR *x166 = malloc(sizeof(UCHAR) * x9);
 for(int x12=1; x12 < x5; x12++) {
 int32_t x101 = x12 - 1;
 int32_t x148 = x6 * x101;
@@ -79,7 +79,7 @@ int32_t x139 = x136 / 3;
 int32_t x142 = x98 + x139;
 int32_t x145 = x142 / 3;
 UCHAR x152 = x145;
-x10[x151] = x152;
+x166[x151] = x152;
 int32_t x154 = x150 + 1;
 int32_t x21 = x17 + 1;
 UCHAR x22 = x0[x21];
@@ -121,7 +121,7 @@ int32_t x140 = x137 / 3;
 int32_t x143 = x99 + x140;
 int32_t x146 = x143 / 3;
 UCHAR x155 = x146;
-x10[x154] = x155;
+x166[x154] = x155;
 UCHAR x24 = x0[x17];
 int32_t x25 = (int) x24;
 UCHAR x35 = x0[x28];
@@ -153,13 +153,13 @@ int32_t x141 = x138 / 3;
 int32_t x144 = x100 + x141;
 int32_t x147 = x144 / 3;
 UCHAR x157 = x147;
-x10[x150] = x157;
+x166[x150] = x157;
 
 }
 
 }
-memcpy(x1, x10, x9);
-free(x10);
+memcpy(x1, x166, x9);
+free(x166);
 }
 int32_t WIDTH_OUT_DIFF = 2;
 int32_t HEIGHT_OUT_DIFF = 2;

@@ -17,14 +17,15 @@ trait Dsl extends PrimitiveOps with NumericOps
           with ImageBufferOps with ShortOps
           with OrderingOps with VectorizedOps {}
 
-trait DslExp extends Dsl with PrimitiveOpsExpOpt with NumericOpsExpOpt
+trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with BooleanOpsExpOpt with IfThenElseExpOpt
+             with ImageBufferOpsExp
              with RangeOpsExp with FractionalOpsExp
              with EqualExpBridgeOpt with ArrayOpsExpOpt
-             with SeqOpsExp with ImageBufferOpsExp
-             with ShortOpsExpOpt with OrderingOpsExpOpt
+             with SeqOpsExp
+             with OrderingOpsExpOpt
              with AVX with AVX2 with VectorizedOpsExp
-             with IntrinsicsArrays {
+             with IntrinsicsArrays  {
  implicit def anyTyp    : Typ[Any]    = manifestTyp
  implicit def uByteTyp  : Typ[UByte]  = manifestTyp
  implicit def uIntTyp   : Typ[UInt]   = manifestTyp
@@ -39,6 +40,7 @@ trait DslGenC extends CGenNumericOps
   with CGenShortOps with CGenArrayOps
   with CGenOrderingOps with CGenAVX
   with CGenAVX2  {
+    self =>
     val IR: DslExp
     import IR._
 
@@ -121,7 +123,11 @@ trait DslGenC extends CGenNumericOps
     val s2 = reflectMutableSym(fresh[T2])
     val s3 = fresh[T3]
     val s4 = fresh[T4]
+    val trans = new Vectorizer {
+      val IR: self.IR.type = self.IR
+    }
+
     val body = reifyBlock(f(s1, s2, s3, s4))
-    emitSource(List(s1, s2, s3, s4), body, className, stream)
+    emitSource(List(s1, s2, s3, s4), trans.transformBlock(body), className, stream)
   }
 }

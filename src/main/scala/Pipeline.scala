@@ -35,6 +35,7 @@ trait Pipeline extends SimpleFuncOps {
 		def realize(): Unit
 		def storeRoot(): Unit
 		def computeRoot(): Unit
+		def vectorize(v: String, vectorWidth: Int): Unit
 
 		def tile(x: String, y: String,
 						 xOuter: String, yOuter: String, xInner: String,
@@ -146,6 +147,10 @@ trait PipelineForCompiler extends Pipeline
 			schedule = Some(swapLoopNodes(sched, f.vars(v1), f.vars(v2)))
 		}
 
+		override def vectorize(v: String, vectorWidth: Int): Unit = {
+			split(v, v + "_outer", v + "_inner", vectorWidth)
+			schedule = Some(vectorizeLoop(sched, f.vars(v + "_inner")))
+		}
 	}
 
 	def assignOutArray(out: Rep[Array[UChar]]): Rep[Unit] = {

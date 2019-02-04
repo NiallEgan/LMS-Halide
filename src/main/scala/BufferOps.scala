@@ -1,5 +1,7 @@
 package sepia
 
+import scala.reflect.SourceContext
+
 import lms.common._
 
 trait ImageBufferOps extends PrimitiveOps with ArrayOps
@@ -170,6 +172,21 @@ trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
   case class ArrayFree(b: Rep[Array[UChar]]) extends Def[Unit]
 
 
+  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] =
+    (e match {
+      case ArrayFree(x) => arrayFree(x)
+      case Reflect(ArrayFree(x), u, es) => {
+        reflectMirrored(Reflect(ArrayFree(f(x)), mapOver(f, u), f(es)))(mtyp1[A], pos)
+      }
+      case IntToDoubleConversion(x) => int2double(f(x))
+      case DoubleToIntConversion(x) => double2int(f(x))
+      case Reflect(MemCpy(src, dest, len), u, es) => {
+         reflectMirrored(Reflect(MemCpy(f(src),f(dest),f(len)), mapOver(f,u), f(es)))(mtyp1[A], pos)
+      }
+      case _ => super.mirror(e, f)
+    }).asInstanceOf[Exp[A]]
+
+
   override def newBuffer(m: Exp[Int], n: Exp[Int]) = {
     Buffer(m, n, array_obj_new[UChar](m * n * 3))
   }
@@ -181,7 +198,10 @@ trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
   }
 
   override def bufferFree(b: Buffer) = {
-    ArrayFree(b.a)
+    arrayFree(b.a)  // todo: Should we be marking some side effects here?
+  }
+  def arrayFree(a: Rep[Array[UChar]]) = {
+    ArrayFree(a)
   }
 
   override def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer, x: Exp[Int], y: Exp[Int], v: RGBVal[T]) = {
@@ -192,7 +212,12 @@ trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
   }
 
   override def bufferMemCpy(src: Buffer, dest: Buffer) = {
-    MemCpy(src.a, dest.a, src.width * src.height * 3)
+    bufferMemCpy(src.a, dest.a, src.width * src.height * 3)
+  }
+
+  def bufferMemCpy(src: Rep[Array[UChar]], dest: Rep[Array[UChar]],
+                   len: Rep[Int]) = {
+    /*reflectWrite(dest)(*/MemCpy(src, dest, len) // unsafe... like ArrayCopy, the issue is some weird sharing...
   }
 
   def int2double(v: Rep[Int]): Rep[Double] = IntToDoubleConversion(v)

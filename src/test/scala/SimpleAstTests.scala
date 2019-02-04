@@ -409,7 +409,7 @@ class CompilerSpec extends FlatSpec {
 		assertResult(correctAst)(gradProg.scheduleRep)
 	}
 
-	"One stage box blur split loops reordered" should "reoder x and y" in {
+	"One stage box blur split loops reordered" should "reorder x and y" in {
 		println("One stage blur, reordered: ")
 		val blurProg = new OneStageBoxBlurSplitLoopsReordered with CompilerInstance
 									 with TestAstOps
@@ -426,6 +426,28 @@ class CompilerSpec extends FlatSpec {
 		))
 
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur_reordered")
+		assertResult(correctAst)(blurProg.scheduleRep)
+	}
+
+	"One stage box blur vectorized" should "vectorize x" in {
+		println("One stage blur, vectorized: ")
+		val blurProg = new OneStageBoxBlurVectorized with CompilerInstance
+									 with TestAstOps
+		val blurProgAnalysis = new OneStageBoxBlurVectorized
+													 with TestPipelineAnalysis
+		val correctAst: TNode = new TRootNode(List(
+			new TStorageNode("i", List(
+				new TLoopNode("y", "i", Sequential, List(
+					new TLoopNode("x_outer", "i", Sequential, List(
+						new TLoopNode("x_inner", "i", Vectorized, List(
+							new TComputeNode("i", List())
+						))
+					))
+				))
+			))
+		))
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur_vectorized")
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 

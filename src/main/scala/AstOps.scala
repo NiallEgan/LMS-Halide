@@ -332,6 +332,17 @@ trait AstOps extends Ast {
 		}
 	}
 
+	def vectorizeLoop(sched: Schedule, dim: Dim) = {
+		sched.findAndTransform(
+			_ match {
+			case LoopNode(d, _, _, _) if d == dim => true
+			case _ => false
+		},
+		_ match {
+			case LoopNode(d, stage, _, children) => LoopNode(d, stage, Vectorized, children)
+		})
+	}
+
 	def fuseLoopNodes(sched: Schedule, newDim: Dim, outer: Dim, inner: Dim) = {
 		def isLoopNodeFor(dim: Dim)(n: Schedule) = n match {
 			case LoopNode(d, _, _, _) if d.name == dim.name && d.f == dim.f => {

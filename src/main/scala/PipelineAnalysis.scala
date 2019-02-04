@@ -2,6 +2,8 @@ package sepia
 
 trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 													with SymbolicFuncOpsExp with Pipeline {
+	// Possible refactoring: Change interperation to generate the graph directly!
+
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
 
@@ -174,6 +176,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		override def split(v: String, outer: String, inner: String, splitFactor: Int): Unit = return
 		override def reorder(v1: String, v2: String): Unit = return
 		override def fuse(v: String, outer: String, inner: String): Unit = return
+		override def vectorize(v: String, vectorWidth: Int): Unit = return
 		override def realize(): Unit = {
 			finalFunc = Some(f)
 		}

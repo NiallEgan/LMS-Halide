@@ -1,6 +1,7 @@
 package sepia
 
 import lms.common._
+import scala.reflect.SourceContext
 
 trait ShortOps extends PrimitiveOps {
   // Should we be allowed to add other types
@@ -22,7 +23,7 @@ trait ShortOps extends PrimitiveOps {
 
 }
 
-trait ShortOpsExp extends ShortOps with BaseExp {
+trait ShortOpsExp extends ShortOps with EffectExp {
   case class ShortMinus(a: Exp[Short], b: Exp[Short]) extends Def[Short]
   case class ShortPlus(a: Exp[Short], b: Exp[Short]) extends Def[Short]
   case class ShortTimes(a: Exp[Short], b: Exp[Short]) extends Def[Short]
@@ -31,7 +32,6 @@ trait ShortOpsExp extends ShortOps with BaseExp {
   case class ShortConvert(a: Exp[Int]) extends Def[Short]
   case class IntConvert(a: Exp[Short]) extends Def[Int]
   case class DoubleToShortConversion(a: Exp[Double]) extends Def[Short]
-
 
   override def short_minus(a: Exp[Short], b: Exp[Short]) = ShortMinus(a, b)
   override def short_plus(a: Exp[Short], b: Exp[Short]) = ShortPlus(a, b)
@@ -42,9 +42,41 @@ trait ShortOpsExp extends ShortOps with BaseExp {
   override def s2i(a: Exp[Short]) = IntConvert(a)
   override def d2s(a: Exp[Double]) = DoubleToShortConversion(a)
 
+  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
+    super.mirror(e, f)(typ[A], pos)
+  }
+
 }
 
 trait ShortOpsExpOpt extends ShortOpsExp {
+  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
+    (e match {
+      case ShortMinus(a, b) => short_minus(f(a), f(b))
+      case ShortPlus(a, b) => short_plus(f(a), f(b))
+      case ShortTimes(a, b) => short_times(f(a), f(b))
+      case ShortDivide(a, b) => short_divide(f(a), f(b))
+      case ShortConvert(a) => i2s(f(a))
+      case IntConvert(a) => s2i(f(a))
+      case DoubleToShortConversion(a) => d2s(f(a))
+
+      case Reflect(ShortMinus(a, b), u, es) =>
+        reflectMirrored(Reflect(ShortMinus(f(a), f(b)), mapOver(f, u), f(es)))
+      case Reflect(ShortPlus(a, b), u, es) =>
+        reflectMirrored(Reflect(ShortPlus(f(a), f(b)), mapOver(f, u), f(es)))
+      case Reflect(ShortTimes(a, b), u, es) =>
+        reflectMirrored(Reflect(ShortTimes(f(a), f(b)), mapOver(f, u), f(es)))
+      case Reflect(ShortDivide(a, b), u, es) =>
+        reflectMirrored(Reflect(ShortDivide(f(a), f(b)), mapOver(f, u), f(es)))
+      case Reflect(ShortConvert(a), u, es) =>
+        reflectMirrored(Reflect(ShortConvert(f(a)), mapOver(f, u), f(es)))
+      case Reflect(IntConvert(a), u, es) =>
+        reflectMirrored(Reflect(IntConvert(f(a)), mapOver(f, u), f(es)))
+      case Reflect(DoubleToShortConversion(a), u, es) =>
+        reflectMirrored(Reflect(DoubleToShortConversion(f(a)), mapOver(f, u), f(es)))
+      case _ => super.mirror(e, f)(typ[A], pos)
+    }).asInstanceOf[Exp[A]]
+  }
+
   override def short_minus(a: Exp[Short], b: Exp[Short]) = (a, b) match {
     // TODO: These .toShort converions are dubious. Sign?
     case (Const(a), Const(b)) => unit((a - b).toShort)
@@ -76,7 +108,7 @@ trait ShortOpsExpOpt extends ShortOpsExp {
 
 trait CGenShortOps extends CGenBase {
   val IR: ShortOpsExp
-  import IR._ 
+  import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
     rhs match {

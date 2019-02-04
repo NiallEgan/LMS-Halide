@@ -4,6 +4,7 @@ package sepia
 sealed trait LoopType
 case object Sequential extends LoopType
 case object Unrolled extends LoopType
+case object Vectorized extends LoopType
 // TODO: Vectorized, parallelized
 
 trait Ast {
@@ -12,9 +13,9 @@ trait Ast {
 
 	sealed trait ScheduleNode {
 		def findAndTransform(p: ScheduleNode => Boolean,
-												  f: ScheduleNode => ScheduleNode): ScheduleNode
+												 f: ScheduleNode => ScheduleNode): ScheduleNode
 		def findAndTransform(n: ScheduleNode,
-												    f: ScheduleNode => ScheduleNode): ScheduleNode = {
+												 f: ScheduleNode => ScheduleNode): ScheduleNode = {
 				findAndTransform(n == _, f)
 			}
 
@@ -70,8 +71,7 @@ trait Ast {
 				ComputeNode(stage, children.map(f))
 			}
 
-			override def withChildren(l: List[ScheduleNode]) =
-				ComputeNode(stage, l)
+			override def withChildren(l: List[ScheduleNode]) = ComputeNode(stage, l)
 
 			override def getChildren() = children
 

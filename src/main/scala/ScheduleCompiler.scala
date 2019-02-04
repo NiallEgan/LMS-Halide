@@ -211,6 +211,31 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 																							enclosingLoops ++ variable.pseudoLoops,
 																							completeTree)
           }
+
+				case Vectorized => {
+					// What I really want...
+					/*for (i <- lb until ub: Vectorized[Range]) {
+						variable.v_=(i)
+						for (child <- children) evalSched(child, boundsGraph,
+																							enclosingLoops ++ variable.pseudoLoops,
+																							completeTree)
+					}*/
+
+					// TODO: Generalize - a lot!
+					vectorized_loop(0 until 4,  i => {
+						variable.v_=(i)
+						assert(children.length == 1)
+						val child = children(0)
+						child match {
+							case ComputeNode(s, cs) if cs == List() => {
+								if (notPreviouslyComputed(stage, completeTree, boundsGraph, enclosingLoops ++ variable.pseudoLoops)) {
+									stage.storeInBuffer(stage.compute())
+								}
+							}
+							case _ => throw new InvalidSchedule("Error: Can only vectorize loops with a direct, single compute node child.")
+						}
+					})
+				}
       }
 
     case ComputeNode(stage, children) => {
