@@ -134,6 +134,9 @@ trait Vectorizer extends ForwardTransformer {
              case _ => make_constant_d32(n, a)
            }
          }
+         case ShortToDouble(a) => {
+           make_constant_d32(n, repShortToRepDouble(a))
+         }
       }
        case Const(v) => make_constant_d32(n, v)
        case s@Sym(_) => {

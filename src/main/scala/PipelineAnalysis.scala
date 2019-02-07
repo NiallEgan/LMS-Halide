@@ -67,8 +67,9 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case NumericTimes(a, b)           => f(List(a, b).map(m))
 			case NumericMinus(a, b)						=> f(List(a, b).map(m))
 			case IntToDoubleConversion(a)			=> f(List(a).map(m))
-
-
+			case ShortToDouble(a)             => f(List(a).map(m))
+			case ShortToFloat(a)              => f(List(a).map(m))
+			case DoubleToShortConversion(a)   => f(List(a).map(m))
   }
 
 	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
@@ -80,8 +81,22 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		mkFunc(f, dom, id)
 	}
 
-	override def toFuncSansDomain[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
+	override def func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
 		toFunc(f, ((0, 0), (0, 0)))
+	}
+
+	override def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[Short] = {
+		// todo: dry up
+		val cast =
+			if (typ[T] == typ[UChar]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[UChar]])
+			else if (typ[T] == typ[Int]) realizeInt(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Int]])
+			else if (typ[T] == typ[Float]) realizeFloat(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Float]])
+			else realizeDouble(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Double]])
+
+		val castFunc = func(cast)
+		finalFunc = Some(castFunc)
+		castFunc
+
 	}
 
 	def mergeBoundsMaps(b1: Map[Int, Map[String, Bound]],
@@ -167,6 +182,8 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 				funcsToId(finalFunc.getOrElse(throw new InvalidAlgorithm("Error: No final func"))))
 	}
 
+
+
 	class UselessFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) extends FuncOps(f) {
 		// Just convert sched ops to no-ops in the analysis phase
 		override def computeAt[U:Typ:Numeric:SepiaNum](consumer: Func[U], s: String): Unit = return
@@ -177,9 +194,6 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		override def reorder(v1: String, v2: String): Unit = return
 		override def fuse(v: String, outer: String, inner: String): Unit = return
 		override def vectorize(v: String, vectorWidth: Int): Unit = return
-		override def realize(): Unit = {
-			finalFunc = Some(f)
-		}
 
 	}
 

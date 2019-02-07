@@ -18,7 +18,7 @@ int32_t x9 = x7 + 2;
 x10 = x9;
 }
 for(int x15=0; x15 < x3; x15++) {
-int32_t x25 = x2 * x15;
+int32_t x26 = x2 * x15;
 for(int x17=0; x17 < x10; x17++) {
 int32_t x20 = x17 * 2;
 bool x21 = x20 > x4;
@@ -30,15 +30,15 @@ x22 = x20;
 }
 for(int x19=0; x19 < 2; x19++) {
 int32_t x23 = x22 + x19;
-int32_t x26 = x23 + x25;
-int32_t x27 = 3 * x26;
-int32_t x28 = x27 + 2;
 int32_t x24 = x23 + x15;
-UCHAR x29 = x24;
-x43[x28] = x29;
-int32_t x31 = x27 + 1;
-x43[x31] = x29;
-x43[x27] = x29;
+UCHAR x25 = x24;
+int32_t x27 = x23 + x26;
+int32_t x28 = 3 * x27;
+int32_t x29 = x28 + 2;
+x43[x29] = x25;
+int32_t x31 = x28 + 1;
+x43[x31] = x25;
+x43[x28] = x25;
 
 }
 

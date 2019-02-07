@@ -5,17 +5,17 @@ int32_t x4 = x2 * x3;
 int32_t x5 = x4 * 3;
 UCHAR *x28 = malloc(sizeof(UCHAR) * x5);
 for(int x8=0; x8 < x3; x8++) {
-int32_t x12 = x2 * x8;
+int32_t x13 = x2 * x8;
 for(int x10=0; x10 < x2; x10++) {
-int32_t x13 = x10 + x12;
-int32_t x14 = 3 * x13;
-int32_t x15 = x14 + 2;
 int32_t x11 = x10 + x8;
-UCHAR x16 = x11;
-x28[x15] = x16;
-int32_t x18 = x14 + 1;
-x28[x18] = x16;
-x28[x14] = x16;
+UCHAR x12 = x11;
+int32_t x14 = x10 + x13;
+int32_t x15 = 3 * x14;
+int32_t x16 = x15 + 2;
+x28[x16] = x12;
+int32_t x18 = x15 + 1;
+x28[x18] = x12;
+x28[x15] = x12;
 
 }
 

@@ -24,6 +24,10 @@ trait Ast {
 		def withChildren(l: List[ScheduleNode]): ScheduleNode
 		def withChildren(l: ScheduleNode): ScheduleNode = withChildren(List(l))
 
+		def map(f: ScheduleNode => ScheduleNode): ScheduleNode = {
+			f(this).mapChildren(_.map(f))
+		}
+
 		def getChildren(): List[ScheduleNode]
 
 		def exists(f: ScheduleNode => Boolean): Boolean

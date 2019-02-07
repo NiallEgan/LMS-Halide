@@ -126,7 +126,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   }
 
   class CompilerFunc[T:Typ:Numeric:SepiaNum](val f: (Rep[Int], Rep[Int]) => RGBVal[T],
-                     dom: Domain, val id: Int) {
+                                             val dom: Domain, val id: Int) {
     def x = vars("x")
     def y = vars("y")
     var finalFunc: Boolean = false
@@ -140,7 +140,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     var storeRoot = false
     var storeAt: Option[Dim] = None
     var computeAt: Option[Dim] = None
-    var buffer: Option[Buffer] = None
+    var buffer: Option[Buffer[T]] = None
 
     def compute() = f(x.v, y.v)
 
@@ -154,7 +154,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def allocateNewBuffer() {
-      buffer = Some(NewBuffer(x.max - x.min, y.max - y.min))
+      buffer = allocateNewBuffer(x.max - x.min, y.max - y.min)
     }
 
     def deallocBuffer() {
@@ -163,7 +163,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {
-      buffer = Some(NewBuffer(m, n))
+      buffer = Some(NewBuffer[T](m, n))
     }
 
     def domWidth = x.max - x.min
@@ -201,7 +201,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     else {
         val r = f.buffer
                 .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
-        new RGBVal(sepiaNum.int2T(r.red), sepiaNum.int2T(r.green), sepiaNum.int2T(r.blue))
+        new RGBVal(r.red, r.green, r.blue)
     }
   }
 

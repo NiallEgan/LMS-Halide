@@ -4,224 +4,113 @@ import scala.reflect.SourceContext
 
 import lms.common._
 
-trait ImageBufferOps extends PrimitiveOps with ArrayOps
-                     with ShortOps with NumericOps {
-  type UChar = Short
+trait ImageBufferOps extends RGBValOps {
 
-  trait SepiaNum[T] {
-    implicit def int2T(v: Rep[Int]): Rep[T]
-    implicit def T2Double(v: Rep[T]): Rep[Double]
-    implicit def T2short(v: Rep[T]): Rep[Short]
-  }
-
-  def int2double(v: Rep[Int]): Rep[Double]
-  def double2int(v: Rep[Double]): Rep[Int]
-  def double2short(v: Rep[Double]): Rep[Short]
-  def int2short(v: Rep[Int]): Rep[Short]
-
-
-  class SepiaNumDouble extends SepiaNum[Double] {
-    override def int2T(v: Rep[Int]): Rep[Double] = int2double(v)
-    override def T2Double(v: Rep[Double]): Rep[Double] = v
-    override def T2short(v: Rep[Double]): Rep[Short] = double2short(v)
-  }
-  class SepiaNumInt extends SepiaNum[Int] {
-    override def int2T(v: Rep[Int]): Rep[Int] = v
-    override def T2Double(v: Rep[Int]): Rep[Double] = int2double(v)
-    override def T2short(v: Rep[Int]): Rep[Short] = int2short(v)
-
-  }
-  implicit val sepiaNumDouble = new SepiaNumDouble()
-  implicit val sepiaNumInt = new SepiaNumInt()
-
-
-  case class Buffer(val width: Rep[Int], val height: Rep[Int], val a: Rep[Array[UChar]]) {
-    def apply(x: Rep[Int], y: Rep[Int]) =
-      bufferApply(this, x, y)
+  case class Buffer[T:Typ:Numeric:SepiaNum](val width: Rep[Int],
+                                            val height: Rep[Int],
+                                            val a: Rep[Array[T]]) {
+    def apply(x: Rep[Int], y: Rep[Int]) = bufferApply(this, x, y)
     def free(): Rep[Unit] = bufferFree(this)
+
+    val typEv = typ[T]
+    val numEv = implicitly[Numeric[T]]
+    val sepEv = implicitly[SepiaNum[T]]
   }
 
-  class RGBValOps[T:Numeric:Typ:SepiaNum](v: RGBVal[T]) {
-    val sepiaNum = implicitly[SepiaNum[T]]
-    import sepiaNum._
-    def +(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red + other.red,
-                                          v.green + other.green,
-                                          v.blue + other.blue)
-    def +(other: Rep[T]): RGBVal[T] = RGBVal(numeric_plus(v.red, other),
-                                              numeric_plus(v.green, other),
-                                              numeric_plus(v.blue, other))
-    def +(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] = RGBVal[Double](other + v.red,
-                                            v.green + other,
-                                            v.blue + other)
-
-    def -(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red - other.red,
-                                          v.green - other.green,
-                                          v.blue - other.blue)
-    def -(other: Rep[T]): RGBVal[T] = RGBVal(v.red - other,
-                                               v.green - other,
-                                               v.blue - other)
-    def -(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] =
-                                RGBVal(v.red - other,
-                                       v.green - other,
-                                       v.blue - other)
-
-    def *(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red * other.red,
-                                                v.green * other.green,
-                                                v.blue * other.blue)
-    def *(other: Rep[T]): RGBVal[T] = RGBVal(v.red * other,
-                                             v.green * other,
-                                             v.blue * other)
-    def *(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] =
-                              RGBVal(v.red * other,
-                                     v.green * other,
-                                     v.blue * other)
-
-    def /(other: RGBVal[T]): RGBVal[T] = RGBVal(v.red / other.red,
-                                                v.green / other.green,
-                                                v.blue / other.blue)
-    def /(other: Rep[T]): RGBVal[T] = RGBVal(v.red / other,
-                                             v.green / other,
-                                             v.blue / other)
-    def /(other: Rep[Double])(implicit d1: DummyImplicit): RGBVal[Double] =
-                                RGBVal(v.red / other,
-                                       v.green / other,
-                                       v.blue / other)
-  }
-
-  implicit def RGBValToOps[T:Typ:Numeric:SepiaNum](v: RGBVal[T]): RGBValOps[T] = new RGBValOps(v)
-
-  implicit class RGBEnrichedDoubles(v: Rep[Double]) {
-    def makeRGBValOp[T:Typ:Numeric:SepiaNum](f: (Rep[Double], Rep[Double]) => Rep[Double])(rgb: RGBVal[T]): RGBVal[Double] = {
-      val sNum = implicitly[SepiaNum[T]]
-      RGBVal(f(v,sNum.T2Double(rgb.red)),
-             f(v, sNum.T2Double(rgb.green)),
-             f(v, sNum.T2Double(rgb.blue)))
-    }
-    def *[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
-      makeRGBValOp[T](numeric_times)(rgb)
-    }
-
-    def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
-      makeRGBValOp[T](numeric_divide)(rgb)
-    }
-
-    def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
-      makeRGBValOp[T](numeric_minus)(rgb)
-    }
-
-    def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[Double] = {
-      makeRGBValOp[T](numeric_plus)(rgb)
-    }
-  }
-
-  implicit class RGBEnrichedInts(v: Rep[Int]) {
-    def makeRGBValOp[T:Typ:Numeric:SepiaNum](f: (Rep[T], Rep[T]) => Rep[T])(rgb: RGBVal[T]): RGBVal[T] = {
-      val sNum = implicitly[SepiaNum[T]]
-      RGBVal(f(sNum.int2T(v),rgb.red),
-             f(sNum.int2T(v), rgb.green),
-             f(sNum.int2T(v), rgb.blue))
-    }
-    def *[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-      makeRGBValOp[T](numeric_times)(rgb)
-    }
-
-    def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-      makeRGBValOp[T](numeric_divide)(rgb)
-    }
-
-    def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-      makeRGBValOp[T](numeric_minus)(rgb)
-    }
-
-    def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-      makeRGBValOp[T](numeric_plus)(rgb)
-    }
-  }
-
-  case class RGBVal[T:Typ:Numeric:SepiaNum](red: Rep[T], green: Rep[T], blue: Rep[T])
-
-  def bufferApply(b: Buffer, x: Rep[Int], y: Rep[Int]): RGBVal[Int]
-  def bufferFree(b: Buffer): Rep[Unit]
+  def bufferApply[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Rep[Int],
+                                 y: Rep[Int]): RGBVal[T]
+  def bufferFree[T:Typ:Numeric:SepiaNum](b: Buffer[T]): Rep[Unit]
 }
 
 trait CompilerImageOps extends ImageBufferOps {
   object NewBuffer {
-    def apply(width: Rep[Int], height: Rep[Int]) = newBuffer(width, height)
+    def apply[T:Typ:Numeric:SepiaNum](width: Rep[Int], height: Rep[Int]) = newBuffer[T](width, height)
   }
 
-  implicit def bufferToBufferOps(b: Buffer): BufferOps = new BufferOps(b)
+  implicit def bufferToBufferOps[T:Typ:Numeric:SepiaNum](b: Buffer[T]): BufferOps[T] = new BufferOps(b)
 
-  class BufferOps(b: Buffer) {
-    def update[T:Typ:Numeric:SepiaNum](x: Rep[Int], y: Rep[Int], v: RGBVal[T]) = bufferUpdate(b, x, y, v)
-    def memcpy(src: Buffer) = bufferMemCpy(src, b)
+  class BufferOps[T:Typ:Numeric:SepiaNum](b: Buffer[T]) {
+    def update(x: Rep[Int], y: Rep[Int], v: RGBVal[T]) = bufferUpdate(b, x, y, v)
   }
 
-  def newBuffer(width: Rep[Int], height: Rep[Int]): Buffer
-  def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer, x: Rep[Int], y: Rep[Int], v: RGBVal[T]): Rep[Unit]
-  def bufferMemCpy(src: Buffer, dest: Buffer): Rep[Unit]
+  def newBuffer[T:Typ:Numeric:SepiaNum](width: Rep[Int], height: Rep[Int]): Buffer[T]
+  def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Rep[Int], y: Rep[Int], v: RGBVal[T]): Rep[Unit]
+  def bufferMemCpy[T:Typ:Numeric:SepiaNum](src: Buffer[T], dest: Buffer[UChar]): Rep[Unit]
 
 }
 
 trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
                         with ArrayOpsExpOpt with PrimitiveOpsExpOpt {
 
-  case class MemCpy(src: Rep[Array[UChar]], dest: Rep[Array[UChar]], size: Rep[Int])
-    extends Def[Unit]
-  case class IntToDoubleConversion(x: Rep[Int]) extends Def[Double]
-  case class DoubleToIntConversion(x: Rep[Double]) extends Def[Int]
-  case class ArrayFree(b: Rep[Array[UChar]]) extends Def[Unit]
+  case class MemCpy[T:Typ:Numeric:SepiaNum](src: Exp[Array[T]], dest: Exp[Array[UChar]],
+                                            size: Exp[Int]) extends Def[Unit] {
+    val typEv = typ[T]
+    val numEv = implicitly[Numeric[T]]
+    val sepEv = implicitly[SepiaNum[T]]
+  }
+  case class IntToDoubleConversion(x: Exp[Int]) extends Def[Double]
+  case class DoubleToIntConversion(x: Exp[Double]) extends Def[Int]
+  case class ShortToDoubleConversion(x: Exp[Short]) extends Def[Double]
+  case class ArrayFree[T:Typ:Numeric:SepiaNum](b: Exp[Array[T]]) extends Def[Unit] {
+    val typEv = typ[T]
+    val numEv = implicitly[Numeric[T]]
+    val sepEv = implicitly[SepiaNum[T]]
+  }
 
 
   override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] =
     (e match {
-      case ArrayFree(x) => arrayFree(x)
-      case Reflect(ArrayFree(x), u, es) => {
-        reflectMirrored(Reflect(ArrayFree(f(x)), mapOver(f, u), f(es)))(mtyp1[A], pos)
+      case af@ArrayFree(x) => arrayFree(x)(af.typEv, af.numEv, af.sepEv)
+      case Reflect(af@ArrayFree(x), u, es) => {
+        reflectMirrored(Reflect(ArrayFree(f(x))(af.typEv, af.numEv, af.sepEv), mapOver(f, u), f(es)))(mtyp1[A], pos)
       }
       case IntToDoubleConversion(x) => int2double(f(x))
       case DoubleToIntConversion(x) => double2int(f(x))
-      case Reflect(MemCpy(src, dest, len), u, es) => {
-         reflectMirrored(Reflect(MemCpy(f(src),f(dest),f(len)), mapOver(f,u), f(es)))(mtyp1[A], pos)
+      case Reflect(mc@MemCpy(src, dest, len), u, es) => {
+         reflectMirrored(Reflect(MemCpy(f(src),f(dest),f(len))(mc.typEv, mc.numEv, mc.sepEv),
+                                 mapOver(f,u), f(es)))(mtyp1[A], pos)
       }
       case _ => super.mirror(e, f)
     }).asInstanceOf[Exp[A]]
 
 
-  override def newBuffer(m: Exp[Int], n: Exp[Int]) = {
-    Buffer(m, n, array_obj_new[UChar](m * n * 3))
+  override def newBuffer[T:Typ:Numeric:SepiaNum](m: Exp[Int], n: Exp[Int]) = {
+    Buffer(m, n, array_obj_new[T](m * n * 3))
   }
 
-  override def bufferApply(b: Buffer, x: Exp[Int], y: Exp[Int]) = {
-    RGBVal(s2i(array_apply(b.a, 3 * (x + b.width * y) + 2)),
-           s2i(array_apply(b.a, 3 * (x + b.width * y) + 1)),
-           s2i(array_apply(b.a, 3 * (x + b.width * y))))
+  override def bufferApply[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Exp[Int], y: Exp[Int]) = {
+    RGBVal(array_apply(b.a, 3 * (x + b.width * y) + 2),
+           array_apply(b.a, 3 * (x + b.width * y) + 1),
+           array_apply(b.a, 3 * (x + b.width * y)))
   }
 
-  override def bufferFree(b: Buffer) = {
+  override def bufferFree[T:Typ:Numeric:SepiaNum](b: Buffer[T]) = {
     arrayFree(b.a)  // todo: Should we be marking some side effects here?
   }
-  def arrayFree(a: Rep[Array[UChar]]) = {
+  def arrayFree[T:Typ:Numeric:SepiaNum](a: Rep[Array[T]]) = {
     ArrayFree(a)
   }
 
-  override def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer, x: Exp[Int], y: Exp[Int], v: RGBVal[T]) = {
+  override def bufferUpdate[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Exp[Int], y: Exp[Int], v: RGBVal[T]) = {
     val sepiaNum = implicitly[SepiaNum[T]]
-    array_update(b.a, 3 * (x + b.width * y) + 2, sepiaNum.T2short(v.red))
-    array_update(b.a, 3 * (x + b.width * y) + 1, sepiaNum.T2short(v.green))
-    array_update(b.a, 3 * (x + b.width * y), sepiaNum.T2short(v.blue))
+    array_update[T](b.a, 3 * (x + b.width * y) + 2, v.red)
+    array_update[T](b.a, 3 * (x + b.width * y) + 1, v.green)
+    array_update[T](b.a, 3 * (x + b.width * y), v.blue)
   }
 
-  override def bufferMemCpy(src: Buffer, dest: Buffer) = {
+  // We only use this at the very end, so keep it as just Buffer[UChar]
+  override def bufferMemCpy[T:Typ:Numeric:SepiaNum](src: Buffer[T], dest: Buffer[UChar]): Exp[Unit] = {
     bufferMemCpy(src.a, dest.a, src.width * src.height * 3)
   }
 
-  def bufferMemCpy(src: Rep[Array[UChar]], dest: Rep[Array[UChar]],
+  def bufferMemCpy[T:Typ:Numeric:SepiaNum](src: Exp[Array[T]], dest: Exp[Array[UChar]],
                    len: Rep[Int]) = {
     /*reflectWrite(dest)(*/MemCpy(src, dest, len) // unsafe... like ArrayCopy, the issue is some weird sharing...
   }
 
-  def int2double(v: Rep[Int]): Rep[Double] = IntToDoubleConversion(v)
-  def double2int(v: Rep[Double]): Rep[Int] = DoubleToIntConversion(v)
-  def double2short(v: Rep[Double]): Rep[Short] = d2s(v)
-  def int2short(v: Rep[Int]): Rep[Short] = i2s(v)
+  def int2double(v: Exp[Int]): Exp[Double] = IntToDoubleConversion(v)
+  def double2int(v: Exp[Double]): Exp[Int] = DoubleToIntConversion(v)
+  def short2double(v: Exp[Short]): Exp[Double] = ShortToDoubleConversion(v)
+  def double2short(v: Exp[Double]): Exp[Short] = d2s(v)
+  def int2short(v: Exp[Int]): Exp[Short] = i2s(v)
 }

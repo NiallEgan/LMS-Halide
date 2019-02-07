@@ -19,6 +19,10 @@ trait ShortOps extends PrimitiveOps {
   def s2i(a: Rep[Short]): Rep[Int]
   def d2s(a: Rep[Double]): Rep[Short]
 
+  def repShortToRepInt(a: Rep[Short]): Rep[Int] = s2i(a)
+  def repShortToRepDouble(a: Rep[Short]): Rep[Double]
+  def repShortToRepFloat(a: Rep[Short]): Rep[Float]
+
   implicit def i2reps(i: Int) = unit(i.toShort)
 
 }
@@ -28,7 +32,8 @@ trait ShortOpsExp extends ShortOps with EffectExp {
   case class ShortPlus(a: Exp[Short], b: Exp[Short]) extends Def[Short]
   case class ShortTimes(a: Exp[Short], b: Exp[Short]) extends Def[Short]
   case class ShortDivide(a: Exp[Short], b: Exp[Short]) extends Def[Short]
-
+  case class ShortToDouble(a: Exp[Short]) extends Def[Double]
+  case class ShortToFloat(a: Exp[Short]) extends Def[Float]
   case class ShortConvert(a: Exp[Int]) extends Def[Short]
   case class IntConvert(a: Exp[Short]) extends Def[Int]
   case class DoubleToShortConversion(a: Exp[Double]) extends Def[Short]
@@ -41,6 +46,9 @@ trait ShortOpsExp extends ShortOps with EffectExp {
   override def i2s(a: Exp[Int]) = ShortConvert(a)
   override def s2i(a: Exp[Short]) = IntConvert(a)
   override def d2s(a: Exp[Double]) = DoubleToShortConversion(a)
+  override def repShortToRepDouble(a: Rep[Short]): Rep[Double] = ShortToDouble(a)
+  override def repShortToRepFloat(a: Rep[Short]): Rep[Float] = ShortToFloat(a)
+
 
   override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
     super.mirror(e, f)(typ[A], pos)
@@ -50,11 +58,15 @@ trait ShortOpsExp extends ShortOps with EffectExp {
 
 trait ShortOpsExpOpt extends ShortOpsExp {
   override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
+
+    //println(f"Mirroring $e")
     (e match {
       case ShortMinus(a, b) => short_minus(f(a), f(b))
       case ShortPlus(a, b) => short_plus(f(a), f(b))
       case ShortTimes(a, b) => short_times(f(a), f(b))
       case ShortDivide(a, b) => short_divide(f(a), f(b))
+      case ShortToFloat(a) => repShortToRepFloat(a)
+      case ShortToDouble(a) => repShortToRepDouble(a)
       case ShortConvert(a) => i2s(f(a))
       case IntConvert(a) => s2i(f(a))
       case DoubleToShortConversion(a) => d2s(f(a))
@@ -73,6 +85,11 @@ trait ShortOpsExpOpt extends ShortOpsExp {
         reflectMirrored(Reflect(IntConvert(f(a)), mapOver(f, u), f(es)))
       case Reflect(DoubleToShortConversion(a), u, es) =>
         reflectMirrored(Reflect(DoubleToShortConversion(f(a)), mapOver(f, u), f(es)))
+      case Reflect(ShortToFloat(a), u, es) =>
+        reflectMirrored(Reflect(ShortToFloat(f(a)), mapOver(f, u), f(es)))
+      case Reflect(ShortToDouble(a), u, es) =>
+        reflectMirrored(Reflect(ShortToDouble(f(a)), mapOver(f, u), f(es)))
+
       case _ => super.mirror(e, f)(typ[A], pos)
     }).asInstanceOf[Exp[A]]
   }
@@ -119,6 +136,8 @@ trait CGenShortOps extends CGenBase {
       case ShortConvert(a) => emitValDef(sym, src"$a")
       case IntConvert(a) => emitValDef(sym, src"(int) $a") // unsafe...
       case DoubleToShortConversion(a) => emitValDef(sym, src"(UCHAR) $a")
+      case ShortToFloat(a) => emitValDef(sym, src"(float) $a")
+      case ShortToDouble(a) => emitValDef(sym, src"(double) $a")
       case _ => super.emitNode(sym, rhs)
     }
   }
