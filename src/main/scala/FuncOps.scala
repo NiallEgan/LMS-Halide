@@ -82,10 +82,11 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
                  val outer: Dim, val inner: Dim, val splitFactor: Int) extends Dim(min, max, name, f) {
       override def v: Rep[Int] = {
-        val clampedOuter: Rep[Int] =
+        /*val clampedOuter: Rep[Int] =
           if (outer.v * splitFactor > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor
           else outer.v * splitFactor
-        clampedOuter + inner.v
+        clampedOuter + inner.v*/
+        outer.v * splitFactor + inner.v + looplb
 
       }
       override def v_=(new_val: Rep[Int]) = {
@@ -175,8 +176,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       // that we hit every value
       val oldDim = vars(v)
       val x = oldDim.max - splitFactor
-      val outerDim = new OuterDim(oldDim.min / splitFactor,
-          if (x % splitFactor == 0) x / splitFactor + 1 else x / splitFactor + 2,
+      val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
           outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor)
       vars(v) = new SplitDim(oldDim.min, oldDim.max,
                              oldDim.name, oldDim.f,

@@ -61,7 +61,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case ShortMinus(a, b)							=> f(List(a, b).map(m))
 			case ShortTimes(a, b)							=> f(List(a, b).map(m))
 			case ShortConvert(a)				  		=> f(List(a).map(m))
-			case IntConvert(a)				  	  	=> f(List(a).map(m))
+			case ShortToInt(a)				  	  	=> f(List(a).map(m))
 			case NumericDivide(a, b)					=> f(List(a, b).map(m))
 			case NumericPlus(a, b)					  => f(List(a, b).map(m))
 			case NumericTimes(a, b)           => f(List(a, b).map(m))

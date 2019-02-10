@@ -166,15 +166,18 @@ trait OneStageBoxBlur extends TestPipeline {
 
 trait OneStageBoxBlurVectorized extends TestPipeline {
 	override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val g = func[Double] {
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3.0
+		}
 		val i = final_func {
-			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x, y+1) + in(x, y-1) +
-																			in(x-1, y-1) + in(x-1, y) + in(x-1, y+1) +
-																			in(x+1, y-1) + in(x+1, y) + in(x+1, y+1)) / 9.0
+			(x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y+1) + g(x, y-1)) / 3
 		}
 
-		i.vectorize("x", 4)
+		g.computeAt(i, "y")
+		g.split("x", "x_outer", "x_inner", 2)
+		//g.vectorize("x", 4)
 
-
+		registerFunction("g", g)
 		registerFunction("i", i)
 	}
 }

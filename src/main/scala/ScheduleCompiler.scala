@@ -222,7 +222,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 					}*/
 
 					// TODO: Generalize - a lot!
-					vectorized_loop(0 until 4,  i => {
+					vectorized_loop(0 until 4, i => {
 						variable.v_=(i)
 						assert(children.length == 1)
 						val child = children(0)

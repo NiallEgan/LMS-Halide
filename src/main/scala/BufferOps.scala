@@ -18,7 +18,7 @@ trait ImageBufferOps extends RGBValOps {
   }
 
   def bufferApply[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Rep[Int],
-                                 y: Rep[Int]): RGBVal[T]
+                                          y: Rep[Int]): RGBVal[T]
   def bufferFree[T:Typ:Numeric:SepiaNum](b: Buffer[T]): Rep[Unit]
 }
 

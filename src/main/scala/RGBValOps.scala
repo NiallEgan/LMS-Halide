@@ -309,18 +309,6 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
    def *(rgb: RGBVal[Int]): RGBVal[Int] = {
      repConstToRgb(v) * rgb
    }
-
-   /*def /[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-     makeRGBValOp[T](numeric_divide)(rgb)
-   }
-
-   def -[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-     makeRGBValOp[T](numeric_minus)(rgb)
-   }
-
-   def +[T:Typ:Numeric:SepiaNum](rgb: RGBVal[T]): RGBVal[T] = {
-     makeRGBValOp[T](numeric_plus)(rgb)
-   }*/
  }
 
   case class RGBVal[T:Typ:Numeric:SepiaNum](red: Rep[T], green: Rep[T], blue: Rep[T]) {

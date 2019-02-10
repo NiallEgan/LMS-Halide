@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <immintrin.h>
 
 #define UCHAR unsigned char
 #define MIN(x, y) ((x) < (y) ? (x) : (y))

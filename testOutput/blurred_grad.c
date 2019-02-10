@@ -50,5 +50,5 @@ x55[x42] = x39;
 memcpy(x1, x55, x11);
 free(x55);
 }
-int32_t WIDTH_OUT_DIFF = 2;
-int32_t HEIGHT_OUT_DIFF = 2;
+int32_t WIDTH_OUT_DIFF = 0;
+int32_t HEIGHT_OUT_DIFF = 0;
