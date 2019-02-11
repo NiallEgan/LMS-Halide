@@ -21,6 +21,21 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 			variable.loopub_=(upperBound)
 			variable.shadowingUb_=(upperBound)
 			(lowerBound, upperBound)
+		} else if (variable.isInstanceOf[OuterDim]) {
+			val outerVariable = variable.asInstanceOf[OuterDim]
+			val normalBounds = computeSimpleLoopBounds(outerVariable.old, stage, boundsGraph, enclosingLoops)
+			val a = normalBounds._1
+			val b = normalBounds._2
+			outerVariable.setOldLoopOffset(a)
+			val lowerBound = 0
+			// (x + y - 1) / y ceils
+			// maybe q = (x % y) ? x / y + 1 : x / y is better?
+			val extent = outerVariable.splitFactor
+			val upperBound = (b - a + extent - 1) / extent
+			variable.looplb_=(lowerBound)
+			variable.loopub_=(upperBound)
+			variable.shadowingUb_=(b)
+			(lowerBound, upperBound)
 		} else computeSimpleLoopBounds(variable, stage, boundsGraph, enclosingLoops)
 	}
 
@@ -51,11 +66,10 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
 			  val unadjLb = baseVar.v + bound.lb
 				val unadjUb = baseVar.v + bound.ub
-			  variable.looplb_=(variable.adjustLower(unadjLb))
+			  variable.looplb_=(unadjLb)
 				variable.shadowingUb_=(unadjUb + 1)
 				variable.loopub_=(unadjUb + 1)
-				(variable.adjustLower(unadjLb),
-				 variable.adjustUpper(unadjUb) + 1)
+				(unadjLb, unadjUb + 1)
 			}
 		}
 	}

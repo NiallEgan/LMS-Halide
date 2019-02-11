@@ -1,0 +1,154 @@
+#include <string.h>
+#include <stdio.h>
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 - 1;
+int32_t x7 = x4 - 1;
+int32_t x5 = x3 - 1;
+int32_t x10 = x5 - 1;
+int32_t x11 = x7 * x10;
+int32_t x12 = x11 * 3;
+UCHAR *x158 = malloc(sizeof(UCHAR) * x12);
+int32_t x16 = x7 * 3;
+int32_t x17 = x16 * 3;
+int32_t x24 = x7 + 4;
+int32_t x25 = x24 - 1;
+int32_t x26 = x25 / 4;
+int32_t x6 = x4 - 4;
+int32_t x33 = x6 - 1;
+__m256d x187 = _mm256_set_pd(3.0, 3.0, 3.0, 3.0);
+for(int x15=1; x15 < x5; x15++) {
+double *x159 = malloc(sizeof(double) * x17);
+int32_t x19 = x15 + -1;
+int32_t x20 = x15 + 1;
+int32_t x21 = x20 + 1;
+for(int x23=x19; x23 < x21; x23++) {
+int32_t x37 = x2 * x23;
+int32_t x84 = x23 - x19;
+int32_t x85 = x7 * x84;
+for(int x28=0; x28 < x26; x28++) {
+int32_t x30 = x28 * 4;
+int32_t x31 = x30 + 1;
+bool x32 = x31 > x6;
+int32_t x34;
+if (x32) {
+x34 = x33;
+} else {
+x34 = x30;
+}
+int32_t x160 = x34 + 1;
+int32_t x161 = x160 + x37;
+int32_t x162 = 3 * x161;
+int32_t x163 = x162 + 2;
+__m256i x181 = _mm256_loadu_si256((__m256i const *) (x0 + x163));
+printf("Loading values: %d, %d, %d, %d\n", x0[x163], x0[x163 + 1], x0[x163 + 2], x0[x163 + 3]);
+int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
+_mm256_storeu_si256((__m256i *) initialLoad, x181);
+printf("iniitalLoad: %d, %d, %d, %d, %d, %d, %d, %d\n", initialLoad[0], initialLoad[1], initialLoad[2], initialLoad[3],
+        initialLoad[4], initialLoad[5], initialLoad[6], initialLoad[7]);
+
+
+int32_t x166 = x160 + 1;
+int32_t x167 = x166 + x37;
+int32_t x168 = 3 * x167;
+int32_t x169 = x168 + 2;
+__m256i x182 = _mm256_loadu_si256((__m256i const *) (x0 + x169));
+__m256i x183 = _mm256_add_epi32(x181, x182);
+int32_t x173 = x34 + x37;
+int32_t x174 = 3 * x173;
+int32_t x175 = x174 + 2;
+__m256i x184 = _mm256_loadu_si256((__m256i const *) (x0 + x175));
+__m256i x185 = _mm256_add_epi32(x183, x184);
+__m256d x186 = _mm256_castsi256_pd(x185);
+__m256d x188 = _mm256_div_pd(x186, x187);
+int32_t x189 = x34 + x85;
+int32_t x190 = 3 * x189;
+int32_t x191 = x190 + 2;
+int32_t x193 = x162 + 1;
+__m256i x206 = _mm256_loadu_si256((__m256i const *) (x0 + x193));
+int32_t x196 = x168 + 1;
+__m256i x207 = _mm256_loadu_si256((__m256i const *) (x0 + x196));
+__m256i x208 = _mm256_add_epi32(x206, x207);
+int32_t x200 = x174 + 1;
+__m256i x209 = _mm256_loadu_si256((__m256i const *) (x0 + x200));
+__m256i x210 = _mm256_add_epi32(x208, x209);
+__m256d x211 = _mm256_castsi256_pd(x210);
+__m256d x212 = _mm256_div_pd(x211, x187);
+int32_t x213 = x190 + 1;
+__m256i x225 = _mm256_loadu_si256((__m256i const *) (x0 + x162));
+__m256i x226 = _mm256_loadu_si256((__m256i const *) (x0 + x168));
+__m256i x227 = _mm256_add_epi32(x225, x226);
+__m256i x228 = _mm256_loadu_si256((__m256i const *) (x0 + x174));
+__m256i x229 = _mm256_add_epi32(x227, x228);
+__m256d x230 = _mm256_castsi256_pd(x229);
+__m256d x231 = _mm256_div_pd(x230, x187);
+double *xs = (double *) malloc(sizeof(double) * 4);
+_mm256_storeu_pd(xs, x231);
+printf("One vector: %f, %f, %f, %f\n", x231[0], x231[1], x231[2], x231[3]);
+_mm256_storeu_pd((double *) (x159 + x191), x188);
+_mm256_storeu_pd((double *) (x159 + x213), x212);
+_mm256_storeu_pd((double *) (x159 + x190), x231);
+
+}
+
+}
+int32_t x102 = x15 - x19;
+int32_t x103 = x7 * x102;
+int32_t x111 = x20 - x19;
+int32_t x112 = x7 * x111;
+int32_t x123 = x15 - 1;
+int32_t x124 = x123 - x19;
+int32_t x125 = x7 * x124;
+int32_t x142 = x7 * x123;
+for(int x100=1; x100 < x4; x100++) {
+int32_t x101 = x100 - 1;
+int32_t x104 = x101 + x103;
+int32_t x105 = 3 * x104;
+int32_t x106 = x105 + 2;
+double x239 = x159[x106];
+int32_t x108 = x105 + 1;
+double x240 = x159[x108];
+double x241 = x159[x105];
+int32_t x113 = x101 + x112;
+int32_t x114 = 3 * x113;
+int32_t x115 = x114 + 2;
+double x242 = x159[x115];
+int32_t x117 = x114 + 1;
+double x243 = x159[x117];
+double x244 = x159[x114];
+int32_t x126 = x101 + x125;
+int32_t x127 = 3 * x126;
+int32_t x128 = x127 + 2;
+double x245 = x159[x128];
+int32_t x130 = x127 + 1;
+double x246 = x159[x130];
+double x247 = x159[x127];
+int32_t x143 = x101 + x142;
+int32_t x144 = 3 * x143;
+int32_t x145 = x144 + 2;
+double x248 = x239 + x242;
+double x249 = x248 + x245;
+double x250 = x249 / 3.0;
+UCHAR x251 = (UCHAR) x250;
+x158[x145] = x251;
+int32_t x147 = x144 + 1;
+double x253 = x240 + x243;
+double x254 = x253 + x246;
+double x255 = x254 / 3.0;
+UCHAR x256 = (UCHAR) x255;
+x158[x147] = x256;
+double x258 = x241 + x244;
+double x259 = x258 + x247;
+double x260 = x259 / 3.0;
+UCHAR x261 = (UCHAR) x260;
+x158[x144] = x261;
+
+}
+free(x159);
+
+}
+memcpy(x1, x158, x12);
+free(x158);
+}
+int32_t WIDTH_OUT_DIFF = 2;
+int32_t HEIGHT_OUT_DIFF = 2;

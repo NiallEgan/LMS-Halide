@@ -73,20 +73,17 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     val scaleRatio = 1
 
-    def adjustLower(x: Rep[Int]) = x
-    def adjustUpper(x: Rep[Int]) = x
-
     val pseudoLoops: Map[(Func[_], String), Dim] = Map((f, shadowingName) -> this)
 	}
 
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
-                 val outer: Dim, val inner: Dim, val splitFactor: Int) extends Dim(min, max, name, f) {
+                 val outer: Dim, val inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
       override def v: Rep[Int] = {
-        /*val clampedOuter: Rep[Int] =
-          if (outer.v * splitFactor > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor
+        val clampedOuter: Rep[Int] =
+          if (outer.v * splitFactor + old.looplb > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor - old.looplb
           else outer.v * splitFactor
-        clampedOuter + inner.v*/
-        outer.v * splitFactor + inner.v + looplb
+        //clampedOuter + inner.v
+        clampedOuter + inner.v + old.looplb
 
       }
       override def v_=(new_val: Rep[Int]) = {
@@ -99,17 +96,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   }
 
   class OuterDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
-                 sName: String, sRatio: Int) extends Dim(min, max, name, f) {
+                 sName: String, sRatio: Int, val old: Dim, val splitFactor: Int) extends Dim(min, max, name, f) {
       // scale ratio is the ratio of this dimension to the original x or y
       override val scaleRatio = sRatio
       override val shadowingName = sName
-
-      override def adjustLower(x: Rep[Int]) = {
-        x / scaleRatio
-      }
-
-      override def adjustUpper(x: Rep[Int]) = {
-        if (x % scaleRatio == 0) x / scaleRatio else x / scaleRatio + 1
+      def setOldLoopOffset(v: Rep[Int]) {
+        old.loopub_=(v)
       }
   }
 
@@ -177,10 +169,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       val oldDim = vars(v)
       val x = oldDim.max - splitFactor
       val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
-          outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor)
+          outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor, oldDim, splitFactor)
       vars(v) = new SplitDim(oldDim.min, oldDim.max,
                              oldDim.name, oldDim.f,
-                             outerDim, innerDim, splitFactor)
+                             outerDim, innerDim, splitFactor, oldDim)
       vars(outer) = outerDim
       vars(inner) = innerDim
     }

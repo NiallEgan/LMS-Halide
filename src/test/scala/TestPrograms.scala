@@ -174,8 +174,8 @@ trait OneStageBoxBlurVectorized extends TestPipeline {
 		}
 
 		g.computeAt(i, "y")
-		g.split("x", "x_outer", "x_inner", 2)
-		//g.vectorize("x", 4)
+		//g.split("x", "x_outer", "x_inner", 4)
+		g.vectorize("x", 4)
 
 		registerFunction("g", g)
 		registerFunction("i", i)

@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main() {
-  __m256 evens = _mm256_set_ps(2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0);
+  /*__m256 evens = _mm256_set_ps(2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0);
   __m256 odds = _mm256_set_ps(1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0);
 
   __m256 result = _mm256_sub_ps(evens, odds);
@@ -13,7 +13,17 @@ int main() {
 
   for (int i = 0; i < 16; i++) {
     printf("%f\n", arr[i]);
-  }
+  }*/
+
+  int32_t *vals = malloc(sizeof(int32_t) * 8);
+  for (int i = 0; i < 8; i++) vals[i] = i;
+  __m256i vec = _mm256_loadu_si256((__m256i const *) (vals));
+  int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
+  _mm256_storeu_si256((__m256i *) initialLoad, vec);
+  printf("Loading values: %d, %d, %d, %d, %d, %d, %d, %d\n", initialLoad[0], initialLoad[1], initialLoad[2], initialLoad[3], initialLoad[4],
+         initialLoad[5], initialLoad[6], initialLoad[7]);
+  /*int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
+  _mm256_storeu_si256((__m256i *) initialLoad, x181);
 
   /*float* f = (float*)&result;
   printf("%f %f %f %f %f %f %f %f\n",
