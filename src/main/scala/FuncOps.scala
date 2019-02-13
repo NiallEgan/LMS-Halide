@@ -156,6 +156,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {
+      println(f"Buffer allocation: $id has type ${typ[T]}")
       buffer = Some(NewBuffer[T](m, n))
     }
 

@@ -104,10 +104,10 @@ trait AstOps extends Ast {
 		}
 	}
 
-	def listToOption(l: List[Option[ScheduleNode]]): Option[ScheduleNode] = l match {
+	def listToOption(l: List[Option[ScheduleNode]]): Option[ScheduleNode] = l.filter(_.nonEmpty) match {
 		case Nil => None
 		case x::Nil => x
-		case _ => throw new InvalidSchedule("Too many matches")
+		case _ => throw new InvalidSchedule(f"Too many matches $l")
 	}
 
 	private def isComputeNode(node: ScheduleNode, consumer: Func[_]) = node match {

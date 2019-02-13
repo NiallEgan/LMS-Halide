@@ -15,7 +15,10 @@ trait Dsl extends PrimitiveOps with NumericOps
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
           with ImageBufferOps with ShortOps
-          with OrderingOps with VectorizedOps {}
+          with OrderingOps with VectorizedOps {
+  def generate_comment(l: String): Rep[Unit]
+  def comment[A:Typ](l: String, verbose: Boolean = true)(b: => Rep[A]): Rep[A]
+}
 
 trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with NumericOpsExpOpt
              with BooleanOpsExpOpt with IfThenElseExpOpt
@@ -31,6 +34,21 @@ trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with Numeri
  implicit def uIntTyp   : Typ[UInt]   = manifestTyp
  implicit def uLongTyp  : Typ[ULong]  = manifestTyp
  implicit def uShortTyp : Typ[UShort] = manifestTyp
+
+ case class GenerateComment(l: String) extends Def[Unit]
+ def generate_comment(l: String) = reflectEffect(GenerateComment(l))
+ case class Comment[A:Typ](l: String, verbose: Boolean, b: Block[A]) extends Def[A]
+ def comment[A:Typ](l: String, verbose: Boolean)(b: => Rep[A]): Rep[A] = {
+   val br = reifyEffects(b)
+   val be = summarizeEffects(br)
+   reflectEffect[A](Comment(l, verbose, br), be)
+ }
+
+ override def boundSyms(e: Any): List[Sym[Any]] = e match {
+   case Comment(_, _, b) => effectSyms(b)
+   case _ => super.boundSyms(e)
+ }
+
 }
 
 trait DslGenC extends CGenNumericOps
@@ -84,6 +102,7 @@ trait DslGenC extends CGenNumericOps
         case VectorForEach(_, _, _, body) => {
           emitBlock(body) // TODO: Don't let VectorForEach get this far
         }
+        case GenerateComment(s) => stream.println(f"// $s")
         case _ => super.emitNode(sym, rhs)
       }
     }

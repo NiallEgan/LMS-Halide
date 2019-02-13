@@ -15,13 +15,37 @@ int main() {
     printf("%f\n", arr[i]);
   }*/
 
-  int32_t *vals = malloc(sizeof(int32_t) * 8);
+  /*int32_t *vals = malloc(sizeof(int32_t) * 8);
   for (int i = 0; i < 8; i++) vals[i] = i;
   __m256i vec = _mm256_loadu_si256((__m256i const *) (vals));
   int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
   _mm256_storeu_si256((__m256i *) initialLoad, vec);
   printf("Loading values: %d, %d, %d, %d, %d, %d, %d, %d\n", initialLoad[0], initialLoad[1], initialLoad[2], initialLoad[3], initialLoad[4],
+         initialLoad[5], initialLoad[6], initialLoad[7]);*/
+  char bytes[8] = {1, 2, 3, 4, 0, 0, 0, 0};
+  __m256i ctrl = _mm256_setr_epi8(0, 255, 255, 255,
+                                  1, 255, 255, 255,
+                                  2, 255, 255, 255,
+                                  3, 255, 255, 255,
+
+                                  255, 255, 255, 255,
+                                  255, 255, 255, 255,
+                                  255, 255, 255, 255,
+                                  255, 255, 255, 255);
+  __m256i vec = _mm256_loadu_si256((__m256i const *) (bytes));
+  vec = _mm256_shuffle_epi8(vec, ctrl);
+  int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
+  _mm256_storeu_si256((__m256i *) initialLoad, vec);
+
+  printf("Loading values: %d, %d, %d, %d, %d, %d, %d, %d\n", initialLoad[0], initialLoad[1], initialLoad[2], initialLoad[3], initialLoad[4],
          initialLoad[5], initialLoad[6], initialLoad[7]);
+ __m256 vecf = _mm256_castsi256_ps(vec);
+ float *floatingStore = malloc(sizeof(float) * 8);
+ _mm256_storeu_ps(floatingStore, vecf);
+ printf("Floating values: %f, %f, %f, %f, %f, %f, %f, %f\n",
+        vecf[0], vecf[1], vecf[2], vecf[3],
+        vecf[4], vecf[5], vecf[6], vecf[7]);
+ //__m256 x188 = _mm256_div_ps(x186, x187)
   /*int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
   _mm256_storeu_si256((__m256i *) initialLoad, x181);
 

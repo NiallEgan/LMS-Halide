@@ -429,27 +429,7 @@ class CompilerSpec extends FlatSpec {
 		assertResult(correctAst)(blurProg.scheduleRep)
 	}
 
-	"One stage box blur vectorized" should "vectorize x" in {
-		println("One stage blur, vectorized: ")
-		val blurProg = new OneStageBoxBlurVectorized with CompilerInstance
-									 with TestAstOps
-		val blurProgAnalysis = new OneStageBoxBlurVectorized
-													 with TestPipelineAnalysis
-		val correctAst: TNode = new TRootNode(List(
-			new TStorageNode("i", List(
-				new TLoopNode("y", "i", Sequential, List(
-					new TLoopNode("x_outer", "i", Sequential, List(
-						new TLoopNode("x_inner", "i", Vectorized, List(
-							new TComputeNode("i", List())
-						))
-					))
-				))
-			))
-		))
-
-		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur_vectorized")
-		assertResult(correctAst)(blurProg.scheduleRep)
-	}
+	
 
 	"Tiled grad" should "split and reorder x and y" in {
 		println("Grad tiled: ")

@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 int main() {
-  int x_max = 5;
-  int y_max = 6;
+  int x_max = 16;
+  int y_max = 32;
   UCHAR input[x_max * y_max * 3];
 
   for (int y = 0; y < y_max; y++) {
