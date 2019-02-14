@@ -35,8 +35,44 @@ trait Runner {
 }
 
 class VectorOpsSpec extends FlatSpec {
-  val r = new Runner {val p = new VectorProgram with DslExp }
+  /*val r = new Runner {val p = new VectorProgram with DslExp }
   "vectorized prog" should "compile sucessfuly" in {
     r.run()
-  }
+  }*/
+
+  "One stage box blur vectorized" should "vectorize x" in {
+		println("One stage blur, vectorized: ")
+		val blurProg = new BrightenedGradVectorized with CompilerInstance
+									 with TestAstOps
+		val blurProgAnalysis = new BrightenedGradVectorized
+													 with TestPipelineAnalysis
+		val correctAst: TNode = TRootNode(List(
+			TStorageNode("f",List(
+				TLoopNode("y","f",Sequential(),List(
+					TLoopNode("x","f",Sequential(),List(
+						TComputeNode("f",List())
+          ))
+        )),
+				TStorageNode("i",List(
+					TLoopNode("y","i",Sequential(),List(
+						TStorageNode("g",List(
+							TLoopNode("y","g",Sequential(),List(
+								TLoopNode("x_outer", "g", Sequential(),List(
+									TLoopNode("x_inner", "g", Vectorized(8),List(
+										TComputeNode("g",List())
+                  ))
+                ))
+              )),
+							TLoopNode("x","i",Sequential(),List(
+                TComputeNode("i",List())
+              )))
+					))
+				))
+			))
+		))
+			)
+
+		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur_vectorized")
+		assertResult(correctAst)(blurProg.scheduleRep)
+	}
 }

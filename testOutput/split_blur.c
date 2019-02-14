@@ -2,171 +2,152 @@
 #include "pipeline.h"
 void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
 int32_t x4 = x2 - 1;
-int32_t x13 = x4 - 1;
+int32_t x8 = x4 - 1;
 int32_t x5 = x3 - 1;
-int32_t x14 = x5 - 1;
-int32_t x15 = x13 * x14;
+int32_t x9 = x5 - 1;
+int32_t x10 = x8 * x9;
+int32_t x11 = x10 * 3;
+UCHAR *x153 = malloc(sizeof(UCHAR) * x11);
+int32_t x15 = x8 * 3;
 int32_t x16 = x15 * 3;
-UCHAR *x17 = malloc(sizeof(UCHAR) * x16);
-int32_t x20 = x13 * 3;
-int32_t x21 = x20 * 3;
-for(int x19=1; x19 < x5; x19++) {
-UCHAR *x22 = malloc(sizeof(UCHAR) * x21);
-int32_t x23 = x19 + -1;
-int32_t x25 = x23 / 2;
-int32_t x24 = x19 + 1;
-int32_t x27 = x24 % 2;
-bool x28 = x27 == 0;
-int32_t x31;
-if (x28) {
-int32_t x29 = x24 / 2;
-x31 = x29;
+for(int x14=1; x14 < x5; x14++) {
+int32_t *x154 = malloc(sizeof(int32_t) * x16);
+int32_t x18 = x14 + -1;
+int32_t x19 = x14 + 1;
+int32_t x20 = x19 + 1;
+int32_t x21 = x20 - x18;
+int32_t x22 = x21 + 2;
+int32_t x23 = x22 - 1;
+int32_t x24 = x23 / 2;
+int32_t x33 = x20 - 2;
+int32_t x35 = x33 - x18;
+for(int x26=0; x26 < x24; x26++) {
+int32_t x31 = x26 * 2;
+int32_t x32 = x31 + x18;
+bool x34 = x32 > x33;
+int32_t x36;
+if (x34) {
+x36 = x35;
 } else {
-int32_t x29 = x24 / 2;
-int32_t x30 = x29 + 1;
-x31 = x30;
+x36 = x31;
 }
-int32_t x32 = x31 + 1;
-int32_t x26 = x24 + 1;
-int32_t x40 = x26 - 2;
-for(int x34=x25; x34 < x32; x34++) {
-int32_t x39 = x34 * 2;
-bool x41 = x39 > x40;
-int32_t x42;
-if (x41) {
-x42 = x40;
-} else {
-x42 = x39;
-}
-for(int x36=0; x36 < 2; x36++) {
-int32_t x43 = x42 + x36;
-int32_t x86 = x43 - x23;
-int32_t x87 = x13 * x86;
-int32_t x44 = x2 * x43;
-for(int x38=1; x38 < x4; x38++) {
-int32_t x69 = x38 - 1;
-int32_t x88 = x69 + x87;
-int32_t x89 = 3 * x88;
-int32_t x90 = x89 + 2;
-int32_t x45 = x38 + x44;
-int32_t x46 = 3 * x45;
-int32_t x47 = x46 + 2;
-UCHAR x48 = x0[x47];
-int32_t x49 = (int) x48;
-int32_t x55 = x38 + 1;
-int32_t x56 = x55 + x44;
-int32_t x57 = 3 * x56;
-int32_t x58 = x57 + 2;
-UCHAR x59 = x0[x58];
-int32_t x60 = (int) x59;
-int32_t x66 = x49 + x60;
-int32_t x70 = x69 + x44;
-int32_t x71 = 3 * x70;
-int32_t x72 = x71 + 2;
-UCHAR x73 = x0[x72];
-int32_t x74 = (int) x73;
-int32_t x80 = x66 + x74;
-int32_t x83 = x80 / 3;
-UCHAR x91 = x83;
-x22[x90] = x91;
-int32_t x93 = x89 + 1;
-int32_t x50 = x46 + 1;
+for(int x28=0; x28 < 2; x28++) {
+int32_t x37 = x36 + x28;
+int32_t x38 = x37 + x18;
+int32_t x39 = x2 * x38;
+int32_t x81 = x8 * x37;
+for(int x30=1; x30 < x4; x30++) {
+int32_t x40 = x30 + x39;
+int32_t x41 = 3 * x40;
+int32_t x42 = x41 + 2;
+UCHAR x43 = x0[x42];
+int32_t x55 = (int) x43;
+int32_t x47 = x30 + 1;
+int32_t x48 = x47 + x39;
+int32_t x49 = 3 * x48;
+int32_t x50 = x49 + 2;
 UCHAR x51 = x0[x50];
-int32_t x52 = (int) x51;
-int32_t x61 = x57 + 1;
-UCHAR x62 = x0[x61];
-int32_t x63 = (int) x62;
-int32_t x67 = x52 + x63;
-int32_t x75 = x71 + 1;
-UCHAR x76 = x0[x75];
-int32_t x77 = (int) x76;
-int32_t x81 = x67 + x77;
-int32_t x84 = x81 / 3;
-UCHAR x94 = x84;
-x22[x93] = x94;
-UCHAR x53 = x0[x46];
-int32_t x54 = (int) x53;
-UCHAR x64 = x0[x57];
-int32_t x65 = (int) x64;
-int32_t x68 = x54 + x65;
-UCHAR x78 = x0[x71];
-int32_t x79 = (int) x78;
-int32_t x82 = x68 + x79;
-int32_t x85 = x82 / 3;
-UCHAR x96 = x85;
-x22[x89] = x96;
+int32_t x58 = (int) x51;
+int32_t x61 = x55 + x58;
+int32_t x64 = x30 - 1;
+int32_t x65 = x64 + x39;
+int32_t x66 = 3 * x65;
+int32_t x67 = x66 + 2;
+UCHAR x68 = x0[x67];
+int32_t x72 = (int) x68;
+int32_t x75 = x61 + x72;
+int32_t x78 = x75 / 3;
+int32_t x82 = x64 + x81;
+int32_t x83 = 3 * x82;
+int32_t x84 = x83 + 2;
+x154[x84] = x78;
+int32_t x44 = x41 + 1;
+UCHAR x45 = x0[x44];
+int32_t x56 = (int) x45;
+int32_t x52 = x49 + 1;
+UCHAR x53 = x0[x52];
+int32_t x59 = (int) x53;
+int32_t x62 = x56 + x59;
+int32_t x69 = x66 + 1;
+UCHAR x70 = x0[x69];
+int32_t x73 = (int) x70;
+int32_t x76 = x62 + x73;
+int32_t x79 = x76 / 3;
+int32_t x86 = x83 + 1;
+x154[x86] = x79;
+UCHAR x46 = x0[x41];
+int32_t x57 = (int) x46;
+UCHAR x54 = x0[x49];
+int32_t x60 = (int) x54;
+int32_t x63 = x57 + x60;
+UCHAR x71 = x0[x66];
+int32_t x74 = (int) x71;
+int32_t x77 = x63 + x74;
+int32_t x80 = x77 / 3;
+x154[x83] = x80;
 
 }
 
 }
 
 }
-int32_t x106 = x19 - x23;
-int32_t x107 = x13 * x106;
-int32_t x118 = x24 - x23;
-int32_t x119 = x13 * x118;
-int32_t x133 = x19 - 1;
-int32_t x134 = x133 - x23;
-int32_t x135 = x13 * x134;
-int32_t x152 = x13 * x133;
-for(int x104=1; x104 < x4; x104++) {
-int32_t x105 = x104 - 1;
-int32_t x108 = x105 + x107;
+int32_t x97 = x14 - x18;
+int32_t x98 = x8 * x97;
+int32_t x106 = x19 - x18;
+int32_t x107 = x8 * x106;
+int32_t x118 = x14 - 1;
+int32_t x119 = x118 - x18;
+int32_t x120 = x8 * x119;
+int32_t x137 = x8 * x118;
+for(int x95=1; x95 < x4; x95++) {
+int32_t x96 = x95 - 1;
+int32_t x99 = x96 + x98;
+int32_t x100 = 3 * x99;
+int32_t x101 = x100 + 2;
+int32_t x164 = x154[x101];
+int32_t x103 = x100 + 1;
+int32_t x165 = x154[x103];
+int32_t x166 = x154[x100];
+int32_t x108 = x96 + x107;
 int32_t x109 = 3 * x108;
 int32_t x110 = x109 + 2;
-UCHAR x111 = x22[x110];
-int32_t x113 = x109 + 1;
-UCHAR x114 = x22[x113];
-UCHAR x116 = x22[x109];
-int32_t x120 = x105 + x119;
-int32_t x121 = 3 * x120;
-int32_t x122 = x121 + 2;
-UCHAR x123 = x22[x122];
-int32_t x125 = x121 + 1;
-UCHAR x126 = x22[x125];
-UCHAR x128 = x22[x121];
-int32_t x136 = x105 + x135;
-int32_t x137 = 3 * x136;
-int32_t x138 = x137 + 2;
-UCHAR x139 = x22[x138];
-int32_t x141 = x137 + 1;
-UCHAR x142 = x22[x141];
-UCHAR x144 = x22[x137];
-int32_t x153 = x105 + x152;
-int32_t x154 = 3 * x153;
-int32_t x155 = x154 + 2;
-int32_t x112 = (int) x111;
-int32_t x124 = (int) x123;
-int32_t x130 = x112 + x124;
-int32_t x140 = (int) x139;
-int32_t x146 = x130 + x140;
-int32_t x149 = x146 / 3;
-UCHAR x156 = x149;
-x17[x155] = x156;
-int32_t x158 = x154 + 1;
-int32_t x115 = (int) x114;
-int32_t x127 = (int) x126;
-int32_t x131 = x115 + x127;
-int32_t x143 = (int) x142;
-int32_t x147 = x131 + x143;
-int32_t x150 = x147 / 3;
-UCHAR x159 = x150;
-x17[x158] = x159;
-int32_t x117 = (int) x116;
-int32_t x129 = (int) x128;
-int32_t x132 = x117 + x129;
-int32_t x145 = (int) x144;
-int32_t x148 = x132 + x145;
-int32_t x151 = x148 / 3;
-UCHAR x161 = x151;
-x17[x154] = x161;
+int32_t x167 = x154[x110];
+int32_t x112 = x109 + 1;
+int32_t x168 = x154[x112];
+int32_t x169 = x154[x109];
+int32_t x121 = x96 + x120;
+int32_t x122 = 3 * x121;
+int32_t x123 = x122 + 2;
+int32_t x170 = x154[x123];
+int32_t x125 = x122 + 1;
+int32_t x171 = x154[x125];
+int32_t x172 = x154[x122];
+int32_t x138 = x96 + x137;
+int32_t x139 = 3 * x138;
+int32_t x140 = x139 + 2;
+int32_t x173 = x164 + x167;
+int32_t x174 = x173 + x170;
+int32_t x175 = x174 / 3;
+UCHAR x176 = x175;
+x153[x140] = x176;
+int32_t x142 = x139 + 1;
+int32_t x178 = x165 + x168;
+int32_t x179 = x178 + x171;
+int32_t x180 = x179 / 3;
+UCHAR x181 = x180;
+x153[x142] = x181;
+int32_t x183 = x166 + x169;
+int32_t x184 = x183 + x172;
+int32_t x185 = x184 / 3;
+UCHAR x186 = x185;
+x153[x139] = x186;
 
 }
-free(x22);
+free(x154);
 
 }
-memcpy(x1, x17, x16);
-free(x17);
+memcpy(x1, x153, x11);
+free(x153);
 }
 int32_t WIDTH_OUT_DIFF = 2;
 int32_t HEIGHT_OUT_DIFF = 2;

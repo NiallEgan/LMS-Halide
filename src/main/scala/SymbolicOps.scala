@@ -15,7 +15,7 @@ trait SymbolicOps extends Base with ImageBufferOps {
 trait SymbolicOpsExp extends SymbolicOps with PrimitiveOpsExpOpt {
   case class SymbolicInt(s: String) extends Def[Int]
   case class SymbolicArray() extends Def[Array[UChar]]
-  case class SymbolicArrayApplication(s: String, x: Exp[Int], y: Exp[Int]) extends Def[Int]
+  case class SymbolicArrayApplication[T:Typ:Numeric:SepiaNum](s: String, x: Exp[Int], y: Exp[Int]) extends Def[T]
 
   override def newSymbolicInt(s: String): Rep[Int] = SymbolicInt(s)
   override def newSymbolicArray(): Rep[Array[UChar]] =
@@ -23,13 +23,13 @@ trait SymbolicOpsExp extends SymbolicOps with PrimitiveOpsExpOpt {
 }
 
 trait SymbolicImageBufferOpsExp extends ImageBufferOps with SymbolicOpsExp {
-  def symbolicRGBVal(x: Exp[Int], y: Exp[Int]) = {
-      RGBVal(new SymbolicArrayApplication("r", x, y),
-             new SymbolicArrayApplication("g", x, y),
-             new SymbolicArrayApplication("b", x, y))
+  def symbolicRGBVal[T:Typ:Numeric:SepiaNum](x: Exp[Int], y: Exp[Int]) = {
+      RGBVal[T](SymbolicArrayApplication[T]("r", x, y),
+                SymbolicArrayApplication[T]("g", x, y),
+                SymbolicArrayApplication[T]("b", x, y))
   }
 
-  override def bufferApply(b: Buffer, x: Exp[Int], y: Exp[Int]) = {
+  override def bufferApply[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Exp[Int], y: Exp[Int]) = {
     symbolicRGBVal(x, y)
   }
 }

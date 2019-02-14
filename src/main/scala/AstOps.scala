@@ -11,8 +11,8 @@ trait AstOps extends Ast {
 	private def simpleFuncTree[T:Typ:Numeric:SepiaNum](f: Func[T]): ScheduleNode = {
 		val cn: ComputeNode[T] = ComputeNode[T](f, List())
 		val xLoop: LoopNode[T] = LoopNode[T](f.x, f,
-											Sequential, List(cn))
-		val yLoop: LoopNode[T] = LoopNode[T](f.y, f, Sequential, List(xLoop))
+											Sequential(), List(cn))
+		val yLoop: LoopNode[T] = LoopNode[T](f.y, f, Sequential(), List(xLoop))
 	  StorageNode[T](f, List(yLoop))
 	}
 
@@ -104,10 +104,10 @@ trait AstOps extends Ast {
 		}
 	}
 
-	def listToOption(l: List[Option[ScheduleNode]]): Option[ScheduleNode] = l match {
+	def listToOption(l: List[Option[ScheduleNode]]): Option[ScheduleNode] = l.filter(_.nonEmpty) match {
 		case Nil => None
 		case x::Nil => x
-		case _ => throw new InvalidSchedule("Too many matches")
+		case _ => throw new InvalidSchedule(f"Too many matches $l")
 	}
 
 	private def isComputeNode(node: ScheduleNode, consumer: Func[_]) = node match {
@@ -132,9 +132,9 @@ trait AstOps extends Ast {
 		assert(parent.belongsTo(consumer))
 		val cn: ComputeNode[T] = ComputeNode(producer, List())
 		val xLoop: LoopNode[T] = LoopNode(producer.x, producer,
-											Sequential, List(cn))
+											Sequential(), List(cn))
 		val yLoop: LoopNode[T] = LoopNode(producer.y, producer,
-											Sequential, List(xLoop))
+											Sequential(), List(xLoop))
 		sched.findAndTransform(parent, (n: Schedule) =>
 			n.withChildren(StorageNode(producer, yLoop::n.getChildren))
 		)
@@ -191,8 +191,8 @@ trait AstOps extends Ast {
 		val deInlinedSched = if (producer.inlined) {
 			producer.inlined = false
 			val cn: ComputeNode[T] = ComputeNode(producer, List())
-			val xLoop: LoopNode[T] = LoopNode(producer.x, producer, Sequential, List(cn))
-			val yLoop: LoopNode[T] = LoopNode(producer.y, producer, Sequential, List(xLoop))
+			val xLoop: LoopNode[T] = LoopNode(producer.x, producer, Sequential(), List(cn))
+			val yLoop: LoopNode[T] = LoopNode(producer.y, producer, Sequential(), List(xLoop))
 			sched.withChildren(StorageNode(producer, yLoop::sched.getChildren))
 		} else sched
 
@@ -312,7 +312,7 @@ trait AstOps extends Ast {
 				case _ => false
 			},
 			_ match {
-				case LoopNode(_, f, _, children) => LoopNode(outer, f, Sequential, List(LoopNode(inner, f, Sequential, children)))
+				case LoopNode(_, f, _, children) => LoopNode(outer, f, Sequential(), List(LoopNode(inner, f, Sequential(), children)))
 			}
 		)
 		s
@@ -330,6 +330,17 @@ trait AstOps extends Ast {
 				}
 			case _ => sched.mapChildren(swapLoopNodes(_, v1, v2))
 		}
+	}
+
+	def vectorizeLoop(sched: Schedule, dim: Dim, size: Int) = {
+		sched.findAndTransform(
+			_ match {
+			case LoopNode(d, _, _, _) if d == dim => true
+			case _ => false
+		},
+		_ match {
+			case LoopNode(d, stage, _, children) => LoopNode(d, stage, Vectorized(size), children)
+		})
 	}
 
 	def fuseLoopNodes(sched: Schedule, newDim: Dim, outer: Dim, inner: Dim) = {

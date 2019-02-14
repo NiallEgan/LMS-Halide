@@ -73,19 +73,17 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     val scaleRatio = 1
 
-    def adjustLower(x: Rep[Int]) = x
-    def adjustUpper(x: Rep[Int]) = x
-
     val pseudoLoops: Map[(Func[_], String), Dim] = Map((f, shadowingName) -> this)
 	}
 
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
-                 val outer: Dim, val inner: Dim, val splitFactor: Int) extends Dim(min, max, name, f) {
+                 val outer: Dim, val inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
       override def v: Rep[Int] = {
         val clampedOuter: Rep[Int] =
-          if (outer.v * splitFactor > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor
+          if (outer.v * splitFactor + old.looplb > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor - old.looplb
           else outer.v * splitFactor
-        clampedOuter + inner.v
+        //clampedOuter + inner.v
+        clampedOuter + inner.v + old.looplb
 
       }
       override def v_=(new_val: Rep[Int]) = {
@@ -98,17 +96,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   }
 
   class OuterDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
-                 sName: String, sRatio: Int) extends Dim(min, max, name, f) {
+                 sName: String, sRatio: Int, val old: Dim, val splitFactor: Int) extends Dim(min, max, name, f) {
       // scale ratio is the ratio of this dimension to the original x or y
       override val scaleRatio = sRatio
       override val shadowingName = sName
-
-      override def adjustLower(x: Rep[Int]) = {
-        x / scaleRatio
-      }
-
-      override def adjustUpper(x: Rep[Int]) = {
-        if (x % scaleRatio == 0) x / scaleRatio else x / scaleRatio + 1
+      def setOldLoopOffset(v: Rep[Int]) {
+        old.loopub_=(v)
       }
   }
 
@@ -126,7 +119,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   }
 
   class CompilerFunc[T:Typ:Numeric:SepiaNum](val f: (Rep[Int], Rep[Int]) => RGBVal[T],
-                     dom: Domain, val id: Int) {
+                                             val dom: Domain, val id: Int) {
     def x = vars("x")
     def y = vars("y")
     var finalFunc: Boolean = false
@@ -140,7 +133,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     var storeRoot = false
     var storeAt: Option[Dim] = None
     var computeAt: Option[Dim] = None
-    var buffer: Option[Buffer] = None
+    var buffer: Option[Buffer[T]] = None
 
     def compute() = f(x.v, y.v)
 
@@ -154,7 +147,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def allocateNewBuffer() {
-      buffer = Some(NewBuffer(x.max - x.min, y.max - y.min))
+      buffer = allocateNewBuffer(x.max - x.min, y.max - y.min)
     }
 
     def deallocBuffer() {
@@ -163,7 +156,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def allocateNewBuffer(m: Rep[Int], n: Rep[Int]) {
-      buffer = Some(NewBuffer(m, n))
+      println(f"Buffer allocation: $id has type ${typ[T]}")
+      buffer = Some(NewBuffer[T](m, n))
     }
 
     def domWidth = x.max - x.min
@@ -175,12 +169,11 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       // that we hit every value
       val oldDim = vars(v)
       val x = oldDim.max - splitFactor
-      val outerDim = new OuterDim(oldDim.min / splitFactor,
-          if (x % splitFactor == 0) x / splitFactor + 1 else x / splitFactor + 2,
-          outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor)
+      val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
+          outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor, oldDim, splitFactor)
       vars(v) = new SplitDim(oldDim.min, oldDim.max,
                              oldDim.name, oldDim.f,
-                             outerDim, innerDim, splitFactor)
+                             outerDim, innerDim, splitFactor, oldDim)
       vars(outer) = outerDim
       vars(inner) = innerDim
     }
@@ -201,7 +194,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     else {
         val r = f.buffer
                 .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
-        new RGBVal(sepiaNum.int2T(r.red), sepiaNum.int2T(r.green), sepiaNum.int2T(r.blue))
+        new RGBVal(r.red, r.green, r.blue)
     }
   }
 
