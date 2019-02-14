@@ -48,22 +48,22 @@ class VectorOpsSpec extends FlatSpec {
 													 with TestPipelineAnalysis
 		val correctAst: TNode = TRootNode(List(
 			TStorageNode("f",List(
-				TLoopNode("y","f",Sequential,List(
-					TLoopNode("x","f",Sequential,List(
+				TLoopNode("y","f",Sequential(),List(
+					TLoopNode("x","f",Sequential(),List(
 						TComputeNode("f",List())
           ))
         )),
 				TStorageNode("i",List(
-					TLoopNode("y","i",Sequential,List(
+					TLoopNode("y","i",Sequential(),List(
 						TStorageNode("g",List(
-							TLoopNode("y","g",Sequential,List(
-								TLoopNode("x_outer", "g", Sequential,List(
-									TLoopNode("x_inner", "g", Vectorized,List(
+							TLoopNode("y","g",Sequential(),List(
+								TLoopNode("x_outer", "g", Sequential(),List(
+									TLoopNode("x_inner", "g", Vectorized(8),List(
 										TComputeNode("g",List())
                   ))
                 ))
               )),
-							TLoopNode("x","i",Sequential,List(
+							TLoopNode("x","i",Sequential(),List(
                 TComputeNode("i",List())
               )))
 					))

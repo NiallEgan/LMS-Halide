@@ -11,8 +11,8 @@ trait AstOps extends Ast {
 	private def simpleFuncTree[T:Typ:Numeric:SepiaNum](f: Func[T]): ScheduleNode = {
 		val cn: ComputeNode[T] = ComputeNode[T](f, List())
 		val xLoop: LoopNode[T] = LoopNode[T](f.x, f,
-											Sequential, List(cn))
-		val yLoop: LoopNode[T] = LoopNode[T](f.y, f, Sequential, List(xLoop))
+											Sequential(), List(cn))
+		val yLoop: LoopNode[T] = LoopNode[T](f.y, f, Sequential(), List(xLoop))
 	  StorageNode[T](f, List(yLoop))
 	}
 
@@ -132,9 +132,9 @@ trait AstOps extends Ast {
 		assert(parent.belongsTo(consumer))
 		val cn: ComputeNode[T] = ComputeNode(producer, List())
 		val xLoop: LoopNode[T] = LoopNode(producer.x, producer,
-											Sequential, List(cn))
+											Sequential(), List(cn))
 		val yLoop: LoopNode[T] = LoopNode(producer.y, producer,
-											Sequential, List(xLoop))
+											Sequential(), List(xLoop))
 		sched.findAndTransform(parent, (n: Schedule) =>
 			n.withChildren(StorageNode(producer, yLoop::n.getChildren))
 		)
@@ -191,8 +191,8 @@ trait AstOps extends Ast {
 		val deInlinedSched = if (producer.inlined) {
 			producer.inlined = false
 			val cn: ComputeNode[T] = ComputeNode(producer, List())
-			val xLoop: LoopNode[T] = LoopNode(producer.x, producer, Sequential, List(cn))
-			val yLoop: LoopNode[T] = LoopNode(producer.y, producer, Sequential, List(xLoop))
+			val xLoop: LoopNode[T] = LoopNode(producer.x, producer, Sequential(), List(cn))
+			val yLoop: LoopNode[T] = LoopNode(producer.y, producer, Sequential(), List(xLoop))
 			sched.withChildren(StorageNode(producer, yLoop::sched.getChildren))
 		} else sched
 
@@ -312,7 +312,7 @@ trait AstOps extends Ast {
 				case _ => false
 			},
 			_ match {
-				case LoopNode(_, f, _, children) => LoopNode(outer, f, Sequential, List(LoopNode(inner, f, Sequential, children)))
+				case LoopNode(_, f, _, children) => LoopNode(outer, f, Sequential(), List(LoopNode(inner, f, Sequential(), children)))
 			}
 		)
 		s
@@ -332,14 +332,14 @@ trait AstOps extends Ast {
 		}
 	}
 
-	def vectorizeLoop(sched: Schedule, dim: Dim) = {
+	def vectorizeLoop(sched: Schedule, dim: Dim, size: Int) = {
 		sched.findAndTransform(
 			_ match {
 			case LoopNode(d, _, _, _) if d == dim => true
 			case _ => false
 		},
 		_ match {
-			case LoopNode(d, stage, _, children) => LoopNode(d, stage, Vectorized, children)
+			case LoopNode(d, stage, _, children) => LoopNode(d, stage, Vectorized(size), children)
 		})
 	}
 

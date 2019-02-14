@@ -211,14 +211,14 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, enclosingLoops)
       loopType match {
-        case Sequential =>
+        case Sequential() =>
           for (i <- (lb until ub): Rep[Range]) {
             variable.v_=(i)
 						for (child <- children) evalSched(child, boundsGraph,
 																							enclosingLoops ++ variable.pseudoLoops,
 																							completeTree)
           }
-        case Unrolled =>
+        case Unrolled() =>
           for (i <- lb until ub) {
             variable.v_=(i)
             for (child <- children) evalSched(child, boundsGraph,
@@ -226,7 +226,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 																							completeTree)
           }
 
-				case Vectorized => {
+				case Vectorized(n) => {
 					// What I really want...
 					/*for (i <- lb until ub: Vectorized[Range]) {
 						variable.v_=(i)
@@ -236,7 +236,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 					}*/
 
 					// TODO: Generalize - a lot!
-					vectorized_loop(0 until 8, i => {
+					vectorized_loop(0 until n, i => {
 						variable.v_=(i)
 						assert(children.length == 1)
 						val child = children(0)

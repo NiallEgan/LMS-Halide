@@ -2,9 +2,9 @@ package sepia
 
 
 sealed trait LoopType
-case object Sequential extends LoopType
-case object Unrolled extends LoopType
-case object Vectorized extends LoopType
+case class Sequential() extends LoopType
+case class Unrolled() extends LoopType
+case class Vectorized(n: Int) extends LoopType
 // TODO: Vectorized, parallelized
 
 trait Ast {

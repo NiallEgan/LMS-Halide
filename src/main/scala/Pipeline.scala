@@ -188,7 +188,7 @@ trait PipelineForCompiler extends Pipeline
 
 		override def vectorize(v: String, vectorWidth: Int): Unit = {
 			split(v, v + "_outer", v + "_inner", vectorWidth)
-			schedule = Some(vectorizeLoop(sched, f.vars(v + "_inner")))
+			schedule = Some(vectorizeLoop(sched, f.vars(v + "_inner"), vectorWidth))
 		}
 	}
 
