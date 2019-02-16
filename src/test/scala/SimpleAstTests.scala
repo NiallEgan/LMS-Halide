@@ -539,4 +539,6 @@ class CompilerSpec extends FlatSpec {
 		val cropProgAnalysis = new Cropper with TestPipelineAnalysis
 		cropProg.compile(cropProgAnalysis.getBoundsGraph, "cropper")
 	}
+
+	
 }
