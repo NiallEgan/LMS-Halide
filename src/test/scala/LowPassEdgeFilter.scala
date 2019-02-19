@@ -3,7 +3,7 @@ import scala.math._
 
 trait EdgeFilter extends TestPipeline {
   def simpleConvolution(k: List[List[Rep[Int]]],
-                        input: Func[Double]): Func[Short] = {
+                        input: Func[Double]): Func[UChar] = {
     final_func { (x: Rep[Int], y: Rep[Int]) => {
       k(0)(0) * input(x-1, y-1) + k(0)(1) * input(x, y-1) + k(0)(2) * input(x+1, y-1) +
       k(1)(0) * input(x-1, y)   + k(1)(1) * input(x, y)   + k(1)(2) * input(x+1, y) +

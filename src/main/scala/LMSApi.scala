@@ -65,6 +65,7 @@ trait DslGenC extends CGenNumericOps
     override def isPrimitiveType(tpe: String) = tpe match {
       case "USHORT" => true
       case "UCHAR" => true
+      case "Char" => true
       case "__m64" => true
       case "__m128" => true
       case "__m128d" => true
@@ -79,14 +80,15 @@ trait DslGenC extends CGenNumericOps
     }
 
     override def remap[A](m: Typ[A]) = m.toString match {
-      case "Array[Short]" => "UCHAR[]"
-      case "Short" => "UCHAR"
+      case "Array[Char]" => "UCHAR *"
+      case "Char" => "UCHAR"
+      case "Short" => "uint16_t"
+      case "Int" => "int32_t"
       case _ => super.remap(m)
 
     }
-    var seenArray: ArrayNew[Int] = null
+
     override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
-      //println(rhs)
       rhs match {
         case ArrayApply(x, m) => emitValDef(sym, src"$x[$m]")
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
@@ -103,6 +105,8 @@ trait DslGenC extends CGenNumericOps
           emitBlock(body) // TODO: Don't let VectorForEach get this far
         }
         case GenerateComment(s) => stream.println(f"// $s")
+        case n@CharToT(a) => emitValDef(sym, f"(${remap(n.toTyp)}) ${quote(a)}")
+        case n@TToChar(a) => emitValDef(sym, f"(UCHAR) ${quote(a)}")
         case _ => super.emitNode(sym, rhs)
       }
     }

@@ -70,6 +70,8 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case ShortToDouble(a)             => f(List(a).map(m))
 			case ShortToFloat(a)              => f(List(a).map(m))
 			case DoubleToShortConversion(a)   => f(List(a).map(m))
+			case CharToT(a)						        => f(List(a).map(m))
+		  case TToChar(a)                   => f(List(a).map(m))
   }
 
 	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
@@ -85,10 +87,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		toFunc(f, ((0, 0), (0, 0)))
 	}
 
-	override def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[Short] = {
+	override def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[UChar] = {
 		// todo: dry up
 		val cast =
-			if (typ[T] == typ[UChar]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[UChar]])
+			if (typ[T] == typ[UChar]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Short]])
 			else if (typ[T] == typ[Int]) realizeInt(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Int]])
 			else if (typ[T] == typ[Float]) realizeFloat(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Float]])
 			else realizeDouble(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Double]])

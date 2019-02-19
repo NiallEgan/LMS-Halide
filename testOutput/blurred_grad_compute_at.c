@@ -119,7 +119,7 @@ int32_t x200 = x199 + x186;
 int32_t x201 = x200 + x189;
 int32_t x202 = x201 + x192;
 int32_t x203 = x202 / 9;
-UCHAR x204 = x203;
+UCHAR x204 = (UCHAR) x203;
 x159[x146] = x204;
 int32_t x148 = x145 + 1;
 int32_t x206 = x169 + x172;
@@ -131,7 +131,7 @@ int32_t x211 = x210 + x187;
 int32_t x212 = x211 + x190;
 int32_t x213 = x212 + x193;
 int32_t x214 = x213 / 9;
-UCHAR x215 = x214;
+UCHAR x215 = (UCHAR) x214;
 x159[x148] = x215;
 int32_t x217 = x170 + x173;
 int32_t x218 = x217 + x176;
@@ -142,7 +142,7 @@ int32_t x222 = x221 + x188;
 int32_t x223 = x222 + x191;
 int32_t x224 = x223 + x194;
 int32_t x225 = x224 / 9;
-UCHAR x226 = x225;
+UCHAR x226 = (UCHAR) x225;
 x159[x145] = x226;
 
 }

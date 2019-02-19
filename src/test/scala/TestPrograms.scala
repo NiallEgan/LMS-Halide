@@ -167,7 +167,7 @@ trait OneStageBoxBlur extends TestPipeline {
 trait BrightenedGradVectorized extends TestPipeline {
 	override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 		val f = func[Int] {
-			(x: Rep[Int], y: Rep[Int]) => in(x, y).map(repShortToRepInt(_)) // todo:
+			(x: Rep[Int], y: Rep[Int]) => in(x, y).map(repCharToRepInt(_)) // todo:
 		}
 		val g = func[Int] {
 			(x: Rep[Int], y: Rep[Int]) => f(x, y) + f(x, y)
@@ -230,7 +230,6 @@ trait TwoStageBoxBlurStoreAtReflected extends TestPipeline {
 		g.computeAt(i, "x")
 		g.storeAt(i, "y")
 
-
 		registerFunction("i", i)
 		registerFunction("g", g)
 
@@ -247,7 +246,6 @@ trait TwoStageBoxBlurComputeAtX extends TestPipeline {
 		}
 
 		g.computeAt(i, "x")
-
 
 		registerFunction("i", i)
 		registerFunction("g", g)

@@ -41,7 +41,7 @@ using namespace Halide::Runtime;
 Buffer<uint16_t> blur_fast(Buffer<uint16_t> in, Buffer<uint16_t> out) {
 #ifdef __SSE2__
         __m128i one_third = _mm_set1_epi16(21846);
-#pragma omp parallel for
+//#pragma omp parallel for
         for (int yTile = 0; yTile < out.height(); yTile += 32) {
             __m128i tmp[(128/8) * (32 + 2)];
             for (int xTile = 0; xTile < out.width(); xTile += 128) {

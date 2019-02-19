@@ -6,7 +6,7 @@ import scala.lms.util.OverloadHack
 
 trait RGBValOps extends PrimitiveOps with ArrayOps
                 with ShortOps with NumericOps {
-  type UChar = Short
+  type UChar = Char
 
   trait SepiaNum[T] {
     implicit def int2T(v: Rep[Int]): Rep[T]
@@ -18,6 +18,11 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
   def int2short(v: Rep[Int]): Rep[Short]
   def short2double(v: Rep[Short]): Rep[Double]
 
+  class SepiaNumChar extends SepiaNum[Char] {
+    override def int2T(v: Rep[Int]): Rep[Char] = ???
+    override def T2Double(v: Rep[Char]): Rep[Double] = ???
+    override def T2short(v: Rep[Char]): Rep[Short] = ???
+  }
   class SepiaNumDouble extends SepiaNum[Double] {
     override def int2T(v: Rep[Int]): Rep[Double] = v.toDouble
     override def T2Double(v: Rep[Double]): Rep[Double] = v
@@ -42,6 +47,7 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
   implicit val sepiaNumInt = new SepiaNumInt()
   implicit val sepiaNumShort = new SepiaNumShort()
   implicit val sepiaNumFloat = new SepiaNumFloat()
+  implicit val sepiaNumChar = new SepiaNumChar()
 
   implicit def constToRgb[T:Numeric:Typ:SepiaNum](v: T): RGBVal[T] = repConstToRgb(unit(v))
   implicit def repConstToRgb[T:Numeric:Typ:SepiaNum](v: Rep[T]) = {
@@ -60,6 +66,19 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
     RGBVal(w.widenScalar(v.red), w.widenScalar(v.green), w.widenScalar(v.blue))
   }
   // Widenings
+  trait WiderThanChar[T] extends Widener[Char, T]
+  implicit val c2sWidener: WiderThanChar[Short] = new WiderThanChar[Short] {
+    override def widenScalar(v: Rep[Char]) = repCharToRepShort(v)
+  }
+  implicit val c2iWidener: WiderThanChar[Int] = new WiderThanChar[Int] {
+    override def widenScalar(v: Rep[Char]) = repCharToRepInt(v)
+  }
+  implicit val c2fWidener: WiderThanChar[Float] = new WiderThanChar[Float] {
+    override def widenScalar(v: Rep[Char]) = repCharToRepFloat(v)
+  }
+  implicit val c2dWidener: WiderThanChar[Double] = new WiderThanChar[Double] {
+    override def widenScalar(v: Rep[Char]) = repCharToRepDouble(v)
+  }
   trait WiderThanShort[T] extends Widener[Short, T]
 
   /*implicit val s2sWidener: WiderThanShort[Short] = new WiderThanShort[Short] {
@@ -99,16 +118,47 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
 
   trait WiderThanDouble[T] extends Widener[Double, T]
 
+  implicit def rgbValCharToShort(v: RGBVal[Char]): RGBVal[Short] = rgbValWidener[Char, Short](v)
+  implicit def rgbValCharToInt(v: RGBVal[Char]): RGBVal[Int] = rgbValWidener(v)
+  implicit def rgbValCharToDouble(v: RGBVal[Char]): RGBVal[Double] = rgbValWidener(v)
+  implicit def rgbValCharToFloat(v: RGBVal[Char]): RGBVal[Float] = rgbValWidener(v)
   implicit def rgbValShortToInt(v: RGBVal[Short])(implicit o: Overloaded1): RGBVal[Int] = rgbValWidener(v)
-  implicit def rgbValShortToInt(v: RGBVal[Short])(implicit o: Overloaded2): RGBVal[Float] = rgbValWidener(v)
-  implicit def rgbValShortToInt(v: RGBVal[Short])(implicit o: Overloaded3): RGBVal[Double] = rgbValWidener(v)
-  implicit def rgbValShortToInt(v: RGBVal[Int])(implicit o: Overloaded4): RGBVal[Float] = rgbValWidener(v)
-  implicit def rgbValShortToInt(v: RGBVal[Int])(implicit o: Overloaded5): RGBVal[Double] = rgbValWidener(v)
-  implicit def rgbValShortToInt(v: RGBVal[Float])(implicit o: Overloaded6): RGBVal[Double] = rgbValWidener(v)
+  implicit def rgbValShortToFloat(v: RGBVal[Short])(implicit o: Overloaded2): RGBVal[Float] = rgbValWidener(v)
+  implicit def rgbValShortToDouble(v: RGBVal[Short])(implicit o: Overloaded3): RGBVal[Double] = rgbValWidener(v)
+  implicit def rgbValIntToFloat(v: RGBVal[Int])(implicit o: Overloaded4): RGBVal[Float] = rgbValWidener(v)
+  implicit def rgbValIntToDouble(v: RGBVal[Int])(implicit o: Overloaded5): RGBVal[Double] = rgbValWidener(v)
+  implicit def rgbValFloatDouble(v: RGBVal[Float])(implicit o: Overloaded6): RGBVal[Double] = rgbValWidener(v)
 
   // Arithmetic ops
-  def infix_+(a: RGBVal[Short], b: RGBVal[Short]) = {
-    // todo
+  def infix_+(a: RGBVal[Char], b: RGBVal[Char])(implicit o: Overloaded16) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), rgbValWidener(b), numeric_plus)
+  }
+  def infix_+(a: RGBVal[Short], b: RGBVal[Char])(implicit o: Overloaded18) = {
+    sameTypeRGBOp[Short](a, rgbValWidener(b), numeric_plus)
+  }
+  def infix_+(a: RGBVal[Char], b: RGBVal[Short])(implicit o: Overloaded19) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), b, numeric_plus)
+  }
+  def infix_+(a: RGBVal[Char], b: RGBVal[Int])(implicit o: Overloaded20) = {
+    sameTypeRGBOp[Int](rgbValWidener(a), b, numeric_plus)
+  }
+  def infix_+(a: RGBVal[Int], b: RGBVal[Char])(implicit o: Overloaded21) = {
+    sameTypeRGBOp[Int](a, rgbValWidener(b), numeric_plus)
+  }
+  def infix_+(a: RGBVal[Char], b: RGBVal[Float])(implicit o: Overloaded22) = {
+    sameTypeRGBOp[Float](rgbValWidener(a), b, numeric_plus)
+  }
+  def infix_+(a: RGBVal[Float], b: RGBVal[Char])(implicit o: Overloaded23) = {
+    sameTypeRGBOp[Float](a, rgbValWidener(b), numeric_plus)
+  }
+  def infix_+(a: RGBVal[Char], b: RGBVal[Double])(implicit o: Overloaded24) = {
+    sameTypeRGBOp[Double](rgbValWidener(a), b, numeric_plus)
+  }
+  def infix_+(a: RGBVal[Double], b: RGBVal[Char])(implicit o: Overloaded25) = {
+    sameTypeRGBOp[Double](a, rgbValWidener(b), numeric_plus)
+  }
+
+  def infix_+(a: RGBVal[Short], b: RGBVal[Short])(implicit o: Overloaded17) = {
     sameTypeRGBOp[Int](rgbValWidener(a), rgbValWidener(b), numeric_plus)
   }
   def infix_+(a: RGBVal[Short], b: RGBVal[Int])(implicit o: Overloaded1) = {
@@ -157,7 +207,21 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
     sameTypeRGBOp[Double](a, b, numeric_plus)
   }
 
-
+  def infix_/(a: RGBVal[Char], b: RGBVal[Char])(implicit o: Overloaded16) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), rgbValWidener(b), numeric_divide)
+  }
+  def infix_/(a: RGBVal[Short], b: RGBVal[Char])(implicit o: Overloaded18) = {
+    sameTypeRGBOp[Short](a, rgbValWidener(b), numeric_divide)
+  }
+  def infix_/(a: RGBVal[Char], b: RGBVal[Short])(implicit o: Overloaded19) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), b, numeric_divide)
+  }
+  def infix_/(a: RGBVal[Char], b: RGBVal[Int])(implicit o: Overloaded20) = {
+    sameTypeRGBOp[Int](rgbValWidener(a), b, numeric_divide)
+  }
+  def infix_/(a: RGBVal[Int], b: RGBVal[Char])(implicit o: Overloaded21) = {
+    sameTypeRGBOp[Int](a, rgbValWidener(b), numeric_divide)
+  }
   def infix_/(a: RGBVal[Short], b: RGBVal[Short]) = {
     sameTypeRGBOp[Short](a, b, numeric_divide)
   }
@@ -206,7 +270,34 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
   def infix_/(a: RGBVal[Double], b: RGBVal[Double])(implicit o: Overloaded15) = {
     sameTypeRGBOp[Double](a, b, numeric_divide)
   }
+  def infix_/(a: RGBVal[Char], b: RGBVal[Float])(implicit o: Overloaded22) = {
+    sameTypeRGBOp[Float](rgbValWidener(a), b, numeric_divide)
+  }
+  def infix_/(a: RGBVal[Float], b: RGBVal[Char])(implicit o: Overloaded23) = {
+    sameTypeRGBOp[Float](a, rgbValWidener(b), numeric_divide)
+  }
+  def infix_/(a: RGBVal[Char], b: RGBVal[Double])(implicit o: Overloaded24) = {
+    sameTypeRGBOp[Double](rgbValWidener(a), b, numeric_divide)
+  }
+  def infix_/(a: RGBVal[Double], b: RGBVal[Char])(implicit o: Overloaded25) = {
+    sameTypeRGBOp[Double](a, rgbValWidener(b), numeric_divide)
+  }
 
+  def infix_*(a: RGBVal[Char], b: RGBVal[Char])(implicit o: Overloaded16) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), rgbValWidener(b), numeric_times)
+  }
+  def infix_*(a: RGBVal[Short], b: RGBVal[Char])(implicit o: Overloaded18) = {
+    sameTypeRGBOp[Short](a, rgbValWidener(b), numeric_times)
+  }
+  def infix_*(a: RGBVal[Char], b: RGBVal[Short])(implicit o: Overloaded19) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), b, numeric_times)
+  }
+  def infix_*(a: RGBVal[Char], b: RGBVal[Int])(implicit o: Overloaded20) = {
+    sameTypeRGBOp[Int](rgbValWidener(a), b, numeric_times)
+  }
+  def infix_*(a: RGBVal[Int], b: RGBVal[Char])(implicit o: Overloaded21) = {
+    sameTypeRGBOp[Int](a, rgbValWidener(b), numeric_times)
+  }
   def infix_*(a: RGBVal[Short], b: RGBVal[Short]) = {
     sameTypeRGBOp[Short](a, b, numeric_times)
   }
@@ -255,7 +346,34 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
   def infix_*(a: RGBVal[Double], b: RGBVal[Double])(implicit o: Overloaded15) = {
     sameTypeRGBOp[Double](a, b, numeric_times)
   }
+  def infix_*(a: RGBVal[Char], b: RGBVal[Float])(implicit o: Overloaded22) = {
+    sameTypeRGBOp[Float](rgbValWidener(a), b, numeric_times)
+  }
+  def infix_*(a: RGBVal[Float], b: RGBVal[Char])(implicit o: Overloaded23) = {
+    sameTypeRGBOp[Float](a, rgbValWidener(b), numeric_times)
+  }
+  def infix_*(a: RGBVal[Char], b: RGBVal[Double])(implicit o: Overloaded24) = {
+    sameTypeRGBOp[Double](rgbValWidener(a), b, numeric_times)
+  }
+  def infix_*(a: RGBVal[Double], b: RGBVal[Char])(implicit o: Overloaded25) = {
+    sameTypeRGBOp[Double](a, rgbValWidener(b), numeric_times)
+  }
 
+  def infix_-(a: RGBVal[Char], b: RGBVal[Char])(implicit o: Overloaded16) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), rgbValWidener(b), numeric_minus)
+  }
+  def infix_-(a: RGBVal[Short], b: RGBVal[Char])(implicit o: Overloaded18) = {
+    sameTypeRGBOp[Short](a, rgbValWidener(b), numeric_minus)
+  }
+  def infix_-(a: RGBVal[Char], b: RGBVal[Short])(implicit o: Overloaded19) = {
+    sameTypeRGBOp[Short](rgbValWidener(a), b, numeric_minus)
+  }
+  def infix_-(a: RGBVal[Char], b: RGBVal[Int])(implicit o: Overloaded20) = {
+    sameTypeRGBOp[Int](rgbValWidener(a), b, numeric_minus)
+  }
+  def infix_-(a: RGBVal[Int], b: RGBVal[Char])(implicit o: Overloaded21) = {
+    sameTypeRGBOp[Int](a, rgbValWidener(b), numeric_minus)
+  }
   def infix_-(a: RGBVal[Short], b: RGBVal[Short]) = {
     sameTypeRGBOp[Short](a, b, numeric_minus)
   }
@@ -303,6 +421,18 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
   }
   def infix_-(a: RGBVal[Double], b: RGBVal[Double])(implicit o: Overloaded15) = {
     sameTypeRGBOp[Double](a, b, numeric_minus)
+  }
+  def infix_-(a: RGBVal[Char], b: RGBVal[Float])(implicit o: Overloaded22) = {
+    sameTypeRGBOp[Float](rgbValWidener(a), b, numeric_minus)
+  }
+  def infix_-(a: RGBVal[Float], b: RGBVal[Char])(implicit o: Overloaded23) = {
+    sameTypeRGBOp[Float](a, rgbValWidener(b), numeric_minus)
+  }
+  def infix_-(a: RGBVal[Char], b: RGBVal[Double])(implicit o: Overloaded24) = {
+    sameTypeRGBOp[Double](rgbValWidener(a), b, numeric_minus)
+  }
+  def infix_-(a: RGBVal[Double], b: RGBVal[Char])(implicit o: Overloaded25) = {
+    sameTypeRGBOp[Double](a, rgbValWidener(b), numeric_minus)
   }
 
   implicit class RGBEnrichedInts(v: Rep[Int]) {

@@ -11,14 +11,14 @@ int32_t x16 = x14 + x15;
 int32_t x17 = 3 * x16;
 int32_t x18 = x17 + 2;
 UCHAR x19 = x0[x18];
-int32_t x23 = (int) x19;
+int32_t x23 = (int32_t) x19;
 x205[x18] = x23;
 int32_t x20 = x17 + 1;
 UCHAR x21 = x0[x20];
-int32_t x24 = (int) x21;
+int32_t x24 = (int32_t) x21;
 x205[x20] = x24;
 UCHAR x22 = x0[x17];
-int32_t x25 = (int) x22;
+int32_t x25 = (int32_t) x22;
 x205[x17] = x25;
 
 }
@@ -171,7 +171,7 @@ int32_t x288 = x287 + x274;
 int32_t x289 = x288 + x277;
 int32_t x290 = x289 + x280;
 int32_t x291 = x290 / 18;
-UCHAR x292 = x291;
+UCHAR x292 = (UCHAR) x291;
 x213[x191] = x292;
 int32_t x193 = x190 + 1;
 int32_t x294 = x257 + x260;
@@ -183,7 +183,7 @@ int32_t x299 = x298 + x275;
 int32_t x300 = x299 + x278;
 int32_t x301 = x300 + x281;
 int32_t x302 = x301 / 18;
-UCHAR x303 = x302;
+UCHAR x303 = (UCHAR) x302;
 x213[x193] = x303;
 int32_t x305 = x258 + x261;
 int32_t x306 = x305 + x264;
@@ -194,7 +194,7 @@ int32_t x310 = x309 + x276;
 int32_t x311 = x310 + x279;
 int32_t x312 = x311 + x282;
 int32_t x313 = x312 / 18;
-UCHAR x314 = x313;
+UCHAR x314 = (UCHAR) x313;
 x213[x190] = x314;
 
 }

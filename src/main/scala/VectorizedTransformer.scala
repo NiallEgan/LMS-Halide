@@ -95,7 +95,16 @@ trait Vectorizer extends ForwardTransformer {
         case NumericMinus(a, b) => _mm256_sub_epi32(intVectorizer(a.asInstanceOf[Exp[Int]], start, end, indexSymbol),
                                                  intVectorizer(b.asInstanceOf[Exp[Int]], start, end, indexSymbol))
         case NumericTimes(a, b) => throw new VectorisationException("Error: Vector int multiplication not implemented yet")
-        case NumericDivide(a, b) => throw new VectorisationException("Error: Vector int division not possible")
+        case NumericDivide(a, b) => {
+          b match {
+            /*case Const(bv) => {
+              val (multiplier, sh1, sh2) = FastIntegerDivision.getDivisor(bv)
+
+              val t1 = _mm256_mulhi_epi32()
+            }*/
+            case _ => throw new VectorisationException("Error: Only division by constants ")
+          }
+        }
         case app@ArrayApply(a, n) => {
           // todo: Short!
           if (app.m != typ[Int]) throw new VectorisationException("Error: Can only load from int arrays if trying to vectorize")
