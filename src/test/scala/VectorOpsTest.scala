@@ -6,10 +6,13 @@ import sepia._
 
 trait VectorProgram extends Dsl {
   def prog() = {
-    val a: Rep[Array[Float]] = array_obj_new[Float](4)
+    val a: Rep[Array[Short]] = array_obj_new[Short](16)
+    for (i <- 0 until 16: Range) {
+      a(i) = unit((1 << i).toShort)
+    }
 
-    vectorized_loop(0 until 8,
-                   (i: Rep[Int]) => a(i) = i / 2)
+    vectorized_loop(0 until 16,
+                   (i: Rep[Int]) => a(i) = numeric_divide[Short](a(i), 3.toShort))
     a(1)
   }
 }
@@ -17,7 +20,7 @@ trait VectorProgram extends Dsl {
 trait Runner {
   val p: VectorProgram with DslExp
   def run() = {
-    import p.{unitTyp, intTyp, doubleTyp, floatTyp}
+    import p.{unitTyp, intTyp, doubleTyp, floatTyp, shortTyp}
     val y = p.reifyEffects(p.prog())
     val codegen = new DslGenC {val IR: p.type = p}
     val trans = new Vectorizer {
@@ -35,10 +38,10 @@ trait Runner {
 }
 
 class VectorOpsSpec extends FlatSpec {
-  /*val r = new Runner {val p = new VectorProgram with DslExp }
+  val r = new Runner {val p = new VectorProgram with DslExp }
   "vectorized prog" should "compile sucessfuly" in {
     r.run()
-  }*/
+  }
 
   "One stage box blur vectorized" should "vectorize x" in {
 		println("One stage blur, vectorized: ")
@@ -58,7 +61,7 @@ class VectorOpsSpec extends FlatSpec {
 						TStorageNode("g",List(
 							TLoopNode("y","g",Sequential(),List(
 								TLoopNode("x_outer", "g", Sequential(),List(
-									TLoopNode("x_inner", "g", Vectorized(8),List(
+									TLoopNode("x_inner", "g", Vectorized(16),List(
 										TComputeNode("g",List())
                   ))
                 ))

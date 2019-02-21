@@ -70,61 +70,66 @@ trait Vectorizer extends ForwardTransformer {
       }
   }
 
-  def make_constant_i32(size: Int, v: Int) = {
-    val xs = for (i <- 7 to -1 by -1: Range) yield (if (i < size) v else 0)
-    _mm256_set_epi32(xs(0), xs(1), xs(2), xs(3), xs(4), xs(5), xs(6), xs(7))
+  def make_constant_i16(size: Int, v: Int) = {
+    val xs = for (i <- 15 to -1 by -1: Range) yield (if (i < size) v else 0)
+    _mm256_set_epi16(xs(0), xs(1), xs(2), xs(3), xs(4), xs(5), xs(6), xs(7), xs(8), xs(9), xs(10), xs(11), xs(12), xs(13), xs(14), xs(15))
   }
 
-  def make_index_i32(start: Int, end: Int) = {
+  def make_index_i16(start: Int, end: Int) = {
     val size = end - start
-    val xs = for (i <- 0 until 8: Range) yield(if (i < size) i + start else 0)
-    _mm256_set_epi32(xs(7), xs(6), xs(5), xs(4), xs(3), xs(2), xs(1), xs(0))
+    val xs = for (i <- 0 until 16: Range) yield(if (i < size) i + start else 0)
+    _mm256_set_epi16(xs(15), xs(14), xs(13), xs(12), xs(11), xs(10), xs(9), xs(8), xs(7), xs(6), xs(5), xs(4), xs(3), xs(2), xs(1), xs(0))
   }
 
-  def intVectorizer(exp: Exp[Int], start: Int,
+  def intVectorizer(exp: Exp[Short], start: Int,
                     end: Int, indexSymbol: Sym[Int]): Exp[__m256i] = {
     val n = end - start
     exp match {
       case Def(v) => v match {
-        case IntPlus(a, b) => _mm256_add_epi32(intVectorizer(a, start, end, indexSymbol),
-                                    intVectorizer(b, start, end, indexSymbol))
-        case IntMinus(a, b) => _mm256_sub_epi32(intVectorizer(a, start, end, indexSymbol),
-                                intVectorizer(b, start, end, indexSymbol))
-        case NumericPlus(a, b) => _mm256_add_epi32(intVectorizer(a.asInstanceOf[Exp[Int]], start, end, indexSymbol),
-                                                   intVectorizer(b.asInstanceOf[Exp[Int]], start, end, indexSymbol))
-        case NumericMinus(a, b) => _mm256_sub_epi32(intVectorizer(a.asInstanceOf[Exp[Int]], start, end, indexSymbol),
-                                                 intVectorizer(b.asInstanceOf[Exp[Int]], start, end, indexSymbol))
+        case NumericPlus(a, b) => _mm256_add_epi16(intVectorizer(a.asInstanceOf[Exp[Short]], start, end, indexSymbol),
+                                                   intVectorizer(b.asInstanceOf[Exp[Short]], start, end, indexSymbol))
+        case NumericMinus(a, b) => _mm256_sub_epi16(intVectorizer(a.asInstanceOf[Exp[Short]], start, end, indexSymbol),
+                                                 intVectorizer(b.asInstanceOf[Exp[Short]], start, end, indexSymbol))
         case NumericTimes(a, b) => throw new VectorisationException("Error: Vector int multiplication not implemented yet")
         case NumericDivide(a, b) => {
           b match {
-            /*case Const(bv) => {
-              val (multiplier, sh1, sh2) = FastIntegerDivision.getDivisor(bv)
-
-              val t1 = _mm256_mulhi_epi32()
-            }*/
+            case Const(bv) => {
+              if ((bv & (bv - 1)) == 0) {
+                val shiftAmount = FastIntegerDivision.ilog(bv)
+                _mm256_srli_epi16(intVectorizer(a.asInstanceOf[Exp[Short]], start, end, indexSymbol), shiftAmount)
+              } else {
+                val (multiplier, sh1, sh2) = FastIntegerDivision.getDivisor(bv)
+                val multiplierVector = make_constant_i16(n, multiplier)
+                val numerator = intVectorizer(a.asInstanceOf[Exp[Short]], start, end, indexSymbol)
+                val t1 = _mm256_mulhi_epi16(numerator, multiplierVector)
+                val firstShifted = _mm256_srli_epi16(_mm256_sub_epi16(numerator, t1), sh1)
+                _mm256_srli_epi16(_mm256_add_epi16(t1, firstShifted), sh2)
+              }
+            }
             case _ => throw new VectorisationException("Error: Only division by constants ")
           }
         }
         case app@ArrayApply(a, n) => {
           // todo: Short!
-          if (app.m != typ[Int]) throw new VectorisationException("Error: Can only load from int arrays if trying to vectorize")
+          if (app.m != typ[Short]) throw new VectorisationException(f"Error: Can only load from short arrays if trying to vectorize, not arrays of type ${app.m}")
           else _mm256_loadu_si256(apply(a).asInstanceOf[Exp[Array[__m256i]]], stripIndex(n, indexSymbol))
 
         }
         case Reflect(app@ArrayApply(a, n), _, _) => {
-          if (app.m != typ[Int]) throw new VectorisationException("Error: Can only load from int arrays if trying to vectorize")
+          if (app.m != typ[Short]) throw new VectorisationException(f"Error: Can only load from short arrays if trying to vectorize, not arrays of type ${app.m}")
           else {
             generate_comment("loadu")
             _mm256_loadu_si256(apply(a).asInstanceOf[Exp[Array[__m256i]]], stripIndex(n, indexSymbol))
           }
         }
-        case ShortToInt(a) => intVectorizer(a.asInstanceOf[Exp[Int]], start, end, indexSymbol)
+        //case ShortToInt(a) => intVectorizer(a.asInstanceOf[Exp[Int]], start, end, indexSymbol)
+
 
       }
-      case Const(v) => make_constant_i32(n, v)
+      case Const(v) => make_constant_i16(n, v)
       case s@Sym(_) => {
         if (s == indexSymbol) {
-          make_index_i32(start, end)
+          make_index_i16(start, end)
         }
         else throw new VectorisationException("Should never get here?")
       }
@@ -172,15 +177,15 @@ trait Vectorizer extends ForwardTransformer {
            _mm256_div_pd(doubleVectorizer(a, start, end, indexSymbol),
                                                    doubleVectorizer(b, start, end, indexSymbol))
          }
-         case IntToDouble(a) => {
+         /*case IntToDouble(a) => {
           println("Int to double")
           val vecExp = intVectorizer(a, start, end, indexSymbol)
           _mm256_castsi256_pd(vecExp)
-          /*a match {
+          a match {
              case s@Sym(_) if s == indexSymbol => make_index_d32(start, end)
              case _ => make_constant_d32(n, a)
-           }*/
-         }
+           }
+         }*/
          case ShortToDouble(a) => {
            make_constant_d32(n, repShortToRepDouble(a))
            /*a match {
@@ -280,9 +285,8 @@ trait Vectorizer extends ForwardTransformer {
         case op@NumericTimes(a, b) => numeric_times(stripIndex(a, i), stripIndex(b, i))(op.aev.asInstanceOf[Numeric[T]],
                                       typ[T], implicitly[SourceContext])
         case IntPlus(Def(IntTimes(Const(3), a)), Const(k)) => {
-          // Bad hack :(
-          println("Hey")
-          int_plus(int_times(3, stripIndex(a, i)), Const(k * 8))
+          // Bad hack :( how is this going to generalize to different vector widths????
+          int_plus(int_times(3, stripIndex(a, i)), Const(k * 16))
         }
         case IntPlus(a, b) => {
           int_plus(stripIndex(a, i), stripIndex(b, i))
@@ -294,6 +298,8 @@ trait Vectorizer extends ForwardTransformer {
         case op@OrderingGT(a, b) => ordering_gt(stripIndex(a, i), stripIndex(b, i))(op.aev, op.mev, implicitly[SourceContext])
         case ShortToInt(a) => repShortToRepInt(stripIndex(a, i))
         case app@ArrayApply(a, n) => array_apply(a, stripIndex(n, i))(mtyp1[T], implicitly[SourceContext])
+        case cast@TToChar(a) => toCharCast(a)(cast.fromTyp)
+        case cast@CharToT(a) => charCast(a)(cast.toTyp)
         //case Reflectapp@ArrayApply(a, n) => array_apply(a, stripIndex(n, i))(mtyp1[T], implicitly[SourceContext])
 
         case _ => {
@@ -330,8 +336,8 @@ trait Vectorizer extends ForwardTransformer {
         stm match {
           case TP(sym, v) => v match {
            case Reflect(arr@ArrayUpdate(a, n, y), _, _) => {
-             if (arr.m == typ[Int]) {
-                val vectorizedExp: Exp[__m256i] = apply(intVectorizer(y.asInstanceOf[Exp[Int]], start, end, indexSymbol))
+             if (arr.m == typ[Short]) {
+                val vectorizedExp: Exp[__m256i] = apply(intVectorizer(y.asInstanceOf[Exp[Short]], start, end, indexSymbol))
                 vectorizingInt = true
                 println("Found an int store")
                 //val vectorizedExp: Exp[__m256i] = apply(y).asInstanceOf[Exp[__m256i]]
@@ -345,22 +351,20 @@ trait Vectorizer extends ForwardTransformer {
                val vectorizedExp: Exp[__m256] = floatVectorizer(y.asInstanceOf[Exp[Float]], start, end, indexSymbol)
                _mm256_storeu_ps(apply(a).asInstanceOf[Exp[Array[Float]]], vectorizedExp, stripIndex(n, indexSymbol))
              } else {
-               throw new Exception(f"Error: Can only vectorize Int, Double or Float, not ${arr.m}, $arr")
+               throw new VectorisationException(f"Error: Can only vectorize Int, Double or Float, not ${arr.m}, $arr")
              }
            }
            case IntToFloat(a) => {
-             println("Int to float convert")
              repIntToRepFloat(stripIndex(apply(a), indexSymbol))
            }
            case ShortToInt(a) => {
-             println("Short to int convert")
              stripIndex(s2i(apply(a)), indexSymbol) // dodgy...
            }
            case _ => stripIndex(super.transformStm(stm), indexSymbol)
-          /* case IntPlus(a, b) if vectorizingInt => _mm256_add_epi32(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
-           case IntMinus(a, b) if vectorizingInt => _mm256_sub_epi32(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
-           case NumericPlus(a, b) if vectorizingInt => _mm256_add_epi32(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
-           case NumericMinus(a, b) if vectorizingInt => _mm256_sub_epi32(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
+          /* case IntPlus(a, b) if vectorizingInt => _mm256_add_epi16(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
+           case IntMinus(a, b) if vectorizingInt => _mm256_sub_epi16(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
+           case NumericPlus(a, b) if vectorizingInt => _mm256_add_epi16(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
+           case NumericMinus(a, b) if vectorizingInt => _mm256_sub_epi16(apply(a).asInstanceOf[Exp[__m256i]], apply(b).asInstanceOf[Exp[__m256i]])
            case NumericTimes(a, b) if vectorizingInt => throw new VectorisationException("Error: Vector int multiplication not implemented yet")
            case NumericDivide(a, b) if vectorizingInt => throw new VectorisationException("Error: Vector int division not possible")
            case app@ArrayApply(a, n) if vectorizingInt => {
@@ -378,7 +382,7 @@ trait Vectorizer extends ForwardTransformer {
            }
            case ShortToInt(a) if vectorizingInt => apply(a)
            case _ => {
-             if (sym == indexSymbol && vectorizingInt) make_index_i32(start, end)
+             if (sym == indexSymbol && vectorizingInt) make_index_i16(start, end)
              else {
                println(f"No rule for: $v")
                stripIndex(super.transformStm(stm), indexSymbol)

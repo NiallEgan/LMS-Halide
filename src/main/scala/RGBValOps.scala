@@ -159,7 +159,7 @@ trait RGBValOps extends PrimitiveOps with ArrayOps
   }
 
   def infix_+(a: RGBVal[Short], b: RGBVal[Short])(implicit o: Overloaded17) = {
-    sameTypeRGBOp[Int](rgbValWidener(a), rgbValWidener(b), numeric_plus)
+    sameTypeRGBOp[Short](a, b, numeric_plus)
   }
   def infix_+(a: RGBVal[Short], b: RGBVal[Int])(implicit o: Overloaded1) = {
     sameTypeRGBOp[Int](rgbValWidener(a), b, numeric_plus)

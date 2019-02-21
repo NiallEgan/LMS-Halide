@@ -166,22 +166,22 @@ trait OneStageBoxBlur extends TestPipeline {
 
 trait BrightenedGradVectorized extends TestPipeline {
 	override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f = func[Int] {
-			(x: Rep[Int], y: Rep[Int]) => in(x, y).map(repCharToRepInt(_)) // todo:
+		val f = func[Short] {
+			(x: Rep[Int], y: Rep[Int]) => in(x, y).map(repCharToRepShort(_)) // todo: better conversion
 		}
-		val g = func[Int] {
+		val g = func[Short] {
 			(x: Rep[Int], y: Rep[Int]) => f(x, y) + f(x, y)
 		}
-		val i = final_func[Int] {
+		val i = final_func[Short] {
 			(x: Rep[Int], y: Rep[Int]) =>  (g(x, y) + g(x, y+1) + g(x, y-1) +
 																		  g(x-1, y-1) + g(x-1, y) + g(x-1, y+1) +
-																		  g(x+1, y-1) + g(x+1, y) + g(x+1, y+1)) / 18
+																		  g(x+1, y-1) + g(x+1, y) + g(x+1, y+1)) / 18.toShort
 		}
 
 		f.computeRoot()
 		g.computeAt(i, "y")
 		//g.split("x", "x_outer", "x_inner", 8)
-		g.vectorize("x", 8)
+		g.vectorize("x", 16)
 
 		registerFunction("f", f)
 		registerFunction("g", g)
