@@ -110,9 +110,14 @@ trait Vectorizer extends ForwardTransformer {
           }
         }
         case app@ArrayApply(a, n) => {
-          // todo: Short!
-          if (app.m != typ[Short]) throw new VectorisationException(f"Error: Can only load from short arrays if trying to vectorize, not arrays of type ${app.m}")
-          else _mm256_loadu_si256(apply(a).asInstanceOf[Exp[Array[__m256i]]], stripIndex(n, indexSymbol))
+          if (app.m == typ[Short]) {
+            _mm256_loadu_si256(apply(a).asInstanceOf[Exp[Array[__m256i]]], stripIndex(n, indexSymbol))
+          } else if (app.m == typ[Char]) {
+            val byte_vector = _mm_loadu_si128(apply(a).asInstanceOf[Exp[Array[__m128i]]], stripIndex(n, indexSymbol))
+            _mm256_cvtepu8_epi16(byte_vector)
+          }
+          else throw new VectorisationException(f"Error: Can only load from short arrays if trying to vectorize, not arrays of type ${app.m}")
+
 
         }
         case Reflect(app@ArrayApply(a, n), _, _) => {
@@ -120,6 +125,19 @@ trait Vectorizer extends ForwardTransformer {
           else {
             generate_comment("loadu")
             _mm256_loadu_si256(apply(a).asInstanceOf[Exp[Array[__m256i]]], stripIndex(n, indexSymbol))
+          }
+        }
+
+        case CharToT(v1) => v1 match {
+          case Def(v) => v match {
+            case app@ArrayApply(a, n) => {
+              if (app.m == typ[Char]) {
+                val byte_vector = _mm_loadu_si128(apply(a).asInstanceOf[Exp[Array[__m128i]]], stripIndex(n, indexSymbol))
+                _mm256_cvtepu8_epi16(byte_vector)
+              } else {
+                throw new VectorisationException("The unexpected occured. ")
+              }
+            }
           }
         }
         //case ShortToInt(a) => intVectorizer(a.asInstanceOf[Exp[Int]], start, end, indexSymbol)
@@ -351,7 +369,7 @@ trait Vectorizer extends ForwardTransformer {
                val vectorizedExp: Exp[__m256] = floatVectorizer(y.asInstanceOf[Exp[Float]], start, end, indexSymbol)
                _mm256_storeu_ps(apply(a).asInstanceOf[Exp[Array[Float]]], vectorizedExp, stripIndex(n, indexSymbol))
              } else {
-               throw new VectorisationException(f"Error: Can only vectorize Int, Double or Float, not ${arr.m}, $arr")
+               throw new VectorisationException(f"Error: Can only vectorize Short, Double or Float, not ${arr.m}, $arr")
              }
            }
            case IntToFloat(a) => {

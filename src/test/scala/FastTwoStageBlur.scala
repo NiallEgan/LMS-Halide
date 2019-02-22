@@ -6,17 +6,19 @@ import sepia._
 
 trait TwoStageBoxBlurFast extends TestPipeline {
 	override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
-		val f = func[Int] {
-			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3
+		val f = func[Short] {
+			(x: Rep[Int], y: Rep[Int]) => (in(x, y) + in(x+1, y) + in(x-1, y)) / 3.toShort
 		}
-		val g = final_func {
-			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3
+		val g = final_func[Short] {
+			(x: Rep[Int], y: Rep[Int]) => (f(x, y) + f(x, y+1) + f(x, y-1)) / 3.toShort
 		}
 
-		f.computeAt(g, "y")
-		f.storeRoot()
-    f.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 2, 2)
-
+		f.computeRoot()
+		//f.computeAt(g, "y")
+		//f.storeRoot()
+    //f.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 2, 2)
+		f.vectorize("x", 16)
+		//g.vectorize("x", 16)
     registerFunction("f", f)
 		registerFunction("g", g)
 	}

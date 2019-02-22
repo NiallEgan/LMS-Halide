@@ -1,5 +1,5 @@
+#include <x86intrin.h>
 #include <immintrin.h>
-//#include <smmintrin.h>
 #include <stdio.h>
 
 int main() {
@@ -22,24 +22,16 @@ int main() {
   _mm256_storeu_si256((__m256i *) initialLoad, vec);
   printf("Loading values: %d, %d, %d, %d, %d, %d, %d, %d\n", initialLoad[0], initialLoad[1], initialLoad[2], initialLoad[3], initialLoad[4],
          initialLoad[5], initialLoad[6], initialLoad[7]);*/
-  /*char bytes[8] = {1, 2, 3, 4, 0, 0, 0, 0};
-  __m256i ctrl = _mm256_setr_epi8(0, 255, 255, 255,
-                                  1, 255, 255, 255,
-                                  2, 255, 255, 255,
-                                  3, 255, 255, 255,
-
-                                  255, 255, 255, 255,
-                                  255, 255, 255, 255,
-                                  255, 255, 255, 255,
-                                  255, 255, 255, 255);
-  __m256i vec = _mm256_loadu_si256((__m256i const *) (bytes));
-  vec = _mm256_shuffle_epi8(vec, ctrl);
-  int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
+  /*char bytes[16] = {1, 2, 3, 4, 5, 6, 7, 8,
+                   1, 2, 3, 4, 5, 6, 7, 8};
+  __m128i byte_vector = _mm_loadu_si128((__m128i const *) bytes);
+  __m256i vec = _mm256_cvtepu8_epi16(byte_vector);
+  int16_t *initialLoad = malloc(sizeof(int16_t) * 16);
   _mm256_storeu_si256((__m256i *) initialLoad, vec);
 
   printf("Loading values: %d, %d, %d, %d, %d, %d, %d, %d\n", initialLoad[0], initialLoad[1], initialLoad[2], initialLoad[3], initialLoad[4],
-         initialLoad[5], initialLoad[6], initialLoad[7]);
- __m256 vecf = _mm256_castsi256_ps(vec);
+         initialLoad[5], initialLoad[6], initialLoad[7]);*/
+ /*__m256 vecf = _mm256_castsi256_ps(vec);
  float *floatingStore = malloc(sizeof(float) * 8);
  _mm256_storeu_ps(floatingStore, vecf);
  printf("Floating values: %f, %f, %f, %f, %f, %f, %f, %f\n",
@@ -48,6 +40,18 @@ int main() {
 
  __m256i powers =  _mm256_setr_epi16(1, 2, 4, 8, 16, 32, 64, 128,
                                      1, 2, 4, 8, 16, 32, 64, 128);
+char *bytes = malloc(sizeof(char) * 32);
+__m256i vector = _mm256_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+__m256i mask = _mm256_setr_epi8(7, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7, 0,
+                                0, 7, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7);
+__m256i truncated = _mm256_castps_si256(_mm256_and_ps(_mm256_castsi256_ps(vector), _mm256_castsi256_ps(mask)));
+__m256i shuffle_mask = _mm256_setr_epi8(0, 31, 1, 31, 2, 31, 3, 31, 4, 31, 5, 31, 6, 31, 7, 31,
+                                        8, 31, 9, 31, 10, 31, 11, 31, 12, 31, 13, 31, 14, 31, 15, 31);
+truncated = _mm256_shuffle_epi8(truncated, shuffle_mask);
+
+_mm256_storeu_si256((__m256i *)bytes, truncated);
+printf("Stored values: %d, %d, %d, %d, %d, %d, %d, %d\n", bytes[0], bytes[1],
+        bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]);
 /*__m256i zeroes = _mm256_set_epi64x(0, 0, 0, 0);
 __m256i powers_less_one = _mm256_alignr_epi8(zeroes, powers, 1);*/
 /*__m128i first_half = _mm256_extractf128_si256(powers, 0);
@@ -55,13 +59,14 @@ __m128i second_half = _mm256_extractf128_si256(powers, 0);
 __m128i first_half_shifted = _mm256_srli_epi16(first_half, 1);
 __m128i second_half_shifted = _mm256_srli_epi16(second_half, 1);
 __m256i powers_less_one = _mm256_castsi128_si256(first_half_shifted);*/
-__m256i powers_less_one = _mm256_srli_epi16(powers, 1);
+//__m256i powers_less_one = _mm256_srli_epi16(powers, 1);
 //powers_less_one = _mm256_insertf128_si256(powers_less_one, second_half_shifted, 1);
 
-unsigned short *plo = (unsigned short *) &powers_less_one;
+/*unsigned short *plo = (unsigned short *) &powers_less_one;
 printf("Powers less one: %d %d %d %d %d %d %d %d\n %d %d %d %d %d %d %d %d\n",
        plo[0], plo[1], plo[2], plo[3], plo[4], plo[5], plo[6], plo[7],
        plo[8], plo[9], plo[10], plo[11], plo[12], plo[13], plo[14], plo[15]);
+ */
  //__m256 x188 = _mm256_div_ps(x186, x187)
   /*int32_t *initialLoad = malloc(sizeof(int32_t) * 8);
   _mm256_storeu_si256((__m256i *) initialLoad, x181);

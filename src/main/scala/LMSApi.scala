@@ -3,7 +3,8 @@ package sepia
 import java.io.PrintWriter
 
 import scala.lms.common._
-import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2}
+import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2,
+        SSE3, SSE2, CGenSSE3, CGenSSE2}
 import ch.ethz.acl.passera.unsigned.{UByte, UInt, ULong, UShort}
 
 
@@ -27,7 +28,7 @@ trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with Numeri
              with EqualExpBridgeOpt with ArrayOpsExpOpt
              with SeqOpsExp
              with OrderingOpsExpOpt
-             with AVX with AVX2 with VectorizedOpsExp
+             with AVX with AVX2 with SSE2 with SSE3 with VectorizedOpsExp
              with IntrinsicsArrays  {
  implicit def anyTyp    : Typ[Any]    = manifestTyp
  implicit def uByteTyp  : Typ[UByte]  = manifestTyp
@@ -57,7 +58,7 @@ trait DslGenC extends CGenNumericOps
   with CGenRangeOps with CGenFractionalOps
   with CGenShortOps with CGenArrayOps
   with CGenOrderingOps with CGenAVX
-  with CGenAVX2  {
+  with CGenAVX2 with CGenSSE2 with CGenSSE3 {
     self =>
     val IR: DslExp
     import IR._
