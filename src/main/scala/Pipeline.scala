@@ -62,6 +62,7 @@ trait Pipeline extends SimpleFuncOps {
 	def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T]
 
 	def realizeShort(f: (Rep[Int], Rep[Int]) => RGBVal[Short]): (Rep[Int], Rep[Int]) => RGBVal[UChar] = {
+		println("Realizing short")
 		f(_, _).map(s2c)
 	}
 	def realizeInt(f: (Rep[Int], Rep[Int]) => RGBVal[Int]): (Rep[Int], Rep[Int]) => RGBVal[UChar] = {
@@ -69,6 +70,7 @@ trait Pipeline extends SimpleFuncOps {
 		f(_, _).map(i2c)
 	}
 	def realizeDouble(f: (Rep[Int], Rep[Int]) => RGBVal[Double]): (Rep[Int], Rep[Int]) => RGBVal[UChar] = {
+		//throw new Exception()
 		f(_, _).map(d2c)
 	}
 	def realizeFloat(f: (Rep[Int], Rep[Int]) => RGBVal[Float]): (Rep[Int], Rep[Int]) => RGBVal[UChar] = {
@@ -139,11 +141,11 @@ trait PipelineForCompiler extends Pipeline
 
 	override def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[UChar] = {
 		val cast =
-			if (typ[T] == typ[UChar]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Short]])
+			if (typ[T] == typ[Short]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Short]])
 			else if (typ[T] == typ[Int]) realizeInt(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Int]])
 			else if (typ[T] == typ[Float]) realizeFloat(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Float]])
-			else realizeDouble(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Double]])
-
+			else if (typ[T] == typ[Double]) realizeDouble(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Double]])
+			else throw new InvalidAlgorithm(f"Can't use that type ${typ[T]}")
 		val castFunc = func(cast)
 
 		finalFunc = Some(castFunc)

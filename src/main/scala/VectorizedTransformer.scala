@@ -368,6 +368,26 @@ trait Vectorizer extends ForwardTransformer {
              } else if (arr.m == typ[Float]) {
                val vectorizedExp: Exp[__m256] = floatVectorizer(y.asInstanceOf[Exp[Float]], start, end, indexSymbol)
                _mm256_storeu_ps(apply(a).asInstanceOf[Exp[Array[Float]]], vectorizedExp, stripIndex(n, indexSymbol))
+             } else if (arr.m == typ[Char]) {
+                y match {
+                 case Def(yv) => yv match {
+                   case cast@TToChar(b) => {
+                     if (cast.fromTyp == typ[Short]) {
+                       val vectorizedExp: Exp[__m256i] = intVectorizer(b.asInstanceOf[Exp[Short]], start, end, indexSymbol)
+                       val mask: Exp[__m256i] = _mm256_set_epi64x(0L, 0L, 0L, 0L)
+                       val truncated: Exp[__m256i] = _mm256_packus_epi16(vectorizedExp, mask)
+                       val shuffled: Exp[__m256i] = _mm256_permute4x64_epi64(truncated, 0xD8)
+                       val bytes: Exp[__m128i] =  _mm256_extracti128_si256(shuffled, 0)
+                       val store: Exp[Unit] = _mm_storeu_si128(apply(a).asInstanceOf[Exp[Array[__m128i]]], bytes, stripIndex(n, indexSymbol))
+                       store
+                     } else {
+                       throw new VectorisationException(f"Can only vectorize short -> char, not ${cast.fromTyp}")
+                     }
+                   }
+                   case _ => throw new VectorisationException("")
+                 }
+                 case _ => throw new VectorisationException("")
+               }
              } else {
                throw new VectorisationException(f"Error: Can only vectorize Short, Double or Float, not ${arr.m}, $arr")
              }

@@ -18,7 +18,7 @@ trait TwoStageBoxBlurFast extends TestPipeline {
 		//f.storeRoot()
     //f.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 2, 2)
 		f.vectorize("x", 16)
-		//g.vectorize("x", 16)
+		g.vectorize("x", 16)
     registerFunction("f", f)
 		registerFunction("g", g)
 	}
