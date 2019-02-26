@@ -43,7 +43,7 @@ int main() {
 char *bytes = malloc(sizeof(char) * 16);
 for (int i = 0; i < 16; i++) bytes[i] = 0;
 __m256i vector = _mm256_setr_epi16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-__m256i mask = _mm256_setr_epi64(0, 0, 0, 0);
+__m256i mask = _mm256_setr_epi64x(0, 0, 0, 0);
 __m256i truncated = _mm256_packus_epi16(vector, mask);
 truncated = _mm256_permute4x64_epi64(truncated, 0b11011000);
 __m128i new_bytes = _mm256_extracti128_si256(truncated, 0);

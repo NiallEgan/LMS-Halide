@@ -9,3 +9,8 @@ target/
 *.bmp
 *.png
 a.out
+callgrind.*
+*.a
+test/bm
+test/halide_prog
+test/pipe
