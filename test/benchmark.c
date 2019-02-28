@@ -21,6 +21,6 @@ double benchmark(void (*f)(), int min_iterations,
       second_best = tmp;
     }
   }
-  printf("Second best: %f\n", second_best);
+  //printf("Second best: %f\n", second_best);
   return current_best;
 }

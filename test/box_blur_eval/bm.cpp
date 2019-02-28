@@ -37,12 +37,12 @@ int main() {
       input_buffer[3 * base + 2] = v;
     }
   }
-  //double time = benchmark(&test_clean, 5, 15, 0.01);
-  //printf("Clean time is: %f\n", time);
+  double time = benchmark(&test_clean, 5, 15, 0.01);
+  printf("Clean time is: %f\n", time);
   double my_time = benchmark(&test_mine, 5, 15, 0.01);
   printf("My time is: %f\n", my_time);
   double fast_time = benchmark(&test_fast, 5, 15, 0.01);
-  printf("Time to beat is: %f\n", fast_time);
+  printf("Hand optimized is: %f\n", fast_time);
   double halide_time = benchmark(&test_halide, 5, 15, 0.01);
   printf("Halide's time is: %f\n", halide_time);
 

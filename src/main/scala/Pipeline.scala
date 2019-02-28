@@ -74,7 +74,7 @@ trait Pipeline extends SimpleFuncOps {
 		f(_, _).map(d2c)
 	}
 	def realizeFloat(f: (Rep[Int], Rep[Int]) => RGBVal[Float]): (Rep[Int], Rep[Int]) => RGBVal[UChar] = {
-		???
+		f(_, _).map(repFloatToRepChar)
 	}
 
 	def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[UChar]
