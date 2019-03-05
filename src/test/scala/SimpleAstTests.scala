@@ -6,7 +6,7 @@ import sepia._
 
 trait CompilerInstance extends ScheduleCompiler
 											 with PipelineForCompiler with DslExp
-											 with AstOps {
+											 with AstOps with TestPipeline with TestAstOps {
 	self =>
     val codegen = new DslGenC {
       val IR: self.type = self
@@ -37,7 +37,7 @@ trait CompilerInstance extends ScheduleCompiler
 		w = width
 		h = height
 		compilerProg(in, out, w, h)
-		//println(sched)
+		println(sched)
 		println()
 		evalSched(sched, boundsGraph, Map(), sched)
 		//println(sched)

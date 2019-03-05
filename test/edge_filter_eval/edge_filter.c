@@ -1,9 +1,8 @@
 #include <string.h>
-#include "pipeline.h"
-void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+#include "../../testOutput/pipeline.h"
+/*void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
 int32_t x14 = x2 * x3;
 int32_t x15 = x14 * 3;
-int its = 0;
 float *x396 = malloc(sizeof(float) * x15);
 for(int x18=0; x18 < x3; x18++) {
 int32_t x21 = x2 * x18;
@@ -182,7 +181,6 @@ for(int x159=3; x159 < x4; x159++) {
 int32_t x173 = x159 - 3;
 int32_t x174 = x2 * x173;
 int32_t x259 = x9 * x173;
-its += 1;
 for(int x164=0; x164 < x162; x164++) {
 int32_t x166 = x164 * 8;
 int32_t x167 = x166 + 3;
@@ -432,7 +430,6 @@ free(x404);
 free(x396);
 memcpy(x1, x730, x276);
 free(x730);
-printf("Iterations: %d\n", its);
 }
 int32_t WIDTH_OUT_DIFF = 8;
-int32_t HEIGHT_OUT_DIFF = 8;
+int32_t HEIGHT_OUT_DIFF = 8;*/

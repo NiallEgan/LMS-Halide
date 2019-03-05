@@ -125,6 +125,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k)
 			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k)
 			case SymbolicInt(dim) => Bound(0, 0)
+			case IntMinus(Def(IntDivide(Def(SymbolicInt(dim)), Const(k))), Const(k2)) => throw new InvalidAlgorithm("")
 			case _ => throw new InvalidAlgorithm(f"Error: Invalid input to function, $v")
 		}
 		case Const(_) => Bound(0, 0)

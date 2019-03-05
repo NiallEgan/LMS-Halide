@@ -193,7 +193,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     if (f.inlined) f.f(x, y)
     else {
         val r = f.buffer
-                .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for"))(x - f.x.dimOffset, y - f.y.dimOffset)
+                .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for ${f.id}"))(x - f.x.dimOffset, y - f.y.dimOffset)
         new RGBVal(r.red, r.green, r.blue)
     }
   }

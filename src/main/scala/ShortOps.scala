@@ -34,13 +34,13 @@ trait ShortOps extends PrimitiveOps {
   def repIntToRepChar(a: Rep[Int]): Rep[Char]
   def repFloatToRepChar(a: Rep[Float]): Rep[Char]
   def repDoubleToRepChar(a: Rep[Double]): Rep[Char]
-
+  def repFloatToRepInt(a: Rep[Float]): Rep[Int]
 
   implicit def i2reps(i: Int) = unit(i.toShort)
 
 }
 
-trait ShortOpsExp extends ShortOps with EffectExp {
+trait ShortOpsExp extends ShortOps with EffectExp with PrimitiveOpsExp {
   case class ShortMinus(a: Exp[Short], b: Exp[Short]) extends Def[Short]
   case class ShortPlus(a: Exp[Short], b: Exp[Short]) extends Def[Short]
   case class ShortTimes(a: Exp[Short], b: Exp[Short]) extends Def[Short]
@@ -77,6 +77,7 @@ trait ShortOpsExp extends ShortOps with EffectExp {
   override def repIntToRepChar(a: Exp[Int]): Exp[Char] = toCharCast[Int](a)
   override def repFloatToRepChar(a: Exp[Float]): Exp[Char] = toCharCast[Float](a)
   override def repDoubleToRepChar(a: Exp[Double]): Exp[Char] = toCharCast[Double](a)
+  override def repFloatToRepInt(a: Exp[Float]): Exp[Int] = FloatToInt(a)
 
   override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
     super.mirror(e, f)(typ[A], pos)

@@ -19,11 +19,14 @@ trait EdgeFilter extends TestPipeline {
 
 
   override def prog(in: Input, w: Rep[Int], h: Rep[Int]) = {
+    val floatInput = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
+      in(x, y).map(repCharToRepFloat(_))
+    }
     val blur_y = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
-        (kernel(0) * in(x, y) +
-         kernel(1) * (in(x, y-1) + in(x, y+1)) +
-         kernel(2) * (in(x, y-2) + in(x, y+2)) +
-         kernel(3) * (in(x, y-3) + in(x, y+3)))
+        (kernel(0) * floatInput(x, y) +
+         kernel(1) * (floatInput(x, y-1) + floatInput(x, y+1)) +
+         kernel(2) * (floatInput(x, y-2) + floatInput(x, y+2)) +
+         kernel(3) * (floatInput(x, y-3) + floatInput(x, y+3)))
     }
 
     val blur_x = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
@@ -38,8 +41,18 @@ trait EdgeFilter extends TestPipeline {
            List(1, -4, 1),
            List(0, 1, 0)),
       blur_x
+
     )
-    blur_x.computeRoot()
+    //blur_x.computeAt(edge_detection, "y")
+    //blur_x.storeRoot()
+    blur_x.computeRoot() // order matters... :(
+    blur_y.computeRoot()
+    floatInput.computeRoot()
+    blur_x.vectorize("x", 8)
+    blur_y.vectorize("x", 8)
+    //edge_detection.vectorize("x", 8)
+    //blur_x.split("x", "x_outer", "x_inner", 8)
+
   }
 }
 

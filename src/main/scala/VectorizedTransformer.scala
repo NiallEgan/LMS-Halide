@@ -303,8 +303,8 @@ trait Vectorizer extends ForwardTransformer {
         case op@NumericTimes(a, b) => numeric_times(stripIndex(a, i), stripIndex(b, i))(op.aev.asInstanceOf[Numeric[T]],
                                       typ[T], implicitly[SourceContext])
         case IntPlus(Def(IntTimes(Const(3), a)), Const(k)) => {
-          // Bad hack :( how is this going to generalize to different vector widths????
-          int_plus(int_times(3, stripIndex(a, i)), Const(k * 16))
+          // Bad hack :( 
+          int_plus(int_times(3, stripIndex(a, i)), Const(k * (end - start)))
         }
         case IntPlus(a, b) => {
           int_plus(stripIndex(a, i), stripIndex(b, i))
