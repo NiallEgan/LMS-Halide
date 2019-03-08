@@ -16,11 +16,15 @@ class CallGraph(a: Map[Int, List[Int]], ws: Map[(Int, Int), Edge]) {
     weights.contains((consumer, producer))
   }
 
-  def producersOf(f: Int) = adjList(f)
+  def producersOf(f: Int) = adjList.getOrElse(f, List())
 
   def getBoundWithDefault(producer: Int, consumer: Int,
                           v: String, default: Bound) = {
     weights((consumer, producer)).bounds.getOrElse(v, default)
+  }
+
+  override def toString(): String = {
+    adjList.toString
   }
 }
 
@@ -35,7 +39,9 @@ object CallGraph {
 
   def buildAdj(m: Map[Int, Map[Int, Map[String, Bound]]],
                src: Int): Map[Int, List[Int]] = {
-    if (!m.contains(src) || m(src).isEmpty) {  // src doesn't call anything (or is in)
+    //println(f"found src $src")
+    assert(src != 8)
+    if (src == -1 || m(src).isEmpty) {  // src doesn't call anything (or is in)
       Map(src -> List())
     } else {
       val adjList = m(src).flatMap({
@@ -48,8 +54,10 @@ object CallGraph {
 
   def graphFromMap(m: Map[Int, Map[Int, Map[String, Bound]]], node: Int): CallGraph = {
     val weights = buildWeights(m)
-
+    println(f"starting node: $node")
     val adjList = buildAdj(m, node)
     new CallGraph(adjList, weights)
   }
+
+  
 }

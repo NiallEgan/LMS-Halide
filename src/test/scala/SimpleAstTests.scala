@@ -20,14 +20,14 @@ trait CompilerInstance extends ScheduleCompiler
 		// todo: doesn't work for multistage pipelines with no in
 		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
 									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "x").getOrElse(Bound(0, 0)).width - 1
+									 "x").getOrElse(Bound(0, 0, 1, 1)).width - 1
 
 	}
 
 	def heightOutDiff(boundsGraph: CallGraph) = {
 		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
 									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "y").getOrElse(Bound(0, 0)).width - 1
+									 "y").getOrElse(Bound(0, 0, 1, 1)).width - 1
 
 	}
 

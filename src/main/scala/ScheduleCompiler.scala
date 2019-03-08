@@ -64,8 +64,8 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				val bound = BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-			  val unadjLb = baseVar.v + bound.lb
-				val unadjUb = baseVar.v + bound.ub
+			  val unadjLb = bound.mulLo * baseVar.v + bound.lb
+				val unadjUb = bound.mulHi * baseVar.v + bound.ub
 			  variable.looplb_=(unadjLb)
 				variable.shadowingUb_=(unadjUb + 1)
 				variable.loopub_=(unadjUb + 1)
@@ -145,6 +145,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 												    completeTree: ScheduleNode,
 											 	    boundsGraph: CallGraph,
 														enclosingLoops: Map[(Func[_], String), Dim]): Rep[Boolean] = {
+			println("loop?")
 			if (stage.computeRoot) true
 			else {
 				val computeAtFunc: Func[_] = stage.computeAt.getOrElse(throw new InvalidSchedule("non-inlined function has no compute at")).f
@@ -207,7 +208,9 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 	def evalSched(node: ScheduleNode,
 								boundsGraph: CallGraph,
 								enclosingLoops: Map[(Func[_], String), Dim],
-							  completeTree: ScheduleNode): Rep[Unit] = node match {
+							  completeTree: ScheduleNode): Rep[Unit] = {
+		println(f"evaling: $node")
+		node match {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, enclosingLoops)
       loopType match {
@@ -255,7 +258,9 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 
     case ComputeNode(stage, children) => {
 			if (notPreviouslyComputed(stage, completeTree, boundsGraph, enclosingLoops)) {
+				println("not looping here!")
 	      stage.storeInBuffer(stage.compute())
+				println("stored")
 			}
       for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
     }
@@ -273,5 +278,5 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
     case RootNode(children) => {
       for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
     }
-  }
+  }}
 }

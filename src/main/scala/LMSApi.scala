@@ -6,7 +6,7 @@ import scala.lms.common._
 import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2,
         SSE3, SSE2, CGenSSE3, CGenSSE2}
 import ch.ethz.acl.passera.unsigned.{UByte, UInt, ULong, UShort}
-
+import scala.reflect.SourceContext
 
 
 trait Dsl extends PrimitiveOps with NumericOps
@@ -50,6 +50,8 @@ trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with Numeri
    case _ => super.boundSyms(e)
  }
 
+ override def array_apply[T:Typ](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = ArrayApply(x, n)
+
 }
 
 trait DslGenC extends CGenNumericOps
@@ -90,6 +92,7 @@ trait DslGenC extends CGenNumericOps
     }
 
     override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
+      println(f"Emitting node $sym")
       rhs match {
         case ArrayApply(x, m) => emitValDef(sym, src"$x[$m]")
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
@@ -120,6 +123,7 @@ trait DslGenC extends CGenNumericOps
     override def emitSource[A:Typ](args: List[Sym[_]], body: Block[A],
                                    functionName: String, out: PrintWriter) = {
       val sA = remap(typ[A])
+      println("Emitting source")
       withStream(out) {
         stream.println("#include <string.h>")
         stream.println("#include \"pipeline.h\"")
@@ -143,6 +147,9 @@ trait DslGenC extends CGenNumericOps
                     (f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R],
                      className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     // This marks the second argument as mutable
+
+    println("Emitting source mut")
+
     val s1 = fresh[T1]
     val s2 = reflectMutableSym(fresh[T2])
     val s3 = fresh[T3]

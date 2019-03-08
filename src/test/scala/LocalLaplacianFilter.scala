@@ -8,14 +8,14 @@ import scala.collection.mutable.ListBuffer
 trait LocalLaplacian extends TestPipeline {
   val alpha = 0.25f
   val beta = 1.0f
-  val levels = 8
+  val levels = 3
 
-  val remapTable =
-    for (i <- 0 until 256: Range)
+  val remapTable: Array[Float] =
+    (for (i <- 0 until 256: Range)
     yield {
       val fx = (i / 256.0f)
       alpha * fx * exp(-fx * fx / 2.0f).toFloat
-    }
+    }).toArray
 
   def remap(x: RGBVal[Float]): RGBVal[Float] = {
     x.map(v => {
@@ -33,80 +33,98 @@ trait LocalLaplacian extends TestPipeline {
   }
 
   def downsample(f: Func[Float]): Func[Float] = {
-    val downx = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
+    val downx = func[Float] ((x: Rep[Int], y: Rep[Int]) =>
       (f(2*x-1, y) + 3.0f * (f(2*x, y) + f(2*x+1, y)) + f(2*x+2, y)) / 8.0f
-    }
-    val downy = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
+    )
+    downx addName "downx"
+    val downy = func[Float] ((x: Rep[Int], y: Rep[Int]) =>
       (downx(x, 2*y-1) + 3.0f * (downx(x, 2*y) + downx(x, 2*y+1)) + downx(x, 2*y+2)) / 8.0f
-    }
+    )
+    downy addName "downy"
     downy
   }
 
   def upsample(f: Func[Float]): Func[Float] = {
-    val upx = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
+    val upx = func[Float] ((x: Rep[Int], y: Rep[Int]) =>
        0.25f * f(x/2 - 1, y) + 0.75f * f(x/2, y)
        // + 2 * (x % 2
-    }
-    val upy = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
+    )
+    upx addName "upx"
+    val upy = func[Float] ((x: Rep[Int], y: Rep[Int]) =>
       0.25f * upx(x, y / 2 - 1) + 0.75f * upx(x, y / 2)
       // + 2 * (x % 2
-    }
+    )
+    upy addName "upy"
     upy
   }
 
-  def gaussianPryamids(f: Func[Float],
-                       inGPyramid: List[Func[Float]], kOffset: Int): List[Func[Float]] = {
+  def gaussianPryamids(i: Int, offset: Int)(f: Func[Float],
+                       inGPyramid: List[Func[Float]]): List[Func[Float]] = {
     val firstLevel =
-      func[Float] { (x: Rep[Int], y: Rep[Int]) => {
-        val k = clamp(inGPyramid(0)(x, y) * (levels - 1), 0, levels-2) + kOffset
-        val level = k * (1.0f / (levels - 1))
+      func[Float] ((x: Rep[Int], y: Rep[Int]) => {
+        val in_level = inGPyramid(i)(x, y) * (levels - 1)
+        val li = clamp(in_level, 0, levels-2).map(repFloatToRepInt(_))
+        val k = li + offset
+        val level =  k * (1.0f / (levels - 1))
         val idx = clamp(f(x, y) * (levels-1) * 256.0f, 0.0f, (levels-1)*256.0f)
         beta * (f(x, y) - level) + level + remap(idx - 256 * k)
-      }}
+      })
+    firstLevel addName "first level processed gaussian pyramid"
 
     val gPyramid = new ListBuffer[Func[Float]]
     gPyramid += firstLevel
-    for (j <- 1 until levels: Range) gPyramid += downsample(gPyramid(j-1))
+    for (j <- 1 until levels: Range) {
+      val g = downsample(gPyramid(j-1))
+      gPyramid += g
+      g addName f"processes gaussian pyramid $j"
+    }
     gPyramid.toList
   }
 
   def laplacianPyramids(gPyramid: List[Func[Float]]): List[Func[Float]] = {
     val lPyramid = new ListBuffer[Func[Float]]
     gPyramid(levels-1) +=: lPyramid
-    for (j <- levels - 2 to 0 by -1: Range)
-      func[Float] { (x: Rep[Int], y: Rep[Int]) =>
-        gPyramid(0)(x, y) - upsample(gPyramid(1))(x, y)
-      } +=: lPyramid
+    for (j <- levels - 2 to 0 by -1: Range) {
+      val us = upsample(gPyramid(j+1))
+      val g = func[Float] ((x: Rep[Int], y: Rep[Int]) =>
+        gPyramid(j)(x, y) - us(x, y)
+      )
+      g addName f"laplacian pyramid $j"
+      g +=: lPyramid
+    }
     lPyramid.toList
   }
 
   def inGPyramid(f: Func[Float]): List[Func[Float]] = {
     val gPyramid = new ListBuffer[Func[Float]]
     gPyramid += f
-    for (j <- 1 until levels: Range) gPyramid += downsample(gPyramid(j-1))
+    for (j <- 1 until levels: Range) {
+      val g = downsample(gPyramid(j-1))
+      g addName f"in gauss pyramid $j"
+      gPyramid += g
+    }
     gPyramid.toList
   }
 
   def outLPyramid(f: Func[Float], inPyramid: List[Func[Float]]): List[Func[Float]] = {
-    val lPyramid0 = laplacianPyramids(gaussianPryamids(f, inPyramid, 0))
-    val lPyramid1 = laplacianPyramids(gaussianPryamids(f, inPyramid, 1))
-
     val outLPyramid = new ListBuffer[Func[Float]]
     for (j <- 0 until levels: Range) {
-      val f = func[Float] { (x: Rep[Int], y: Rep[Int]) => {
+      val lPyramid0 = laplacianPyramids(gaussianPryamids(j, 0)(f, inPyramid))
+      val lPyramid1 = laplacianPyramids(gaussianPryamids(j, 1)(f, inPyramid))
+      val g = func[Float] ( (x: Rep[Int], y: Rep[Int]) => {
         val level = inPyramid(j)(x, y) * (levels - 1)
         val li = clamp(level, 0, levels-2).map(repFloatToRepInt(_))
         val lf = level - li
-
         (1.0f - lf) * lPyramid0(j)(x, y) + lf * lPyramid1(j)(x, y)
-      }}
-      outLPyramid += f
+      })
+      outLPyramid += g
+      g addName f"out laplace pyramid $j"
     }
     outLPyramid.toList
   }
 
   override def prog(in: Input, w: Rep[Int], h: Rep[Int]) = {
-    val f = func[Float] {(x: Rep[Int], y: Rep[Int]) => in(x, y).map(repCharToRepFloat(_))}
+    val f = func[Float] ((x: Rep[Int], y: Rep[Int]) => in(x, y).map(repCharToRepFloat(_)))
     val inGaussPyramid = inGPyramid(f)
     val outLaplacePyramid = outLPyramid(f, inGaussPyramid)
     val outGaussPyramid = new ListBuffer[Func[Float]]
@@ -114,14 +132,22 @@ trait LocalLaplacian extends TestPipeline {
     println(f"in gauss pyramid: ${inGaussPyramid}")
     outLaplacePyramid(levels-1) +=: outGaussPyramid
     for (j <- levels-2 to 1 by -1: Range) {
-      val g = func[Float]{(x:Rep[Int], y: Rep[Int]) =>
-        upsample(outGaussPyramid(1))(x, y) + outLaplacePyramid(j)(x, y)
-      }
+      val us = upsample(outGaussPyramid(0)) // this is why mutability is bad!!!
+      val g = func[Float]((x: Rep[Int], y: Rep[Int]) =>
+        us(x, y) + outLaplacePyramid(j)(x, y)
+      )
+      g addName f"out gauss pyramid $j"
       g +=: outGaussPyramid
     }
-    val last = final_func[Float] {(x: Rep[Int], y: Rep[Int]) =>
-        upsample(outGaussPyramid(1))(x, y) + outLaplacePyramid(0)(x, y)
-    }
+    println(f"Out gauss pyramid: ${outGaussPyramid}")
+    val us = upsample(outGaussPyramid(0))
+    val last = final_func[Float] ((x: Rep[Int], y: Rep[Int]) =>
+      us(x, y) + outLaplacePyramid(0)(x, y)
+    )
+    last addName "final func"
+
+    f.computeRoot()
+
   }
 }
 
@@ -131,6 +157,8 @@ class LocalLaplacianTest extends FlatSpec {
     val blurProg =
       new LocalLaplacian with CompilerInstance with TestAstOps
     val blurProgAnalysis = new LocalLaplacian with TestPipelineAnalysis
-    blurProg.compile(blurProgAnalysis.getBoundsGraph, "local_laplacian")
+    val bg = blurProgAnalysis.getBoundsGraph
+    println(bg)
+    blurProg.compile(bg, "local_laplacian")
   }
 }

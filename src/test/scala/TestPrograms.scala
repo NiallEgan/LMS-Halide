@@ -407,3 +407,13 @@ trait TwoStageBlurInnerFused extends TestPipeline {
 		registerFunction("g", g)
 	}
 }
+
+trait Interpolator extends TestPipeline {
+	override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+		val f = final_func[Short] { (x: Rep[Int], y: Rep[Int]) =>
+			in(2 * x + 1, y) - in (2 * x - 1, y)
+		}
+
+		registerFunction("f", f)
+	}
+}
