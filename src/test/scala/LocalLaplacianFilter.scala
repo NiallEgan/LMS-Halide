@@ -4,7 +4,7 @@ import scala.math._
 import scala.collection.mutable.ListBuffer
 
 // Translated from the Halide example
-
+/*
 trait LocalLaplacian extends TestPipeline {
   val alpha = 0.25f
   val beta = 1.0f
@@ -134,3 +134,4 @@ class LocalLaplacianTest extends FlatSpec {
     blurProg.compile(blurProgAnalysis.getBoundsGraph, "local_laplacian")
   }
 }
+*/

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <immintrin.h>
+#include <math.h>
 
 #define UCHAR unsigned char
 #define MIN(x, y) ((x) < (y) ? (x) : (y))

@@ -1,12 +1,32 @@
 package sepia
 
 import java.io.PrintWriter
+import scala.reflect.SourceContext
 
 import scala.lms.common._
 import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2,
         SSE3, SSE2, CGenSSE3, CGenSSE2}
 import ch.ethz.acl.passera.unsigned.{UByte, UInt, ULong, UShort}
 
+trait ImageOps extends PrimitiveOps {
+  def tern[T:Typ](cond: Rep[Boolean],
+                  lower: Rep[T], upper: Rep[T]): Rep[T]
+}
+
+trait ImageOpsExp extends ImageOps with BaseExp {
+  case class Tern[T:Typ](cond: Exp[Boolean],
+                    lower: Exp[T], upper: Exp[T]) extends Def[T]
+  override def tern[T:Typ](cond: Rep[Boolean],
+                    lower: Rep[T], upper: Rep[T]): Rep[T] = {
+     Tern(cond, lower, upper)
+  }
+
+  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] =
+    (e match {
+      case Tern(cond, lower, upper) => tern(f(cond), f(lower), f(upper))
+      case _ => super.mirror(e, f)(typ[A], pos)
+    }).asInstanceOf[Exp[A]]
+}
 
 
 trait Dsl extends PrimitiveOps with NumericOps
@@ -16,9 +36,11 @@ trait Dsl extends PrimitiveOps with NumericOps
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
           with ImageBufferOps with ShortOps
-          with OrderingOps with VectorizedOps {
+          with OrderingOps with VectorizedOps
+          with MathOps with ImageOps {
   def generate_comment(l: String): Rep[Unit]
   def comment[A:Typ](l: String, verbose: Boolean = true)(b: => Rep[A]): Rep[A]
+
 }
 
 trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with NumericOpsExpOpt
@@ -29,7 +51,8 @@ trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with Numeri
              with SeqOpsExp
              with OrderingOpsExpOpt
              with AVX with AVX2 with SSE2 with SSE3 with VectorizedOpsExp
-             with IntrinsicsArrays  {
+             with IntrinsicsArrays with MathOpsExp
+             with ImageOpsExp {
  implicit def anyTyp    : Typ[Any]    = manifestTyp
  implicit def uByteTyp  : Typ[UByte]  = manifestTyp
  implicit def uIntTyp   : Typ[UInt]   = manifestTyp
@@ -58,7 +81,8 @@ trait DslGenC extends CGenNumericOps
   with CGenRangeOps with CGenFractionalOps
   with CGenShortOps with CGenArrayOps
   with CGenOrderingOps with CGenAVX
-  with CGenAVX2 with CGenSSE2 with CGenSSE3 {
+  with CGenAVX2 with CGenSSE2 with CGenSSE3
+  with CGenMathOps {
     self =>
     val IR: DslExp
     import IR._
@@ -108,6 +132,10 @@ trait DslGenC extends CGenNumericOps
         case GenerateComment(s) => stream.println(f"// $s")
         case n@CharToT(a) => emitValDef(sym, f"(${remap(n.toTyp)}) ${quote(a)}")
         case n@TToChar(a) => emitValDef(sym, f"(UCHAR) ${quote(a)}")
+        case Tern(cond, l, u) => {
+          emitValDef(sym, src"($cond) ? $l : $u")
+        }
+        //emitValDef(sym, src"if ($v < $threshold) $l else $u")
         case _ => super.emitNode(sym, rhs)
       }
     }

@@ -145,6 +145,7 @@ trait PipelineForCompiler extends Pipeline
 			else if (typ[T] == typ[Int]) realizeInt(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Int]])
 			else if (typ[T] == typ[Float]) realizeFloat(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Float]])
 			else if (typ[T] == typ[Double]) realizeDouble(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Double]])
+			else if (typ[T] == typ[UChar]) f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[UChar]]
 			else throw new InvalidAlgorithm(f"Can't use that type ${typ[T]}")
 		val castFunc = func(cast)
 

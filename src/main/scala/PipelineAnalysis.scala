@@ -1,7 +1,9 @@
 package sepia
 
+import scala.lms.internal.BlockTraversal
+
 trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
-													with SymbolicFuncOpsExp with Pipeline {
+													with SymbolicFuncOpsExp with Pipeline  {
 	// Possible refactoring: Change interperation to generate the graph directly!
 
 	// Before we pass the program to the staged interpreter, we must
@@ -72,6 +74,17 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case DoubleToShortConversion(a)   => f(List(a).map(m))
 			case CharToT(a)						        => f(List(a).map(m))
 		  case TToChar(a)                   => f(List(a).map(m))
+			//case IfThenElse(c, a, b)          => f(List().map(m))
+			case MathSqrt(a)                  => f(List(a).map(m))
+			case OrderingLT(a, b)             => f(List(a, b).map(m))
+			case OrderingGT(a, b)             => f(List(a, b).map(m))
+			case OrderingLTEQ(a, b)             => f(List(a, b).map(m))
+			case OrderingGTEQ(a, b)             => f(List(a, b).map(m))
+			case BooleanAnd(a, b)             => f(List(a, b).map(m))
+			case BooleanOr(a, b)              => f(List(a, b).map(m))
+			case Equal(a, b)                  => f(List(a, b).map(m))
+			case NotEqual(a, b)                  => f(List(a, b).map(m))
+			case Tern(cond, l, u)             => f(List(cond, l, u).map(m))
   }
 
 	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
