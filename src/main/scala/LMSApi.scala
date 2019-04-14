@@ -1,11 +1,32 @@
 package sepia
 
 import java.io.PrintWriter
+import scala.reflect.SourceContext
 
 import scala.lms.common._
-import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2}
+import ch.ethz.acl.intrinsics.{AVX, AVX2, IntrinsicsArrays, CGenAVX, CGenAVX2,
+        SSE3, SSE2, CGenSSE3, CGenSSE2}
 import ch.ethz.acl.passera.unsigned.{UByte, UInt, ULong, UShort}
 
+trait ImageOps extends PrimitiveOps {
+  def tern[T:Typ](cond: Rep[Boolean],
+                  lower: Rep[T], upper: Rep[T]): Rep[T]
+}
+
+trait ImageOpsExp extends ImageOps with BaseExp {
+  case class Tern[T:Typ](cond: Exp[Boolean],
+                    lower: Exp[T], upper: Exp[T]) extends Def[T]
+  override def tern[T:Typ](cond: Rep[Boolean],
+                    lower: Rep[T], upper: Rep[T]): Rep[T] = {
+     Tern(cond, lower, upper)
+  }
+
+  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] =
+    (e match {
+      case Tern(cond, lower, upper) => tern(f(cond), f(lower), f(upper))
+      case _ => super.mirror(e, f)(typ[A], pos)
+    }).asInstanceOf[Exp[A]]
+}
 
 
 trait Dsl extends PrimitiveOps with NumericOps
@@ -15,9 +36,11 @@ trait Dsl extends PrimitiveOps with NumericOps
           with RangeOps with FractionalOps
           with ArrayOps with SeqOps
           with ImageBufferOps with ShortOps
-          with OrderingOps with VectorizedOps {
+          with OrderingOps with VectorizedOps
+          with MathOps with ImageOps {
   def generate_comment(l: String): Rep[Unit]
   def comment[A:Typ](l: String, verbose: Boolean = true)(b: => Rep[A]): Rep[A]
+
 }
 
 trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with NumericOpsExpOpt
@@ -27,8 +50,9 @@ trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with Numeri
              with EqualExpBridgeOpt with ArrayOpsExpOpt
              with SeqOpsExp
              with OrderingOpsExpOpt
-             with AVX with AVX2 with VectorizedOpsExp
-             with IntrinsicsArrays  {
+             with AVX with AVX2 with SSE2 with SSE3 with VectorizedOpsExp
+             with IntrinsicsArrays with MathOpsExp
+             with ImageOpsExp {
  implicit def anyTyp    : Typ[Any]    = manifestTyp
  implicit def uByteTyp  : Typ[UByte]  = manifestTyp
  implicit def uIntTyp   : Typ[UInt]   = manifestTyp
@@ -57,7 +81,8 @@ trait DslGenC extends CGenNumericOps
   with CGenRangeOps with CGenFractionalOps
   with CGenShortOps with CGenArrayOps
   with CGenOrderingOps with CGenAVX
-  with CGenAVX2  {
+  with CGenAVX2 with CGenSSE2 with CGenSSE3
+  with CGenMathOps {
     self =>
     val IR: DslExp
     import IR._
@@ -65,6 +90,7 @@ trait DslGenC extends CGenNumericOps
     override def isPrimitiveType(tpe: String) = tpe match {
       case "USHORT" => true
       case "UCHAR" => true
+      case "Char" => true
       case "__m64" => true
       case "__m128" => true
       case "__m128d" => true
@@ -79,14 +105,15 @@ trait DslGenC extends CGenNumericOps
     }
 
     override def remap[A](m: Typ[A]) = m.toString match {
-      case "Array[Short]" => "UCHAR[]"
-      case "Short" => "UCHAR"
+      case "Array[Char]" => "UCHAR *"
+      case "Char" => "UCHAR"
+      case "Short" => "uint16_t"
+      case "Int" => "int32_t"
       case _ => super.remap(m)
 
     }
-    var seenArray: ArrayNew[Int] = null
+
     override def emitNode(sym: Sym[Any], rhs: Def[Any]) = {
-      //println(rhs)
       rhs match {
         case ArrayApply(x, m) => emitValDef(sym, src"$x[$m]")
         case ArrayUpdate(x, m, y) => stream.println(src"$x[$m] = $y;")
@@ -103,6 +130,12 @@ trait DslGenC extends CGenNumericOps
           emitBlock(body) // TODO: Don't let VectorForEach get this far
         }
         case GenerateComment(s) => stream.println(f"// $s")
+        case n@CharToT(a) => emitValDef(sym, f"(${remap(n.toTyp)}) ${quote(a)}")
+        case n@TToChar(a) => emitValDef(sym, f"(UCHAR) ${quote(a)}")
+        case Tern(cond, l, u) => {
+          emitValDef(sym, src"($cond) ? $l : $u")
+        }
+        //emitValDef(sym, src"if ($v < $threshold) $l else $u")
         case _ => super.emitNode(sym, rhs)
       }
     }

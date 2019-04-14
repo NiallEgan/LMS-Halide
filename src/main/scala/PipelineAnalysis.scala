@@ -1,7 +1,9 @@
 package sepia
 
+import scala.lms.internal.BlockTraversal
+
 trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
-													with SymbolicFuncOpsExp with Pipeline {
+													with SymbolicFuncOpsExp with Pipeline  {
 	// Possible refactoring: Change interperation to generate the graph directly!
 
 	// Before we pass the program to the staged interpreter, we must
@@ -70,6 +72,19 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case ShortToDouble(a)             => f(List(a).map(m))
 			case ShortToFloat(a)              => f(List(a).map(m))
 			case DoubleToShortConversion(a)   => f(List(a).map(m))
+			case CharToT(a)						        => f(List(a).map(m))
+		  case TToChar(a)                   => f(List(a).map(m))
+			//case IfThenElse(c, a, b)          => f(List().map(m))
+			case MathSqrt(a)                  => f(List(a).map(m))
+			case OrderingLT(a, b)             => f(List(a, b).map(m))
+			case OrderingGT(a, b)             => f(List(a, b).map(m))
+			case OrderingLTEQ(a, b)             => f(List(a, b).map(m))
+			case OrderingGTEQ(a, b)             => f(List(a, b).map(m))
+			case BooleanAnd(a, b)             => f(List(a, b).map(m))
+			case BooleanOr(a, b)              => f(List(a, b).map(m))
+			case Equal(a, b)                  => f(List(a, b).map(m))
+			case NotEqual(a, b)                  => f(List(a, b).map(m))
+			case Tern(cond, l, u)             => f(List(cond, l, u).map(m))
   }
 
 	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
@@ -85,10 +100,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		toFunc(f, ((0, 0), (0, 0)))
 	}
 
-	override def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[Short] = {
+	override def final_func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[UChar] = {
 		// todo: dry up
 		val cast =
-			if (typ[T] == typ[UChar]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[UChar]])
+			if (typ[T] == typ[UChar]) realizeShort(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Short]])
 			else if (typ[T] == typ[Int]) realizeInt(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Int]])
 			else if (typ[T] == typ[Float]) realizeFloat(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Float]])
 			else realizeDouble(f.asInstanceOf[(Rep[Int], Rep[Int]) => RGBVal[Double]])
@@ -123,6 +138,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k)
 			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k)
 			case SymbolicInt(dim) => Bound(0, 0)
+			case IntMinus(Def(IntDivide(Def(SymbolicInt(dim)), Const(k))), Const(k2)) => throw new InvalidAlgorithm("")
 			case _ => throw new InvalidAlgorithm(f"Error: Invalid input to function, $v")
 		}
 		case Const(_) => Bound(0, 0)

@@ -75,20 +75,20 @@ int32_t x127 = x115 + x118;
 int32_t x128 = x127 + x121;
 int32_t x129 = x128 + x124;
 int32_t x130 = x129 / 4;
-UCHAR x131 = x130;
+UCHAR x131 = (UCHAR) x130;
 x105[x91] = x131;
 int32_t x93 = x90 + 1;
 int32_t x133 = x116 + x119;
 int32_t x134 = x133 + x122;
 int32_t x135 = x134 + x125;
 int32_t x136 = x135 / 4;
-UCHAR x137 = x136;
+UCHAR x137 = (UCHAR) x136;
 x105[x93] = x137;
 int32_t x139 = x117 + x120;
 int32_t x140 = x139 + x123;
 int32_t x141 = x140 + x126;
 int32_t x142 = x141 / 4;
-UCHAR x143 = x142;
+UCHAR x143 = (UCHAR) x142;
 x105[x90] = x143;
 
 }

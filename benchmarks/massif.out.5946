@@ -1,0 +1,883 @@
+desc: (none)
+cmd: ./bm 1500 2000 1 2
+time_unit: i
+#-----------
+snapshot=0
+#-----------
+time=0
+mem_heap_B=0
+mem_heap_extra_B=0
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=1
+#-----------
+time=2431255
+mem_heap_B=72704
+mem_heap_extra_B=8
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=2
+#-----------
+time=2433038
+mem_heap_B=9072704
+mem_heap_extra_B=2960
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=3
+#-----------
+time=2433075
+mem_heap_B=18051716
+mem_heap_extra_B=6420
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=4
+#-----------
+time=2433402
+mem_heap_B=18052740
+mem_heap_extra_B=6428
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=5
+#-----------
+time=2435077
+mem_heap_B=27052947
+mem_heap_extra_B=9173
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=6
+#-----------
+time=2435325
+mem_heap_B=35996194
+mem_heap_extra_B=11534
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=7
+#-----------
+time=263258933
+mem_heap_B=71996194
+mem_heap_extra_B=15318
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=8
+#-----------
+time=278220999
+mem_heap_B=107888194
+mem_heap_extra_B=16510
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=9
+#-----------
+time=333751993
+mem_heap_B=143636626
+mem_heap_extra_B=17910
+mem_stacks_B=0
+heap_tree=detailed
+n7: 143636626 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 36000000 0x154F4E: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:8)
+  n1: 36000000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 36000000 0x109A6D: main (bm.cpp:50)
+ n1: 35892000 0x1553FC: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:36)
+  n1: 35892000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35892000 0x109A6D: main (bm.cpp:50)
+ n1: 35748432 0x155892: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:179)
+  n1: 35748432 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35748432 0x109A6D: main (bm.cpp:50)
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 73728 in 2 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=10
+#-----------
+time=392696690
+mem_heap_B=179337202
+mem_heap_extra_B=18014
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=11
+#-----------
+time=409492213
+mem_heap_B=215001970
+mem_heap_extra_B=21158
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=12
+#-----------
+time=431495900
+mem_heap_B=250702546
+mem_heap_extra_B=21262
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=13
+#-----------
+time=455752964
+mem_heap_B=286367314
+mem_heap_extra_B=24406
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=14
+#-----------
+time=470671117
+mem_heap_B=295262614
+mem_heap_extra_B=25562
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=15
+#-----------
+time=1128985124
+mem_heap_B=295262614
+mem_heap_extra_B=25562
+mem_stacks_B=0
+heap_tree=peak
+n12: 295262614 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 36000000 0x154F4E: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:8)
+  n1: 36000000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 36000000 0x109A6D: main (bm.cpp:50)
+ n1: 35892000 0x1553FC: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:36)
+  n1: 35892000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35892000 0x109A6D: main (bm.cpp:50)
+ n1: 35748432 0x155892: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:179)
+  n1: 35748432 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35748432 0x109A6D: main (bm.cpp:50)
+ n1: 35700576 0x155CCD: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:320)
+  n1: 35700576 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35700576 0x109A6D: main (bm.cpp:50)
+ n1: 35700576 0x15604E: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:468)
+  n1: 35700576 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35700576 0x109A6D: main (bm.cpp:50)
+ n1: 35664768 0x155E5D: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:395)
+  n1: 35664768 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35664768 0x109A6D: main (bm.cpp:50)
+ n1: 35664768 0x156256: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:539)
+  n1: 35664768 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35664768 0x109A6D: main (bm.cpp:50)
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n1: 8895300 0x1563EE: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:611)
+  n1: 8895300 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 8895300 0x109A6D: main (bm.cpp:50)
+ n0: 73728 in 2 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=16
+#-----------
+time=1128985124
+mem_heap_B=259597846
+mem_heap_extra_B=22418
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=17
+#-----------
+time=1128985152
+mem_heap_B=223897270
+mem_heap_extra_B=22314
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=18
+#-----------
+time=1128985180
+mem_heap_B=188232502
+mem_heap_extra_B=19170
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=19
+#-----------
+time=1128985208
+mem_heap_B=152531926
+mem_heap_extra_B=19066
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=20
+#-----------
+time=1128985236
+mem_heap_B=116783494
+mem_heap_extra_B=17666
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=21
+#-----------
+time=1128985265
+mem_heap_B=80891494
+mem_heap_extra_B=16474
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=22
+#-----------
+time=1128985293
+mem_heap_B=44891494
+mem_heap_extra_B=12690
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=23
+#-----------
+time=1130166772
+mem_heap_B=35996194
+mem_heap_extra_B=11534
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=24
+#-----------
+time=1130167796
+mem_heap_B=71996194
+mem_heap_extra_B=15318
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=25
+#-----------
+time=1145129862
+mem_heap_B=107888194
+mem_heap_extra_B=16510
+mem_stacks_B=0
+heap_tree=detailed
+n6: 107888194 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 36000000 0x154F4E: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:8)
+  n1: 36000000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 36000000 0x109A6D: main (bm.cpp:50)
+ n1: 35892000 0x1553FC: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:36)
+  n1: 35892000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35892000 0x109A6D: main (bm.cpp:50)
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 73728 in 8 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=26
+#-----------
+time=1200660856
+mem_heap_B=143636626
+mem_heap_extra_B=17910
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=27
+#-----------
+time=1259605553
+mem_heap_B=179337202
+mem_heap_extra_B=18014
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=28
+#-----------
+time=1276401076
+mem_heap_B=215001970
+mem_heap_extra_B=21158
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=29
+#-----------
+time=1298404763
+mem_heap_B=250702546
+mem_heap_extra_B=21262
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=30
+#-----------
+time=1322661827
+mem_heap_B=286367314
+mem_heap_extra_B=24406
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=31
+#-----------
+time=1337579980
+mem_heap_B=295262614
+mem_heap_extra_B=25562
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=32
+#-----------
+time=1995893987
+mem_heap_B=259597846
+mem_heap_extra_B=22418
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=33
+#-----------
+time=1995894015
+mem_heap_B=223897270
+mem_heap_extra_B=22314
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=34
+#-----------
+time=1995894043
+mem_heap_B=188232502
+mem_heap_extra_B=19170
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=35
+#-----------
+time=1995894071
+mem_heap_B=152531926
+mem_heap_extra_B=19066
+mem_stacks_B=0
+heap_tree=detailed
+n8: 152531926 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 36000000 0x154F4E: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:8)
+  n1: 36000000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 36000000 0x109A6D: main (bm.cpp:50)
+ n1: 35892000 0x1553FC: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:36)
+  n1: 35892000 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35892000 0x109A6D: main (bm.cpp:50)
+ n1: 35748432 0x155892: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:179)
+  n1: 35748432 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 35748432 0x109A6D: main (bm.cpp:50)
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n1: 8895300 0x1563EE: pipeline(unsigned char*, unsigned char*, int, int) (edge_filter.c:611)
+  n1: 8895300 0x109D3D: benchmark(void (*)(), int, int, double) (benchmark.c:16)
+   n0: 8895300 0x109A6D: main (bm.cpp:50)
+ n0: 73728 in 6 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=36
+#-----------
+time=1995894099
+mem_heap_B=116783494
+mem_heap_extra_B=17666
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=37
+#-----------
+time=1995894128
+mem_heap_B=80891494
+mem_heap_extra_B=16474
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=38
+#-----------
+time=1995894156
+mem_heap_B=44891494
+mem_heap_extra_B=12690
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=39
+#-----------
+time=1997075635
+mem_heap_B=35996194
+mem_heap_extra_B=11534
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=40
+#-----------
+time=1997080074
+mem_heap_B=107779978
+mem_heap_extra_B=14190
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=41
+#-----------
+time=1997092498
+mem_heap_B=107780002
+mem_heap_extra_B=14206
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=42
+#-----------
+time=1997099472
+mem_heap_B=107780290
+mem_heap_extra_B=14214
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=43
+#-----------
+time=1997103284
+mem_heap_B=107780314
+mem_heap_extra_B=14230
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=44
+#-----------
+time=1997103540
+mem_heap_B=107780602
+mem_heap_extra_B=14238
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=45
+#-----------
+time=1997107753
+mem_heap_B=107780626
+mem_heap_extra_B=14254
+mem_stacks_B=0
+heap_tree=detailed
+n5: 107780626 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 71783784 0x10B44B: halide_default_malloc (in /home/negan/partiiproject/benchmarks/bm)
+  n1: 71783784 0x119263: halide_edge (in /home/negan/partiiproject/benchmarks/bm)
+   n1: 71783784 0x8: ???
+    n1: 71783784 0x1FFF000025: ???
+     n1: 71783784 0x7CE: ???
+      n1: 71783784 0x5D4: ???
+       n1: 71783784 0x7D0: ???
+        n1: 71783784 0xFFFFFFFE: ???
+         n1: 71783784 0x7D000000001: ???
+          n1: 71783784 0x2DC6BE: ???
+           n1: 71783784 0x1002DC6BE: ???
+            n0: 71783784 0x7CE: ???
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 74376 in 12 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=46
+#-----------
+time=1997108009
+mem_heap_B=107780914
+mem_heap_extra_B=14262
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=47
+#-----------
+time=1997108675
+mem_heap_B=107780938
+mem_heap_extra_B=14278
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=48
+#-----------
+time=1997108931
+mem_heap_B=107781226
+mem_heap_extra_B=14286
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=49
+#-----------
+time=1997109869
+mem_heap_B=107781250
+mem_heap_extra_B=14302
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=50
+#-----------
+time=1997110125
+mem_heap_B=107781538
+mem_heap_extra_B=14310
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=51
+#-----------
+time=1997113034
+mem_heap_B=107781562
+mem_heap_extra_B=14326
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=52
+#-----------
+time=1997113290
+mem_heap_B=107781850
+mem_heap_extra_B=14334
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=53
+#-----------
+time=1997114748
+mem_heap_B=107781874
+mem_heap_extra_B=14350
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=54
+#-----------
+time=1997115004
+mem_heap_B=107782162
+mem_heap_extra_B=14358
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=55
+#-----------
+time=2640236470
+mem_heap_B=179494234
+mem_heap_extra_B=14998
+mem_stacks_B=0
+heap_tree=detailed
+n5: 179494234 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n2: 143495856 0x10B44B: halide_default_malloc (in /home/negan/partiiproject/benchmarks/bm)
+  n1: 71783784 0x119263: halide_edge (in /home/negan/partiiproject/benchmarks/bm)
+   n1: 71783784 0x8: ???
+    n1: 71783784 0x1FFF000025: ???
+     n1: 71783784 0x7CE: ???
+      n1: 71783784 0x5D4: ???
+       n1: 71783784 0x7D0: ???
+        n1: 71783784 0xFFFFFFFE: ???
+         n1: 71783784 0x7D000000001: ???
+          n1: 71783784 0x2DC6BE: ???
+           n1: 71783784 0x1002DC6BE: ???
+            n0: 71783784 0x7CE: ???
+  n1: 71712072 0x119A53: halide_edge (in /home/negan/partiiproject/benchmarks/bm)
+   n1: 71712072 0x8: ???
+    n1: 71712072 0x1FFF000025: ???
+     n1: 71712072 0x85CB03E: ???
+      n1: 71712072 0x5D4: ???
+       n1: 71712072 0x7D0: ???
+        n1: 71712072 0x7CFFFFFFFFE: ???
+         n1: 71712072 0x7CFFFFFFFFE: ???
+          n1: 71712072 0xB9: ???
+           n1: 71712072 0x3002DC6BE: ???
+            n1: 71712072 0x7CB: ???
+             n1: 71712072 0x0: ???
+              n1: 71712072 0x2FFFFFFFE: ???
+               n0: 71712072 0xFFFFFFF7000005D9: ???
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 75912 in 12 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=56
+#-----------
+time=2655974652
+mem_heap_B=107710450
+mem_heap_extra_B=12342
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=57
+#-----------
+time=2655974692
+mem_heap_B=179494234
+mem_heap_extra_B=14998
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=58
+#-----------
+time=7822370188
+mem_heap_B=251206306
+mem_heap_extra_B=15638
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=59
+#-----------
+time=7831953171
+mem_heap_B=179422522
+mem_heap_extra_B=12982
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=60
+#-----------
+time=8177442022
+mem_heap_B=107710450
+mem_heap_extra_B=12342
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=61
+#-----------
+time=8177442065
+mem_heap_B=35998378
+mem_heap_extra_B=11702
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=62
+#-----------
+time=8177444357
+mem_heap_B=107782162
+mem_heap_extra_B=14358
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=63
+#-----------
+time=8820560865
+mem_heap_B=179494234
+mem_heap_extra_B=14998
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=64
+#-----------
+time=8836288339
+mem_heap_B=107710450
+mem_heap_extra_B=12342
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=65
+#-----------
+time=8836288379
+mem_heap_B=179494234
+mem_heap_extra_B=14998
+mem_stacks_B=0
+heap_tree=detailed
+n5: 179494234 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n3: 143495856 0x10B44B: halide_default_malloc (in /home/negan/partiiproject/benchmarks/bm)
+  n1: 71783784 0x119BC1: halide_edge (in /home/negan/partiiproject/benchmarks/bm)
+   n1: 71783784 0x8: ???
+    n1: 71783784 0x1FFF000025: ???
+     n1: 71783784 0x85CB03E: ???
+      n1: 71783784 0x5D4: ???
+       n1: 71783784 0x7D0: ???
+        n1: 71783784 0x7CFFFFFFFFE: ???
+         n1: 71783784 0x7CFFFFFFFFE: ???
+          n1: 71783784 0xB9: ???
+           n1: 71783784 0x2D97E0002DC6BE: ???
+            n1: 71783784 0x1024803E: ???
+             n1: 71783784 0x0: ???
+              n1: 71783784 0x2FFFFFFFE: ???
+               n0: 71783784 0xBA000005D9: ???
+  n1: 71712072 0x119A53: halide_edge (in /home/negan/partiiproject/benchmarks/bm)
+   n1: 71712072 0x8: ???
+    n1: 71712072 0x1FFF000025: ???
+     n1: 71712072 0x85CB03E: ???
+      n1: 71712072 0x5D4: ???
+       n1: 71712072 0x7D0: ???
+        n1: 71712072 0x7CFFFFFFFFE: ???
+         n1: 71712072 0x7CFFFFFFFFE: ???
+          n1: 71712072 0xB9: ???
+           n1: 71712072 0x3002DC6BE: ???
+            n1: 71712072 0x7CB: ???
+             n1: 71712072 0x0: ???
+              n1: 71712072 0x2FFFFFFFE: ???
+               n0: 71712072 0xFFFFFFF7000005D9: ???
+  n0: 0 in 2 places, all below massif's threshold (1.00%)
+ n2: 17943454 0x10B3D0: Halide::Runtime::Buffer<unsigned char, 4>::Buffer<int, void>(int, int, int) (HalideBuffer.h:824)
+  n0: 9000207 0x109932: main (bm.cpp:34)
+  n0: 8943247 0x109968: main (bm.cpp:35)
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 75912 in 12 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=66
+#-----------
+time=14002690744
+mem_heap_B=251206306
+mem_heap_extra_B=15638
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=67
+#-----------
+time=14012255802
+mem_heap_B=179422522
+mem_heap_extra_B=12982
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=68
+#-----------
+time=14357743930
+mem_heap_B=107710450
+mem_heap_extra_B=12342
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=69
+#-----------
+time=14357743973
+mem_heap_B=35998378
+mem_heap_extra_B=11702
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=70
+#-----------
+time=14357747428
+mem_heap_B=27055131
+mem_heap_extra_B=9341
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=71
+#-----------
+time=14357747525
+mem_heap_B=18054924
+mem_heap_extra_B=6596
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=72
+#-----------
+time=14357757348
+mem_heap_B=18054900
+mem_heap_extra_B=6580
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=73
+#-----------
+time=14357759952
+mem_heap_B=18054876
+mem_heap_extra_B=6564
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=74
+#-----------
+time=14357760154
+mem_heap_B=18054852
+mem_heap_extra_B=6548
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=75
+#-----------
+time=14357760356
+mem_heap_B=18054828
+mem_heap_extra_B=6532
+mem_stacks_B=0
+heap_tree=detailed
+n3: 18054828 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 75816 in 14 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=76
+#-----------
+time=14357763156
+mem_heap_B=18054540
+mem_heap_extra_B=6524
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=77
+#-----------
+time=14357764884
+mem_heap_B=18054516
+mem_heap_extra_B=6508
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=78
+#-----------
+time=14357765438
+mem_heap_B=18054228
+mem_heap_extra_B=6500
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=79
+#-----------
+time=14357765506
+mem_heap_B=18054204
+mem_heap_extra_B=6484
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=80
+#-----------
+time=14357766060
+mem_heap_B=18053916
+mem_heap_extra_B=6476
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=81
+#-----------
+time=14357766128
+mem_heap_B=18053892
+mem_heap_extra_B=6460
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=82
+#-----------
+time=14357776344
+mem_heap_B=17981188
+mem_heap_extra_B=6452
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=83
+#-----------
+time=14357778125
+mem_heap_B=17980164
+mem_heap_extra_B=6444
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=84
+#-----------
+time=14357778765
+mem_heap_B=17979876
+mem_heap_extra_B=6436
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=85
+#-----------
+time=14357779185
+mem_heap_B=17979588
+mem_heap_extra_B=6428
+mem_stacks_B=0
+heap_tree=detailed
+n3: 17979588 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n0: 9000000 0x1098D4: main (bm.cpp:31)
+ n0: 8979012 0x1098F6: main (bm.cpp:32)
+ n0: 576 in 14 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=86
+#-----------
+time=14357779605
+mem_heap_B=17979300
+mem_heap_extra_B=6420
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=87
+#-----------
+time=14357780025
+mem_heap_B=17979012
+mem_heap_extra_B=6412
+mem_stacks_B=0
+heap_tree=empty

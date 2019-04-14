@@ -238,6 +238,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 					// TODO: Generalize - a lot!
 					vectorized_loop(0 until n, i => {
 						variable.v_=(i)
+						//print(children)
 						assert(children.length == 1)
 						val child = children(0)
 						child match {
@@ -260,6 +261,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
     }
 
  	  case StorageNode(stage, children) => {
+			println(f"Hit storage node for ${stage.id}")
 			val dims = computeStorageBounds(stage, boundsGraph, enclosingLoops)
 			stage.allocateNewBuffer(dims._1, dims._2)
 			val offsets = getOffsets(enclosingLoops, node, boundsGraph)

@@ -6,7 +6,7 @@ import sepia._
 
 trait CompilerInstance extends ScheduleCompiler
 											 with PipelineForCompiler with DslExp
-											 with AstOps {
+											 with AstOps with TestPipeline with TestAstOps {
 	self =>
     val codegen = new DslGenC {
       val IR: self.type = self
@@ -37,7 +37,7 @@ trait CompilerInstance extends ScheduleCompiler
 		w = width
 		h = height
 		compilerProg(in, out, w, h)
-		//println(sched)
+		println(sched)
 		println()
 		evalSched(sched, boundsGraph, Map(), sched)
 		//println(sched)
@@ -523,14 +523,6 @@ class CompilerSpec extends FlatSpec {
 		blurProg.compile(blurProgAnalysis.getBoundsGraph, "one_stage_blur")
 	}
 
-	"LowPassEdgeFilter" should "make a gaussian blur program" in {
-		println("one stage blur (simple)")
-
-		val blurProg =
-			new EdgeFilter with CompilerInstance with TestAstOps
-		val blurProgAnalysis = new EdgeFilter with TestPipelineAnalysis
-		blurProg.compile(blurProgAnalysis.getBoundsGraph, "edge_filter")
-	}
 
 	"Cropper" should "" in {
 		println("cropper stage blur (simple)")
@@ -539,4 +531,6 @@ class CompilerSpec extends FlatSpec {
 		val cropProgAnalysis = new Cropper with TestPipelineAnalysis
 		cropProg.compile(cropProgAnalysis.getBoundsGraph, "cropper")
 	}
+
+
 }
