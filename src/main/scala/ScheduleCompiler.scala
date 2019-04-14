@@ -145,7 +145,6 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 												    completeTree: ScheduleNode,
 											 	    boundsGraph: CallGraph,
 														enclosingLoops: Map[(Func[_], String), Dim]): Rep[Boolean] = {
-			println("loop?")
 			if (stage.computeRoot) true
 			else {
 				val computeAtFunc: Func[_] = stage.computeAt.getOrElse(throw new InvalidSchedule("non-inlined function has no compute at")).f

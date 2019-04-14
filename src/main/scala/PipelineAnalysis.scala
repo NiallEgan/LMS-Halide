@@ -83,13 +83,15 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case MathSqrt(a)                  => f(List(a).map(m))
 			case OrderingLT(a, b)             => f(List(a, b).map(m))
 			case OrderingGT(a, b)             => f(List(a, b).map(m))
-			case OrderingLTEQ(a, b)             => f(List(a, b).map(m))
-			case OrderingGTEQ(a, b)             => f(List(a, b).map(m))
+			case OrderingLTEQ(a, b)           => f(List(a, b).map(m))
+			case OrderingGTEQ(a, b)           => f(List(a, b).map(m))
 			case BooleanAnd(a, b)             => f(List(a, b).map(m))
 			case BooleanOr(a, b)              => f(List(a, b).map(m))
 			case Equal(a, b)                  => f(List(a, b).map(m))
-			case NotEqual(a, b)                  => f(List(a, b).map(m))
+			case NotEqual(a, b)               => f(List(a, b).map(m))
 			case Tern(cond, l, u)             => f(List(cond, l, u).map(m))
+			case ArrayApply(c, i)             => f(List(c, i).map(m))
+			case ArrayFromSeq(seq)            => f(List().map(m))
   }
 
 	var funcsToId: Map[Func[_], Int] = Map()
@@ -229,11 +231,11 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			(id -> getInputTransformations(
 														 f(newSymbolicInt("x"), newSymbolicInt("y"))))
 	  }})
-	 println(f"res: ${res(79)}")
+	/* println(f"res: ${res(79)}")
 	 val k = res(79).keys.toList(0)
 	 assert(closed(res))
 	 assert(!hasCycles(res))
-	 println(f"k: $k")
+	 println(f"k: $k")*/
 	 //println(f"res2: ${res(k)}")
 	 val reachableFromLast = reachableFrom(funcsToId(finalFunc.getOrElse(throw new Exception())), res)
 	 for (i <- 0 until id-1: Range) {

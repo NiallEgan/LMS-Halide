@@ -40,7 +40,6 @@ object CallGraph {
   def buildAdj(m: Map[Int, Map[Int, Map[String, Bound]]],
                src: Int): Map[Int, List[Int]] = {
     //println(f"found src $src")
-    assert(src != 8)
     if (src == -1 || m(src).isEmpty) {  // src doesn't call anything (or is in)
       Map(src -> List())
     } else {
@@ -54,10 +53,9 @@ object CallGraph {
 
   def graphFromMap(m: Map[Int, Map[Int, Map[String, Bound]]], node: Int): CallGraph = {
     val weights = buildWeights(m)
-    println(f"starting node: $node")
     val adjList = buildAdj(m, node)
     new CallGraph(adjList, weights)
   }
 
-  
+
 }

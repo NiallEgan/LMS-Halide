@@ -139,7 +139,6 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     override def toString(): String = id.toString
 
     def compute() = {
-      println(f"computing $id")
       f(x.v, y.v)
     }
 
@@ -196,7 +195,6 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
   override def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T] = {
     //println(f"computing ${f.id}")
-    println(f"$nApps")
     nApps += 1
     if (f.inlined) f.f(x, y)
     else {

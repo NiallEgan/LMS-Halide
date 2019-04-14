@@ -176,7 +176,10 @@ trait PipelineForCompiler extends Pipeline
 		}
 
 		override def computeRoot(): Unit = {
-			schedule = Some(computeAtRoot(sched, f))
+			//println(f.id)
+			//assert(f.inlined)
+			// BUG: The AST manipulation code is only working when f is inlined
+			if (f.inlined) schedule = Some(computeAtRoot(sched, f))
 		}
 
 		override def split(v: String, outer: String, inner: String, splitFactor: Int) = {
