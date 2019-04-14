@@ -7,7 +7,7 @@ class LoopBoundsSpec extends FlatSpec {
   "f in the ThreeStageBoundsAnalysisExample" should "have bounds of (-2, 2)" in {
     val progAnalysis = new ThreeStageBoundsAnalysisExample with TestPipelineAnalysis
     val bounds = progAnalysis.getBoundsGraph
-    assertResult(Some(Bound(-2, 2)))(BoundsAnalysis.boundsForProdInCon(bounds, 0, 2, "x"))
+    assertResult(Some(Bound(-2, 2, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, 0, 2, "x"))
   }
 
   "in in the one stage box blur" should "have bounds of (-1, -1)" in {
@@ -15,8 +15,8 @@ class LoopBoundsSpec extends FlatSpec {
 
     val bounds = progAnalysis.getBoundsGraph
 
-    assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "x"))
-    assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "y"))
+    assertResult(Some(Bound(-1, 1, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "x"))
+    assertResult(Some(Bound(-1, 1, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "y"))
 
   }
 
@@ -25,8 +25,8 @@ class LoopBoundsSpec extends FlatSpec {
 
     val bounds = progAnalysis.getBoundsGraph
 
-    assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 1, "x"))
-    assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 1, "y"))
+    assertResult(Some(Bound(-1, 1, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 1, "x"))
+    assertResult(Some(Bound(-1, 1, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 1, "y"))
   }
 
   "in in the three stage box blur" should "have bounds of (-1, -1)" in {
@@ -34,8 +34,17 @@ class LoopBoundsSpec extends FlatSpec {
 
     val bounds = progAnalysis.getBoundsGraph
 
-    assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 2, "x"))
-    assertResult(Some(Bound(-1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 2, "y"))
+    assertResult(Some(Bound(-1, 1, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 2, "x"))
+    assertResult(Some(Bound(-1, 1, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 2, "y"))
+
+  }
+
+  "the interpolator" should "have bounds of (-1, 1, 2, 2)" in {
+    val progAnalysis = new Interpolator with TestPipelineAnalysis
+
+    val bounds = progAnalysis.getBoundsGraph
+    assertResult(Some(Bound(-1, 1, 2, 2)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "x"))
+    assertResult(Some(Bound(0, 0, 1, 1)))(BoundsAnalysis.boundsForProdInCon(bounds, -1, 0, "y"))
 
   }
 

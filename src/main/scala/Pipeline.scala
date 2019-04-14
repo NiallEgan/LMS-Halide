@@ -1,6 +1,7 @@
 package sepia
 
 import scala.lms.util.OverloadHack
+import scala.collection.mutable.{Map => MMap}
 
 trait Pipeline extends SimpleFuncOps {
 	// The trait the user mixes in to create their program
@@ -46,6 +47,8 @@ trait Pipeline extends SimpleFuncOps {
 			split(y, yOuter, yInner, xSplit)
 			reorder(yInner, xOuter)
 		}
+
+		def addName(s: String): Unit
 	}
 
 	implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]): FuncOps[T]
@@ -99,6 +102,7 @@ trait PipelineForCompiler extends Pipeline
 	private var schedule: Option[Schedule] = None
 	private var id = 0
 	var idToFunc: Map[Int, Func[_]] = Map()
+	val funcNames: MMap[Int, String] = MMap()
 	var w: Rep[Int]
 	var h: Rep[Int]
 	var callGraph: CallGraph
@@ -194,6 +198,10 @@ trait PipelineForCompiler extends Pipeline
 		override def vectorize(v: String, vectorWidth: Int): Unit = {
 			split(v, v + "_outer", v + "_inner", vectorWidth)
 			schedule = Some(vectorizeLoop(sched, f.vars(v + "_inner"), vectorWidth))
+		}
+
+		override def addName(v: String): Unit = {
+			funcNames(f.id) = v
 		}
 	}
 
