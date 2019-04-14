@@ -62,9 +62,11 @@ int main(int argc, char **argv) {
   png_bytep out_row_pointers[height-HEIGHT_OUT_DIFF];
   for (int i = 0; i < height-HEIGHT_OUT_DIFF; i++) out_row_pointers[i] = out + 3 * (width - WIDTH_OUT_DIFF) * i;
   png_write_image(write_ptr, out_row_pointers);
+  png_write_end(write_ptr, NULL);
 
-  free(image);
-  free(out);
+  fflush(ofp);
   fclose(ofp);
   fclose(fp);
+  free(image);
+  free(out);
 }

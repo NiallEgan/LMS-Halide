@@ -26,7 +26,7 @@ struct halide_filter_metadata_t;
 extern "C" {
 #endif
 
-int halide_edge(struct halide_buffer_t *_input_buffer, struct halide_buffer_t *_edge_detection_buffer) HALIDE_FUNCTION_ATTRS;
+int halide_edge(struct halide_buffer_t *_input_buffer, struct halide_buffer_t *_final_buffer) HALIDE_FUNCTION_ATTRS;
 int halide_edge_argv(void **args) HALIDE_FUNCTION_ATTRS;
 const struct halide_filter_metadata_t *halide_edge_metadata() HALIDE_FUNCTION_ATTRS;
 

@@ -1,4 +1,4 @@
-#include <time.h>
+#include <sys/time.h>
 #include <stdio.h>
 
 
@@ -11,13 +11,17 @@ double benchmark(void (*f)(), int min_iterations,
   for (int i = 0; i < max_iterations; i++) {
     if (i > min_iterations && (second_best - current_best) / second_best < accuracy) break;
     printf("Iteration number: %d\n", i);
-    clock_t start = clock();
+    struct timeval start, end, result;
+    gettimeofday(&start, NULL);
     f();
-    clock_t end = clock();
-    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-    if (cpu_time_used < current_best) {
+    gettimeofday(&end, NULL);
+    timersub(&end, &start, &result);
+    double time_elapsed = (long int) result.tv_sec + ((double) result.tv_usec) / 1000000;
+    //printf("Time elapsed: %ld.%06ld\n", (long int)result.tv_sec, (long int)result.tv_usec);
+    //printf("time_elapsed: %f\n", time_elapsed);
+    if (time_elapsed < current_best) {
       double tmp = current_best;
-      current_best = cpu_time_used;
+      current_best = time_elapsed;
       second_best = tmp;
     }
   }

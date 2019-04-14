@@ -1,4 +1,4 @@
-/*
+
 // MACHINE GENERATED -- DO NOT EDIT
 
 extern "C" {
@@ -34,4 +34,3 @@ static Registerer registerer;
 }  // namespace
 }  // halide_nsreg_halide_edge
 
-*/

@@ -13,7 +13,7 @@ trait EdgeFilter extends TestPipeline {
     }}
   }
 
-  def twoDConvolution(xKernel: List[Int], yKernel: List[Int], input: Func[Float]): (Func[Float], Func[Float]) = {
+    def twoDConvolution(xKernel: List[Int], yKernel: List[Int], input: Func[Float]): (Func[Float], Func[Float]) = {
     val convolvex = func { (x: Rep[Int], y: Rep[Int]) =>
       xKernel(0) * input(x-1, y)  + input(x, y) * xKernel(1) + input(x+1, y) * xKernel(2)
     }
@@ -36,6 +36,7 @@ trait EdgeFilter extends TestPipeline {
       val avg = (p.red + p.green + p.blue) / 3
       RGBVal(avg, avg, avg)
     }
+
     val blur_y = func[Float] { (x: Rep[Int], y: Rep[Int]) =>
         (kernel(0) * floatInput(x, y) +
          kernel(1) * (floatInput(x, y-1) + floatInput(x, y+1)) +
@@ -58,18 +59,13 @@ trait EdgeFilter extends TestPipeline {
 
     val (fgxx, fgxy) = twoDConvolution(gxx, gxy, blur_x)
     val (fgyx, fgyy) = twoDConvolution(gyx, gyy, blur_x)
-    /*val fgyx = func { (x: Rep[Int], y: Rep[Int]) =>
-      gyx(0) * blur_x(x-1, y)  + blur_x(x, y) * gyx(1) + blur_x(x+1, y) * gyx(2)
-    }
-    val fgyy = func { (x: Rep[Int], y: Rep[Int]) =>
-      fgyx(x, y-1) * gyy(0) + fgyx(x, y)  * gyy(1) + fgyx(x, y+1) * gyy(2)
-    }*/
+
 
     val grad = func { (x: Rep[Int], y: Rep[Int]) =>
       val a: RGBVal[Float] = fgyy(x, y) * fgyy(x, y)
       val b: RGBVal[Float] = fgxy(x, y) * fgxy(x, y)
       val sobel = (a + b).map((x: Rep[Float]) => Math.sqrt(repFloatToRepDouble(x)))
-      sobel.map((x: Rep[Double]) => tern[Short](x < 50.0, 0, 1))
+      sobel.map((x: Rep[Double]) => tern[Short](x < 70.0, 0, 1))
       //sobel
     }
 
@@ -91,7 +87,8 @@ trait EdgeFilter extends TestPipeline {
 
     val edge_thin_stages = ListBuffer[Func[Short]]()
     edge_thin_stages += edge_thin_first
-    for (i <- 0 until 4: Range) {
+    val NTHINS = 100
+    for (i <- 0 until NTHINS: Range) {
       val prev = edge_thin_stages(i)
       val f = func {(x: Rep[Int], y: Rep[Int]) =>
         val p: List[Rep[Short]] = List(
@@ -111,32 +108,12 @@ trait EdgeFilter extends TestPipeline {
       edge_thin_stages += f
     }
 
-    val back_to_rgb = final_func {(x: Rep[Int], y: Rep[Int]) =>
-      edge_thin_stages(4)(x, y) * 255
+
+    val back_to_rgb = final_func { (x: Rep[Int], y: Rep[Int]) =>
+      edge_thin_stages(NTHINS)(x, y) * 255
     }
-    /*val edge_detection = simpleConvolution(
-      List(List(0, 1, 0),
-           List(1, -4, 1),
-           List(0, 1, 0)),
-      blur_x
+    for (i <- 0 until NTHINS: Range) edge_thin_stages(NTHINS-i).computeRoot()
 
-    )*/
-
-    /*val filter = final_func[UChar] {(x: Rep[Int], y: Rep[Int]) =>
-      val p = edge_detection(x, y)
-      val rVal =
-        if (!(p.red == 255 && p.blue == 255 && p.green == 255)) unit(0.toChar)
-        else p.red
-      val gVal =
-        if (!(p.red == 255 && p.blue == 255 && p.green == 255)) unit(0.toChar)
-        else p.green
-      val bVal =
-        if (!(p.red == 255 && p.blue == 255 && p.green == 255)) unit(0.toChar)
-        else p.blue
-      RGBVal(rVal, gVal, bVal)
-    }*/
-    //blur_x.computeAt(edge_detection, "y")
-    //blur_x.storeRoot()
     fgyy.computeRoot()
     fgyx.computeRoot()
     fgxy.computeRoot()
@@ -145,8 +122,13 @@ trait EdgeFilter extends TestPipeline {
     blur_y.computeRoot()
     floatInput.computeRoot()
     //edge_detection.computeRoot()
-    //blur_x.vectorize("x", 8)
-    //blur_y.vectorize("x", 8)
+    blur_x.vectorize("x", 8)
+    blur_y.vectorize("x", 8)
+    fgyy.vectorize("x", 8)
+    fgyx.vectorize("x", 8)
+    fgxy.vectorize("x", 8)
+    fgxx.vectorize("x", 8)
+    //back_to_rgb.vectorize("x", 8)
     //edge_detection.vectorize("x", 8)
     //blur_x.split("x", "x_outer", "x_inner", 8)
   }
