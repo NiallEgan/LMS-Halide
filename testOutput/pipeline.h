@@ -13,3 +13,7 @@
 void pipeline(UCHAR *x0, UCHAR *x1, int32_t w, int32_t h);
 extern int32_t WIDTH_OUT_DIFF;
 extern int32_t HEIGHT_OUT_DIFF;
+extern int32_t WIDTH_OUT_MUL;
+extern int32_t WIDTH_OUT_DIV;
+extern int32_t HEIGHT_OUT_MUL;
+extern int32_t HEIGHT_OUT_DIV;

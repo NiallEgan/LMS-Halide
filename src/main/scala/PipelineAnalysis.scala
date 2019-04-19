@@ -2,6 +2,7 @@ package sepia
 
 import scala.lms.internal._
 import scala.collection.mutable.{Map => MMap}
+import scala.reflect.SourceContext
 
 
 trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
@@ -11,6 +12,14 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
+
+	override def array_update[T:Typ](a: Rep[Array[T]], n: Rep[Int], v: Rep[T])(implicit pos: SourceContext): Rep[Unit] = {
+		()
+	}
+
+	override def array_obj_new[T:Typ](s: Rep[Int]): Rep[Array[T]] = {
+		toAtom(ArrayNew(s))
+	}
 
 	val funcNames: MMap[Int, String] = MMap()
 
@@ -143,44 +152,48 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
 	def extractBound(expr: Exp[_], dim: String) = expr match {
 		case Def(v) => v match {
-			case IntPlus(Def(SymbolicInt(dim)), Const(k)) => Bound(k, k, 1, 1)
-			case IntPlus(Const(k), Def(SymbolicInt(dim))) => Bound(k, k, 1, 1)
-			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k, 1, 1)
-			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k, 1, 1)
-			case IntTimes(Const(k), Def(SymbolicInt(dim))) => Bound(0, 0, k, k)
-			case IntTimes(Def(SymbolicInt(dim)), Const(k)) => Bound(0, 0, k, k)
-			case IntDivide(Def(SymbolicInt(dim)), Const(k)) => Bound(0, 0, 1 / k.toDouble, 1 / k.toDouble)
-			case IntDivide(Const(k), Def(SymbolicInt(dim))) => Bound(0, 0, 1 / k.toDouble, 1 / k.toDouble)
+			case IntPlus(Def(SymbolicInt(dim)), Const(k)) => Bound(k, k, 1, 1, 1, 1)
+			case IntPlus(Const(k), Def(SymbolicInt(dim))) => Bound(k, k, 1, 1, 1, 1)
+			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k, 1, 1, 1, 1)
+			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k, 1, 1, 1, 1)
+			case IntTimes(Const(k), Def(SymbolicInt(dim))) => Bound(0, 0, 1, 1, k, k)
+			case IntTimes(Def(SymbolicInt(dim)), Const(k)) => Bound(0, 0, 1, 1, k, k)
+			case IntDivide(Def(SymbolicInt(dim)), Const(k)) => Bound(0, 0, k, k, 1, 1)
+			case IntDivide(Const(k), Def(SymbolicInt(dim))) => Bound(0, 0, k, k, 1, 1)
 			case IntPlus(a, b) => (a, b) match {
 				case (Def(IntTimes(Const(k1), Def(SymbolicInt(dim)))), Const(k2)) => {
-					Bound(k2, k2, k1, k1)
+					Bound(k2, k2, 1, 1, k1, k1)
 				}
 				case (Const(k2), Def(IntTimes(Const(k1), Def(SymbolicInt(dim))))) => {
-					Bound(k2, k2, k1, k1)
+					Bound(k2, k2, 1, 1, k1, k1)
 				}
 				case (Def(IntDivide(Def(SymbolicInt(dim)), Const(k1))), Const(k2)) => {
-					Bound(k2, k2, 1 / k1.toDouble, 1 / k1.toDouble)
+					Bound(k2, k2, k1, k1, 1, 1)
 				}
 				case (Const(k2), Def(IntDivide(Def(SymbolicInt(dim)), Const(k1)))) => {
-					Bound(k2, k2, 1 / k1.toDouble, 1 / k1.toDouble)
+					Bound(k2, k2, k1, k1, 1, 1)
 				}
+				case (Def(IntMinus(Def(IntDivide(Def(SymbolicInt(dim)), Const(k1))), Const(k2))), c) => {
+					Bound(-k1, -k1, k2, k2, 1, 1)
+				}
+
 			}
 
 			case IntMinus(a, b) => (a, b) match {
 				case (Def(IntTimes(Const(k1), Def(SymbolicInt(dim)))), Const(k2)) => {
-					Bound(-k2, -k2, k1, k1)
+					Bound(-k2, -k2, 1, 1, k1, k1)
 				}
 				case (Def(IntDivide(Def(SymbolicInt(dim)), Const(k1))), Const(k2)) => {
-					Bound(-k2, -k2, 1 / k1.toDouble, 1 / k1.toDouble)
+					Bound(-k2, -k2, k1, k1, 1, 1)
 				}
 			}
 
 
 
-			case SymbolicInt(dim) => Bound(0, 0, 1, 1)
+			case SymbolicInt(dim) => Bound(0, 0, 1, 1, 1, 1)
 			case _ => throw new InvalidAlgorithm(f"Error: Invalid input to function, $v")
 		}
-		case Const(_) => Bound(0, 0, 1, 1)
+		case Const(_) => Bound(0, 0, 1, 1, 1, 1)
 	}
 
 
@@ -238,9 +251,10 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 	 println(f"k: $k")*/
 	 //println(f"res2: ${res(k)}")
 	 val reachableFromLast = reachableFrom(funcsToId(finalFunc.getOrElse(throw new Exception())), res)
-	 for (i <- 0 until id-1: Range) {
+	 for (i <- 0 to id-1: Range) {
 		 if (!reachableFromLast.contains(i)) {
-			 println(f"Warning: function $i, ${funcNames(i)}, is not reachable from the final func")
+			 val name = funcNames.getOrElse(i, "")
+			 println(f"Warning: function $i, ${name}, is not reachable from the final func")
 		 }
 	 }
 	 val nReachable = reachableFromLast.size

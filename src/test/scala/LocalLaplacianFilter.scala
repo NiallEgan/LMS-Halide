@@ -132,8 +132,11 @@ trait LocalLaplacian extends TestPipeline {
     val inGaussPyramid = inGPyramid(f)
 
     val outLaplacePyramid = outLPyramid(f, inGaussPyramid)
-    //val fin = final_func[Float] ((x: Rep[Int], y: Rep[Int]) => outLaplacePyramid(2)._5(x, y))
 
+    val fin = final_func[Float] ((x: Rep[Int], y: Rep[Int]) => outLaplacePyramid(levels-1)._5(x, y))
+
+
+    /*
     val outGaussPyramid = new ListBuffer[Func[Float]]
     println(f"out laplace pyramid: ${outLaplacePyramid}")
     println(f"in gauss pyramid: ${inGaussPyramid}")
@@ -151,7 +154,7 @@ trait LocalLaplacian extends TestPipeline {
     val last = final_func[Float] ((x: Rep[Int], y: Rep[Int]) =>
       us(x, y) + outLaplacePyramid(0)._5(x, y)
     )
-    last addName "final func"
+    last addName "final func"*/
 
 
     for (i <- levels-1 to 0 by -1) {

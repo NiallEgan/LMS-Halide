@@ -34,6 +34,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     val shadowingName = name
 
+    println(f"$name has min values $min")
+
     private var offset: Option[Rep[Int]] = None
     private var loopLowerBound: Option[Rep[Int]] = None
     private var loopUpperBound: Option[Rep[Int]] = None
@@ -148,7 +150,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def setOffsets(offsets: List[(String, Rep[Int])]) = {
-      offsets.foreach({case (v, off) => vars(v).dimOffset_=(off)})
+      offsets.foreach({case (v, off) => {
+        println(f"offset: $off")
+        vars(v).dimOffset_=(off)
+      }})
     }
 
     def allocateNewBuffer() {

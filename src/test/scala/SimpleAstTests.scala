@@ -20,15 +20,40 @@ trait CompilerInstance extends ScheduleCompiler
 		// todo: doesn't work for multistage pipelines with no in
 		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
 									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "x").getOrElse(Bound(0, 0, 1, 1)).width - 1
+									 "x").getOrElse(Bound(0, 0, 1, 1, 1, 1)).width - 1
 
 	}
 
 	def heightOutDiff(boundsGraph: CallGraph) = {
 		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
 									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "y").getOrElse(Bound(0, 0, 1, 1)).width - 1
+									 "y").getOrElse(Bound(0, 0, 1, 1, 1, 1)).width - 1
 
+	}
+
+	def getWidthOutMultiplier(boundsGraph: CallGraph) = {
+		val b = BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
+									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
+									 "x").getOrElse(Bound(0, 0, 1, 1, 1, 1))
+		if (b.mulLower != b.mulHigher || b.divLower != b.divHigher) {
+			println(f"Warning: Don't know yet how to deal with different low and high divs ${(b.mulLower, b.mulHigher)}, ${(b.divLower, b.divHigher)}")
+			(b.mulHigher, b.divHigher)
+		} else {
+			(b.mulLower, b.divHigher)
+		}
+	}
+
+	// DRY!
+	def getHeightOutMultiplier(boundsGraph: CallGraph) = {
+		val b = BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
+									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
+									 "y").getOrElse(Bound(0, 0, 1, 1, 1, 1))
+		if (b.mulLower != b.mulHigher || b.divLower != b.divHigher) {
+			println(f"Warning: Don't know yet how to deal with different low and high divs: ${(b.mulLower, b.mulHigher)}, ${(b.divLower, b.divHigher)}")
+			(b.mulHigher, b.divHigher)
+		} else {
+			(b.mulLower, b.divHigher)
+		}
 	}
 
 	def ev(boundsGraph: CallGraph)
@@ -49,6 +74,11 @@ trait CompilerInstance extends ScheduleCompiler
 		codegen.emitSourceMut(ev(boundsGraph), "pipeline", pw)
 		codegen.emitStaticData("WIDTH_OUT_DIFF", widthOutDiff(boundsGraph), pw)
 		codegen.emitStaticData("HEIGHT_OUT_DIFF", heightOutDiff(boundsGraph), pw)
+		codegen.emitStaticData("WIDTH_OUT_MUL", getWidthOutMultiplier(boundsGraph)._1, pw)
+		codegen.emitStaticData("WIDTH_OUT_DIV", getWidthOutMultiplier(boundsGraph)._2, pw)
+		codegen.emitStaticData("HEIGHT_OUT_MUL", getHeightOutMultiplier(boundsGraph)._1, pw)
+		codegen.emitStaticData("HEIGHT_OUT_DIV", getHeightOutMultiplier(boundsGraph)._2, pw)
+
 	}
 }
 

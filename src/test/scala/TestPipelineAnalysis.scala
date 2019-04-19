@@ -22,8 +22,8 @@ class AnalysisSpec extends FlatSpec {
       val blurredGradProg = new BlurredGradProg with TestPipelineAnalysis
 
       val bounds = blurredGradProg.boundsAsStrings
-      assertResult(Bound(-1, 1, 1, 1))(bounds("g")("f")("x"))
-      assertResult(Bound(-1, 1, 1, 1))(bounds("g")("f")("y"))
+      assertResult(Bound(-1, 1, 1, 1, 1, 1))(bounds("g")("f")("x"))
+      assertResult(Bound(-1, 1, 1, 1, 1, 1))(bounds("g")("f")("y"))
       assertResult(0)(bounds("f").size)
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)
@@ -43,8 +43,8 @@ class AnalysisSpec extends FlatSpec {
       val funkyBoundsProg = new FunkyBoundsProg with TestPipelineAnalysis
 
       val bounds = funkyBoundsProg.boundsAsStrings
-      assertResult(Bound(-11, 10, 1, 1))(bounds("g")("f")("x"))
-      assertResult(Bound(-80, 12, 1, 1))(bounds("g")("f")("y"))
+      assertResult(Bound(-11, 10, 1, 1, 1, 1))(bounds("g")("f")("x"))
+      assertResult(Bound(-80, 12, 1, 1, 1, 1))(bounds("g")("f")("y"))
       assertResult(0)(bounds("f").size)
       assertResult(1)(bounds("g").size)
       assertResult(2)(bounds.size)
@@ -53,9 +53,9 @@ class AnalysisSpec extends FlatSpec {
   "ThreeStageBoxBlur" should "have bounds of " in {
     val threeStageBoxBlur = new ThreeStageBoxBlur with TestPipelineAnalysis
     val bounds = threeStageBoxBlur.boundsAsStrings
-    assertResult(Bound(0, 0, 1, 1))(bounds("i")("g")("x"))
-    assertResult(Bound(-1, 1, 1, 1))(bounds("i")("g")("y"))
-    assertResult(Bound(-1, 1, 1, 1))(bounds("g")("f")("x"))
-    assertResult(Bound(0, 0, 1, 1))(bounds("g")("f")("y"))
+    assertResult(Bound(0, 0, 1, 1, 1, 1))(bounds("i")("g")("x"))
+    assertResult(Bound(-1, 1, 1, 1, 1, 1))(bounds("i")("g")("y"))
+    assertResult(Bound(-1, 1, 1, 1, 1, 1))(bounds("g")("f")("x"))
+    assertResult(Bound(0, 0, 1, 1, 1, 1))(bounds("g")("f")("y"))
   }
 }

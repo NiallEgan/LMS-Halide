@@ -1,0 +1,114 @@
+#include <string.h>
+#include "pipeline.h"
+void pipeline(UCHAR * x0, UCHAR * x1, int32_t x2, int32_t x3) {
+int32_t x4 = x2 * 2;
+int32_t x6 = x4 - 2;
+int32_t x5 = x3 * 2;
+int32_t x7 = x5 - 2;
+int32_t x8 = x6 * x7;
+int32_t x9 = x8 * 3;
+UCHAR *x112 = malloc(sizeof(UCHAR) * x9);
+for(int x12=2; x12 < x5; x12++) {
+int32_t x15 = x12 / 2;
+int32_t x16 = x15 - 1;
+int32_t x19 = x2 * x16;
+int32_t x52 = x2 * x15;
+for(int x14=2; x14 < x4; x14++) {
+int32_t x17 = x14 / 2;
+int32_t x18 = x17 - 1;
+int32_t x20 = x18 + x19;
+int32_t x21 = 3 * x20;
+int32_t x22 = x21 + 2;
+UCHAR x23 = x0[x22];
+float x27 = (float) x23;
+float x30 = 0.25f * x27;
+int32_t x33 = x17 + x19;
+int32_t x34 = 3 * x33;
+int32_t x35 = x34 + 2;
+UCHAR x36 = x0[x35];
+float x40 = (float) x36;
+float x43 = 0.75f * x40;
+float x46 = x30 + x43;
+float x49 = 0.25f * x46;
+int32_t x53 = x18 + x52;
+int32_t x54 = 3 * x53;
+int32_t x55 = x54 + 2;
+UCHAR x56 = x0[x55];
+float x60 = (float) x56;
+float x63 = 0.25f * x60;
+int32_t x66 = x17 + x52;
+int32_t x67 = 3 * x66;
+int32_t x68 = x67 + 2;
+UCHAR x69 = x0[x68];
+float x73 = (float) x69;
+float x76 = 0.75f * x73;
+float x79 = x63 + x76;
+float x82 = 0.75f * x79;
+float x85 = x49 + x82;
+UCHAR x88 = (UCHAR) x85;
+int32_t x91 = x14 - 2;
+int32_t x93 = MIN(x91, x6);
+int32_t x94 = MAX(0, x93);
+int32_t x95 = MIN(x91, x7);
+int32_t x96 = MAX(0, x95);
+int32_t x97 = x6 * x96;
+int32_t x98 = x94 + x97;
+int32_t x99 = 3 * x98;
+int32_t x100 = x99 + 2;
+x112[x100] = x88;
+int32_t x24 = x21 + 1;
+UCHAR x25 = x0[x24];
+float x28 = (float) x25;
+float x31 = 0.25f * x28;
+int32_t x37 = x34 + 1;
+UCHAR x38 = x0[x37];
+float x41 = (float) x38;
+float x44 = 0.75f * x41;
+float x47 = x31 + x44;
+float x50 = 0.25f * x47;
+int32_t x57 = x54 + 1;
+UCHAR x58 = x0[x57];
+float x61 = (float) x58;
+float x64 = 0.25f * x61;
+int32_t x70 = x67 + 1;
+UCHAR x71 = x0[x70];
+float x74 = (float) x71;
+float x77 = 0.75f * x74;
+float x80 = x64 + x77;
+float x83 = 0.75f * x80;
+float x86 = x50 + x83;
+UCHAR x89 = (UCHAR) x86;
+int32_t x102 = x99 + 1;
+x112[x102] = x89;
+UCHAR x26 = x0[x21];
+float x29 = (float) x26;
+float x32 = 0.25f * x29;
+UCHAR x39 = x0[x34];
+float x42 = (float) x39;
+float x45 = 0.75f * x42;
+float x48 = x32 + x45;
+float x51 = 0.25f * x48;
+UCHAR x59 = x0[x54];
+float x62 = (float) x59;
+float x65 = 0.25f * x62;
+UCHAR x72 = x0[x67];
+float x75 = (float) x72;
+float x78 = 0.75f * x75;
+float x81 = x65 + x78;
+float x84 = 0.75f * x81;
+float x87 = x51 + x84;
+UCHAR x90 = (UCHAR) x87;
+x112[x99] = x90;
+
+}
+
+}
+memcpy(x1, x112, x9);
+free(x112);
+}
+int32_t WIDTH_OUT_DIFF = 2;
+int32_t HEIGHT_OUT_DIFF = 2;
+int32_t WIDTH_OUT_MUL = 2;
+int32_t WIDTH_OUT_DIV = 1;
+int32_t HEIGHT_OUT_MUL = 2;
+int32_t HEIGHT_OUT_DIV = 1;
