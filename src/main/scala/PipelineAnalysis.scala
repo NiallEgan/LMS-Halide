@@ -101,6 +101,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case Tern(cond, l, u)             => f(List(cond, l, u).map(m))
 			case ArrayApply(c, i)             => f(List(c, i).map(m))
 			case ArrayFromSeq(seq)            => f(List().map(m))
+			case _                            => f(List().map(m))
   }
 
 	var funcsToId: Map[Func[_], Int] = Map()
