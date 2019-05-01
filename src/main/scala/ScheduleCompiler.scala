@@ -64,8 +64,8 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				val bound = BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-			  val unadjLb = baseVar.v + bound.lb
-				val unadjUb = baseVar.v + bound.ub
+			  val unadjLb = bound.mulLower * baseVar.v / bound.divLower + bound.lb
+				val unadjUb = bound.mulHigher * baseVar.v / bound.divHigher + bound.ub
 			  variable.looplb_=(unadjLb)
 				variable.shadowingUb_=(unadjUb + 1)
 				variable.loopub_=(unadjUb + 1)
@@ -183,7 +183,14 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				case StorageNode(f, _) => {
 					if (f.computeRoot) {
 						// variable.min
-						f.vars.map({case (k, v) => (k, v.min)}).toList
+						println("getting offsets from compute root:")
+
+						f.vars.map({case (k, v) => {
+							val bound = BoundsAnalysis
+									 .boundsForProdInCon(boundsGraph, -1, f.id, k)
+									 .getOrElse(Bound(0, 0, 1, 1, 1, 1))
+							println(f"bound for offset: $bound")
+							(k, v.min)}}).toList
 					} else {
 						// if a loop node is above sn, offset = lb
 						// otherwise, offset = variable.min
@@ -192,7 +199,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 							val bound = BoundsAnalysis
 									 .boundsForProdInCon(boundsGraph, f.id, consumer.id, name)
 									 .getOrElse(throw new InvalidSchedule(f"No bounds for ${name} found"))
-							baseVar.v + bound.lb
+							baseVar.v + bound.lb * bound.mulLower / bound.divLower
 						}
 
 						val computeAtFunc = f.computeAt.getOrElse(throw new InvalidSchedule("No compute at for non inlined function")).f
@@ -207,7 +214,8 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 	def evalSched(node: ScheduleNode,
 								boundsGraph: CallGraph,
 								enclosingLoops: Map[(Func[_], String), Dim],
-							  completeTree: ScheduleNode): Rep[Unit] = node match {
+							  completeTree: ScheduleNode): Rep[Unit] = {
+		node match {
     case LoopNode(variable, stage, loopType, children) =>
 			val (lb, ub) = computeLoopBounds(variable, stage, boundsGraph, enclosingLoops)
       loopType match {
@@ -255,16 +263,19 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 
     case ComputeNode(stage, children) => {
 			if (notPreviouslyComputed(stage, completeTree, boundsGraph, enclosingLoops)) {
-	      stage.storeInBuffer(stage.compute())
+				println("Computing")
+				val v = stage.compute()
+	      stage.storeInBuffer(v)
 			}
       for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
     }
 
  	  case StorageNode(stage, children) => {
-			println(f"Hit storage node for ${stage.id}")
+
 			val dims = computeStorageBounds(stage, boundsGraph, enclosingLoops)
 			stage.allocateNewBuffer(dims._1, dims._2)
 			val offsets = getOffsets(enclosingLoops, node, boundsGraph)
+			println(f"offsets: $offsets")
 			stage.setOffsets(offsets)
    	 	for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
 			stage.deallocBuffer()
@@ -273,5 +284,5 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
     case RootNode(children) => {
       for (child <- children) evalSched(child, boundsGraph, enclosingLoops, completeTree)
     }
-  }
+  }}
 }

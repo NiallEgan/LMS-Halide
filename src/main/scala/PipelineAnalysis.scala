@@ -1,13 +1,27 @@
 package sepia
 
-import scala.lms.internal.BlockTraversal
+import scala.lms.internal._
+import scala.collection.mutable.{Map => MMap}
+import scala.reflect.SourceContext
+
 
 trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
-													with SymbolicFuncOpsExp with Pipeline  {
+													with SymbolicFuncOpsExp with Pipeline
+													 {
 	// Possible refactoring: Change interperation to generate the graph directly!
 
 	// Before we pass the program to the staged interpreter, we must
   // first do some analysis on
+
+	override def array_update[T:Typ](a: Rep[Array[T]], n: Rep[Int], v: Rep[T])(implicit pos: SourceContext): Rep[Unit] = {
+		()
+	}
+
+	override def array_obj_new[T:Typ](s: Rep[Int]): Rep[Array[T]] = {
+		toAtom(ArrayNew(s))
+	}
+
+	val funcNames: MMap[Int, String] = MMap()
 
 	def treeTraversal[T](f: List[T] => T, m: Exp[_] => T,
                        node: Def[_]): T = node match {
@@ -78,22 +92,28 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			case MathSqrt(a)                  => f(List(a).map(m))
 			case OrderingLT(a, b)             => f(List(a, b).map(m))
 			case OrderingGT(a, b)             => f(List(a, b).map(m))
-			case OrderingLTEQ(a, b)             => f(List(a, b).map(m))
-			case OrderingGTEQ(a, b)             => f(List(a, b).map(m))
+			case OrderingLTEQ(a, b)           => f(List(a, b).map(m))
+			case OrderingGTEQ(a, b)           => f(List(a, b).map(m))
 			case BooleanAnd(a, b)             => f(List(a, b).map(m))
 			case BooleanOr(a, b)              => f(List(a, b).map(m))
 			case Equal(a, b)                  => f(List(a, b).map(m))
-			case NotEqual(a, b)                  => f(List(a, b).map(m))
+			case NotEqual(a, b)               => f(List(a, b).map(m))
 			case Tern(cond, l, u)             => f(List(cond, l, u).map(m))
+			case ArrayApply(c, i)             => f(List(c, i).map(m))
+			case ArrayFromSeq(seq)            => f(List().map(m))
+			case _                            => f(List().map(m))
   }
 
-	var funcsToId: Map[(Rep[Int], Rep[Int]) => RGBVal[_], Int] = Map()
+	var funcsToId: Map[Func[_], Int] = Map()
 	private var id = 0
 
 	def toFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T], dom: Domain): Func[T] = {
-		funcsToId += (f -> id)
+		val madeFunc = mkFunc(f, dom, id)
+		assert(!funcsToId.contains(madeFunc))
+		funcsToId = funcsToId + (madeFunc -> id)
 		id += 1
-		mkFunc(f, dom, id)
+		//println(f"funcs to id)
+		madeFunc
 	}
 
 	override def func[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T]): Func[T] = {
@@ -133,15 +153,48 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 
 	def extractBound(expr: Exp[_], dim: String) = expr match {
 		case Def(v) => v match {
-			case IntPlus(Def(SymbolicInt(dim)), Const(k)) => Bound(k, k)
-			case IntPlus(Const(k), Def(SymbolicInt(dim))) => Bound(k, k)
-			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k)
-			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k)
-			case SymbolicInt(dim) => Bound(0, 0)
-			case IntMinus(Def(IntDivide(Def(SymbolicInt(dim)), Const(k))), Const(k2)) => throw new InvalidAlgorithm("")
+			case IntPlus(Def(SymbolicInt(dim)), Const(k)) => Bound(k, k, 1, 1, 1, 1)
+			case IntPlus(Const(k), Def(SymbolicInt(dim))) => Bound(k, k, 1, 1, 1, 1)
+			case IntMinus(Const(k), Def(SymbolicInt(dim))) => Bound(-k, -k, 1, 1, 1, 1)
+			case IntMinus(Def(SymbolicInt(dim)), Const(k)) => Bound(-k, -k, 1, 1, 1, 1)
+			case IntTimes(Const(k), Def(SymbolicInt(dim))) => Bound(0, 0, 1, 1, k, k)
+			case IntTimes(Def(SymbolicInt(dim)), Const(k)) => Bound(0, 0, 1, 1, k, k)
+			case IntDivide(Def(SymbolicInt(dim)), Const(k)) => Bound(0, 0, k, k, 1, 1)
+			case IntDivide(Const(k), Def(SymbolicInt(dim))) => Bound(0, 0, k, k, 1, 1)
+			case IntPlus(a, b) => (a, b) match {
+				case (Def(IntTimes(Const(k1), Def(SymbolicInt(dim)))), Const(k2)) => {
+					Bound(k2, k2, 1, 1, k1, k1)
+				}
+				case (Const(k2), Def(IntTimes(Const(k1), Def(SymbolicInt(dim))))) => {
+					Bound(k2, k2, 1, 1, k1, k1)
+				}
+				case (Def(IntDivide(Def(SymbolicInt(dim)), Const(k1))), Const(k2)) => {
+					Bound(k2, k2, k1, k1, 1, 1)
+				}
+				case (Const(k2), Def(IntDivide(Def(SymbolicInt(dim)), Const(k1)))) => {
+					Bound(k2, k2, k1, k1, 1, 1)
+				}
+				case (Def(IntMinus(Def(IntDivide(Def(SymbolicInt(dim)), Const(k1))), Const(k2))), c) => {
+					Bound(-k1, -k1, k2, k2, 1, 1)
+				}
+
+			}
+
+			case IntMinus(a, b) => (a, b) match {
+				case (Def(IntTimes(Const(k1), Def(SymbolicInt(dim)))), Const(k2)) => {
+					Bound(-k2, -k2, 1, 1, k1, k1)
+				}
+				case (Def(IntDivide(Def(SymbolicInt(dim)), Const(k1))), Const(k2)) => {
+					Bound(-k2, -k2, k1, k1, 1, 1)
+				}
+			}
+
+
+
+			case SymbolicInt(dim) => Bound(0, 0, 1, 1, 1, 1)
 			case _ => throw new InvalidAlgorithm(f"Error: Invalid input to function, $v")
 		}
-		case Const(_) => Bound(0, 0)
+		case Const(_) => Bound(0, 0, 1, 1, 1, 1)
 	}
 
 
@@ -188,8 +241,49 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		// g1's input and (c, d) a bound on g2's input.
 		val symbolicInput = Buffer(0, 0, newSymbolicArray())
 		prog(symbolicInput, newSymbolicInt("w"), newSymbolicInt("h"))
-		funcsToId.map( { case (f, id) => (id -> getInputTransformations(
-														 f(newSymbolicInt("x"), newSymbolicInt("y"))))})
+		val res = funcsToId.map( { case (f, id) => {
+			(id -> getInputTransformations(
+														 f(newSymbolicInt("x"), newSymbolicInt("y"))))
+	  }})
+	/* println(f"res: ${res(79)}")
+	 val k = res(79).keys.toList(0)
+	 assert(closed(res))
+	 assert(!hasCycles(res))
+	 println(f"k: $k")*/
+	 //println(f"res2: ${res(k)}")
+	 val reachableFromLast = reachableFrom(funcsToId(finalFunc.getOrElse(throw new Exception())), res)
+	 for (i <- 0 to id-1: Range) {
+		 if (!reachableFromLast.contains(i)) {
+			 val name = funcNames.getOrElse(i, "")
+			 println(f"Warning: function $i, ${name}, is not reachable from the final func")
+		 }
+	 }
+	 val nReachable = reachableFromLast.size
+	 println(f"Number of expected apps: $nReachable")
+	 res
+
+	}
+
+	def reachableFrom(src: Int, m: Map[Int, Map[Int, Map[String, Bound]]]): List[Int] = {
+		if (src == -1) List()
+		else m(src).keys.toList.flatMap(reachableFrom(_, m)) ++ m(src).keys.toList
+	}
+
+	private def closed(m: Map[Int, Map[Int, Map[String, Bound]]]) = {
+		def closedFrom(i: Int): Boolean = {
+			val neighbours = m(i).keys.filter(_ != -1)
+			neighbours.forall(n => m.contains(n) && closedFrom(n))
+		}
+		var c = true
+		for (i <- m.keys) {
+			val cf = closedFrom(i)
+			if (!cf) {
+				println(f"Not closed for $i")
+			}
+			c = c & cf
+		}
+
+		c
 	}
 
 	def getBoundsGraph(): CallGraph = {
@@ -197,6 +291,16 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 			CallGraph.graphFromMap(m,
 				funcsToId(finalFunc.getOrElse(throw new InvalidAlgorithm("Error: No final func"))))
 	}
+
+	def hasCycles(m: Map[Int, Map[Int, Map[String, Bound]]]): Boolean = {
+    def hasCyclesFrom(n: Int) = {
+			val reach = reachableFrom(n, m)
+			println(f"Reacable from $n: $reach")
+			reach.contains(n)
+    }
+
+		m.keys.toList.exists(hasCyclesFrom(_))
+  }
 
 
 
@@ -210,7 +314,7 @@ trait PipelineForAnalysis extends DslExp with SymbolicOpsExp
 		override def reorder(v1: String, v2: String): Unit = return
 		override def fuse(v: String, outer: String, inner: String): Unit = return
 		override def vectorize(v: String, vectorWidth: Int): Unit = return
-
+		override def addName(s: String) = funcNames(funcsToId(f)) = s
 	}
 
 	override implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]) = new UselessFuncOps(f)

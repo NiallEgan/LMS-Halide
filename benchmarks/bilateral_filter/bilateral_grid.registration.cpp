@@ -11,26 +11,26 @@ void halide_register_argv_and_metadata(
 }
 
 extern "C" {
-extern int halide_blur_argv(void **args);
-extern const struct halide_filter_metadata_t *halide_blur_metadata();
+extern int bilateral_grid_argv(void **args);
+extern const struct halide_filter_metadata_t *bilateral_grid_metadata();
 }
 
 #ifdef HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC
 extern "C" const char * const *HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC();
 #endif  // HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC
 
-namespace halide_nsreg_halide_blur {
+namespace halide_nsreg_bilateral_grid {
 namespace {
 struct Registerer {
     Registerer() {
 #ifdef HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC
-        halide_register_argv_and_metadata(::halide_blur_argv, ::halide_blur_metadata(), HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC());
+        halide_register_argv_and_metadata(::bilateral_grid_argv, ::bilateral_grid_metadata(), HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC());
 #else
-        halide_register_argv_and_metadata(::halide_blur_argv, ::halide_blur_metadata(), nullptr);
+        halide_register_argv_and_metadata(::bilateral_grid_argv, ::bilateral_grid_metadata(), nullptr);
 #endif  // HALIDE_REGISTER_EXTRA_KEY_VALUE_PAIRS_FUNC
     }
 };
 static Registerer registerer;
 }  // namespace
-}  // halide_nsreg_halide_blur
+}  // halide_nsreg_bilateral_grid
 

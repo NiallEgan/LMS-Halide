@@ -38,10 +38,16 @@ trait SymbolicFuncOpsExp extends SimpleFuncOps with SymbolicImageBufferOpsExp {
   // This trait produces nodes for function application.
   // It is used in the pre-interperation analysis of the
   // pipeline
-  type Func[T] = (Rep[Int], Rep[Int]) => RGBVal[T]
+  class TaggedFunc2[T](f: (Rep[Int], Rep[Int]) => RGBVal[T], id: Int)
+     {
+      def apply(x: Rep[Int], y: Rep[Int]) = f(x, y)
+      override def toString() = id.toString
+  }
+
+  type Func[T] = TaggedFunc2[T]
 
   override def mkFunc[T:Typ:Numeric:SepiaNum](f: (Rep[Int], Rep[Int]) => RGBVal[T],
-                      dom: Domain, id: Int) = f
+                      dom: Domain, id: Int) = new TaggedFunc2(f, id)
 
   case class FuncApplication[T:Typ:Numeric:SepiaNum](f: Func[T], x: Exp[Int], y: Exp[Int]) extends Def[T]
 

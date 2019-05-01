@@ -31,15 +31,15 @@ public:
     GeneratorParam<int> tile_x{"tile_x", 32}; // X tile.
     GeneratorParam<int> tile_y{"tile_y", 8};  // Y tile.
 
-    Input<Buffer<uint8_t>>  input{"input", 2};
-    Output<Buffer<uint8_t>> blur_y{"blur_y", 2};
+    Input<Buffer<uint16_t>>  input{"input", 2};
+    Output<Buffer<uint16_t>> blur_y{"blur_y", 2};
 
     void generate() {
         Func blur_x("blur_x");
         Var x("x"), y("y"), xi("xi"), yi("yi");
 
         // The algorithm
-        blur_x(x, y) = (cast<uint16_t>(input(x, y)) + cast<uint16_t>(castinput(x+1, y)) + input(x+2, y))/3;
+        blur_x(x, y) = (cast<uint16_t>(input(x, y)) + cast<uint16_t>(input(x+1, y)) + input(x+2, y))/3;
         blur_y(x, y) = (blur_x(x, y) + blur_x(x, y+1) + blur_x(x, y+2))/3;
 
         // How to schedule it

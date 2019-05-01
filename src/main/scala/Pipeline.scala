@@ -1,6 +1,7 @@
 package sepia
 
 import scala.lms.util.OverloadHack
+import scala.collection.mutable.{Map => MMap}
 
 trait Pipeline extends SimpleFuncOps {
 	// The trait the user mixes in to create their program
@@ -46,6 +47,8 @@ trait Pipeline extends SimpleFuncOps {
 			split(y, yOuter, yInner, xSplit)
 			reorder(yInner, xOuter)
 		}
+
+		def addName(s: String): Unit
 	}
 
 	implicit def toFuncOps[T:Typ:Numeric:SepiaNum](f: Func[T]): FuncOps[T]
@@ -99,20 +102,31 @@ trait PipelineForCompiler extends Pipeline
 	private var schedule: Option[Schedule] = None
 	private var id = 0
 	var idToFunc: Map[Int, Func[_]] = Map()
+	val funcNames: MMap[Int, String] = MMap()
 	var w: Rep[Int]
 	var h: Rep[Int]
 	var callGraph: CallGraph
 
+	private def ceil(n: Rep[Int], d: Rep[Int]): Rep[Int] = {
+		if (n % d == 0) n / d
+		else n / d + 1
+	}
 	private def getSingleVariableDomain(cg: CallGraph, fId: Int, v: String, wOrH: Rep[Int]): (Rep[Int], Rep[Int]) = {
 		// Check if f eventually gets to in
 		BoundsAnalysis.boundsForProdInCon(cg, -1, fId, v) match {
-			case Some(b) => (0 - b.lb, wOrH - b.ub)  // This special case isn't really necessary...
+			case Some(b) => {
+				// This is dubious...
+				val dom: (Rep[Int], Rep[Int]) = (0 - b.lb * ceil(b.mulHigher, b.divHigher), wOrH * b.mulHigher / b.divHigher - b.ub)  // This special case isn't really necessary...
+				println(f"domain for $v is $dom")
+				dom
+			}
 			case None => {
 				if (cg.producersOf(fId).length == 0) {
 					(0, wOrH)
 				} else {
 					// Want to merge adjusted producer domains
-					cg.producersOf(fId).foldLeft((unit(0), wOrH)){case (acc, prod) =>
+					// TODO: Extend this to multplicative offsets
+					cg.producersOf(fId).foldLeft((unit(0), wOrH)){ case (acc, prod) =>
 						val prodDomain = idToFunc(prod).domain(v)
 						val b = BoundsAnalysis.boundsForProdInCon(cg, prod, fId, v).getOrElse(throw new Exception("Not possible"))
 						val adjustedDomain: (Rep[Int], Rep[Int]) = (prodDomain._1 - b.lb, prodDomain._2 - b.ub)
@@ -172,7 +186,10 @@ trait PipelineForCompiler extends Pipeline
 		}
 
 		override def computeRoot(): Unit = {
-			schedule = Some(computeAtRoot(sched, f))
+			//println(f.id)
+			//assert(f.inlined)
+			// BUG: The AST manipulation code is only working when f is inlined
+			if (f.inlined) schedule = Some(computeAtRoot(sched, f))
 		}
 
 		override def split(v: String, outer: String, inner: String, splitFactor: Int) = {
@@ -194,6 +211,10 @@ trait PipelineForCompiler extends Pipeline
 		override def vectorize(v: String, vectorWidth: Int): Unit = {
 			split(v, v + "_outer", v + "_inner", vectorWidth)
 			schedule = Some(vectorizeLoop(sched, f.vars(v + "_inner"), vectorWidth))
+		}
+
+		override def addName(v: String): Unit = {
+			funcNames(f.id) = v
 		}
 	}
 

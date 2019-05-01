@@ -164,7 +164,6 @@ trait Vectorizer extends ForwardTransformer {
      }
 
      def make_index_d32(start: Int, end: Int) = {
-       println("Making index:")
        val size = end - start
        val xs = for (i <- 0 until 4: Range) yield(if (i < size) i + start else 0)
        _mm256_set_pd(xs(3), xs(2), xs(1), xs(0))
@@ -180,7 +179,6 @@ trait Vectorizer extends ForwardTransformer {
          case NumericTimes(a, b) => _mm256_mul_pd(doubleVectorizer(a.asInstanceOf[Exp[Double]], start, end, indexSymbol),
                                                   doubleVectorizer(b.asInstanceOf[Exp[Double]], start, end, indexSymbol))
          case NumericDivide(a, b) => {
-           println("Double divide")
            _mm256_div_pd(doubleVectorizer(a.asInstanceOf[Exp[Double]], start, end, indexSymbol),
                                                    doubleVectorizer(b.asInstanceOf[Exp[Double]], start, end, indexSymbol))
          }
@@ -191,7 +189,6 @@ trait Vectorizer extends ForwardTransformer {
          case DoubleTimes(a, b) => _mm256_mul_pd(doubleVectorizer(a, start, end, indexSymbol),
                                                   doubleVectorizer(b, start, end, indexSymbol))
          case DoubleDivide(a, b) => {
-           println("Double divide")
            _mm256_div_pd(doubleVectorizer(a, start, end, indexSymbol),
                                                    doubleVectorizer(b, start, end, indexSymbol))
          }
@@ -303,7 +300,7 @@ trait Vectorizer extends ForwardTransformer {
         case op@NumericTimes(a, b) => numeric_times(stripIndex(a, i), stripIndex(b, i))(op.aev.asInstanceOf[Numeric[T]],
                                       typ[T], implicitly[SourceContext])
         case IntPlus(Def(IntTimes(Const(3), a)), Const(k)) => {
-          // Bad hack :( 
+          // Bad hack :(
           int_plus(int_times(3, stripIndex(a, i)), Const(k * (end - start)))
         }
         case IntPlus(a, b) => {

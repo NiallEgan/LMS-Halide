@@ -11,19 +11,31 @@ import ch.ethz.acl.passera.unsigned.{UByte, UInt, ULong, UShort}
 trait ImageOps extends PrimitiveOps {
   def tern[T:Typ](cond: Rep[Boolean],
                   lower: Rep[T], upper: Rep[T]): Rep[T]
+  def constArray[T:Typ](a: Array[T]): Rep[Array[T]]
 }
 
-trait ImageOpsExp extends ImageOps with BaseExp {
+trait ImageOpsExp extends ImageOps with BaseExp with ArrayOpsExp {
   case class Tern[T:Typ](cond: Exp[Boolean],
-                    lower: Exp[T], upper: Exp[T]) extends Def[T]
+                         lower: Exp[T], upper: Exp[T]) extends Def[T]
+  case class ConstArray[T:Typ](a: Array[T]) extends Def[Array[T]] {
+    val ev: Typ[T] = implicitly[Typ[T]]
+  }
+
   override def tern[T:Typ](cond: Rep[Boolean],
-                    lower: Rep[T], upper: Rep[T]): Rep[T] = {
+                           lower: Rep[T], upper: Rep[T]): Rep[T] = {
      Tern(cond, lower, upper)
+  }
+
+  override def constArray[T:Typ](a: Array[T]) = {
+    val v: Exp[Array[T]] = ConstArray(a)
+    //println("gooadfb")
+    v
   }
 
   override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] =
     (e match {
       case Tern(cond, lower, upper) => tern(f(cond), f(lower), f(upper))
+      case ca@ConstArray(a) => constArray(a)(ca.ev)
       case _ => super.mirror(e, f)(typ[A], pos)
     }).asInstanceOf[Exp[A]]
 }
@@ -72,6 +84,8 @@ trait DslExp extends Dsl with ShortOpsExpOpt with PrimitiveOpsExpOpt with Numeri
    case Comment(_, _, b) => effectSyms(b)
    case _ => super.boundSyms(e)
  }
+
+ override def array_apply[T:Typ](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = ArrayApply(x, n)
 
 }
 
@@ -132,9 +146,17 @@ trait DslGenC extends CGenNumericOps
         case GenerateComment(s) => stream.println(f"// $s")
         case n@CharToT(a) => emitValDef(sym, f"(${remap(n.toTyp)}) ${quote(a)}")
         case n@TToChar(a) => emitValDef(sym, f"(UCHAR) ${quote(a)}")
-        case Tern(cond, l, u) => {
-          emitValDef(sym, src"($cond) ? $l : $u")
+        case Tern(cond, l, u) => emitValDef(sym, src"($cond) ? $l : $u")
+        case ConstArray(a) => {
+          val values = a.mkString(", ")
+          emitValDef(sym, "{" + values + "}")
         }
+        case a@ArrayFromSeq(s) => {
+          val arrType = remap(a.m)
+          val values = s.map(x => x match {case Const(v) => v}).mkString(", ")
+          stream.println(f"$arrType ${quote(sym)}[${s.length}] = {" + values + "};")
+        }
+
         //emitValDef(sym, src"if ($v < $threshold) $l else $u")
         case _ => super.emitNode(sym, rhs)
       }
@@ -148,6 +170,7 @@ trait DslGenC extends CGenNumericOps
     override def emitSource[A:Typ](args: List[Sym[_]], body: Block[A],
                                    functionName: String, out: PrintWriter) = {
       val sA = remap(typ[A])
+      println("Emitting source")
       withStream(out) {
         stream.println("#include <string.h>")
         stream.println("#include \"pipeline.h\"")
@@ -171,6 +194,8 @@ trait DslGenC extends CGenNumericOps
                     (f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R],
                      className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     // This marks the second argument as mutable
+
+
     val s1 = fresh[T1]
     val s2 = reflectMutableSym(fresh[T2])
     val s3 = fresh[T3]

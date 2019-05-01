@@ -150,12 +150,16 @@ trait AstOps extends Ast {
 		if(nodeFor(producer, sched) && goesToCn(sched)) {
 			Some(sched)
 		}
-		else listToOption(sched.getChildren.map(isolateProducer(producer, _)).filter(_.isDefined))
+		else {
+			val l = sched.getChildren.map(isolateProducer(producer, _)).filter(_.isDefined)
+			println(l)
+			listToOption(l)
+		}
 
 	}
 
 	def removeProducerSchedule[T:Typ:Numeric:SepiaNum](deInlinedSched: N, producer: Func[T]): (Schedule, Schedule) = {
-		val producerSchedule: N = isolateProducer(producer, deInlinedSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $deInlinedSched"))
+		val producerSchedule: N = isolateProducer(producer, deInlinedSched).getOrElse(throw new InvalidSchedule(f"Couldn't find producer in tree $deInlinedSched for ${producer.id}"))
 
 		val notMovingChildren = producerSchedule.getChildren.filter(!_.belongsTo(producer))
 		val newProducerSchedule = producerSchedule.withChildren(
@@ -190,11 +194,15 @@ trait AstOps extends Ast {
 
 		val deInlinedSched = if (producer.inlined) {
 			producer.inlined = false
+			println(f"De-inlining ${producer.id}")
 			val cn: ComputeNode[T] = ComputeNode(producer, List())
 			val xLoop: LoopNode[T] = LoopNode(producer.x, producer, Sequential(), List(cn))
 			val yLoop: LoopNode[T] = LoopNode(producer.y, producer, Sequential(), List(xLoop))
 			sched.withChildren(StorageNode(producer, yLoop::sched.getChildren))
-		} else sched
+		} else {
+			println(f"Not de-inling ${producer.id}")
+			sched
+		}
 
 		val (schedLessProducer, newProducerSchedule) = removeProducerSchedule(deInlinedSched, producer)
 		val newParent = schedLessProducer
@@ -353,7 +361,6 @@ trait AstOps extends Ast {
 		sched.findAndTransform(isLoopNodeFor(outer)(_),
 			_ match {
 				case LoopNode(o, stage, loopType, children) => {
-					println(f"chilun: $children")
 					if (!children.exists(isLoopNodeFor(inner)(_))) throw new InvalidSchedule("Can only fuse loops in a parent-child relationship")
 					else {
 						LoopNode(newDim, stage, loopType, children.flatMap(x =>

@@ -23,6 +23,7 @@ trait SimpleFuncOps extends Dsl {
 
 trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   // The api that is presented to the DSL compiler
+  var nApps = 0
 
   class Dim(val min: Rep[Int], val max: Rep[Int],
             val name: String, val f: Func[_]) {
@@ -32,6 +33,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     // depending on where it was originally split from
 
     val shadowingName = name
+
+    println(f"$name has min values $min")
 
     private var offset: Option[Rep[Int]] = None
     private var loopLowerBound: Option[Rep[Int]] = None
@@ -135,7 +138,11 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     var computeAt: Option[Dim] = None
     var buffer: Option[Buffer[T]] = None
 
-    def compute() = f(x.v, y.v)
+    override def toString(): String = id.toString
+
+    def compute() = {
+      f(x.v, y.v)
+    }
 
     def storeInBuffer(vs: RGBVal[T]) = buffer match {
       case Some(b) => b(x.v - x.dimOffset, y.v - y.dimOffset) = vs
@@ -143,7 +150,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def setOffsets(offsets: List[(String, Rep[Int])]) = {
-      offsets.foreach({case (v, off) => vars(v).dimOffset_=(off)})
+      offsets.foreach({case (v, off) => {
+        println(f"offset: $off")
+        vars(v).dimOffset_=(off)
+      }})
     }
 
     def allocateNewBuffer() {
@@ -189,11 +199,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   type Func[T] = CompilerFunc[T]
 
   override def funcApply[T:Typ:Numeric:SepiaNum](f: Func[T], x: Rep[Int], y: Rep[Int]): RGBVal[T] = {
-    val sepiaNum = implicitly[SepiaNum[T]]
+    //println(f"computing ${f.id}")
+    nApps += 1
     if (f.inlined) f.f(x, y)
     else {
         val r = f.buffer
-                .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for ${f.id}"))(x - f.x.dimOffset, y - f.y.dimOffset)
+                 .getOrElse(throw new InvalidSchedule(f"No buffer allocated at application time for ${f.id}"))(x - f.x.dimOffset, y - f.y.dimOffset)
         new RGBVal(r.red, r.green, r.blue)
     }
   }
