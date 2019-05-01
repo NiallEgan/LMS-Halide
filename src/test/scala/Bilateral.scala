@@ -18,6 +18,9 @@ trait BilateralFilter2 extends TestPipeline {
       // Maybe will want to clamp here or something?
       arr(i + d * (x + w * y))
     }
+    def dealloc() = {
+      arrayFree(arr)
+    }
   }
 
   def clamp(v: Rep[Float], low: Rep[Float], high: Rep[Float]): Rep[Float] = {
@@ -31,19 +34,23 @@ trait BilateralFilter2 extends TestPipeline {
     val wi = new ThreeDBuffer(width, height, depth)
     val hist = List(w, wi)
 
+    val sw = (width - 1) / s_sigma + 1 + 2 * 2
+    val sh = (height - 1) / s_sigma + 1 + 2 * 2
     val blurred_xz = List(new ThreeDBuffer(width, height, depth),
                        new ThreeDBuffer(width, height, depth))
     val blurred = List(new ThreeDBuffer(width, height, depth),
                        new ThreeDBuffer(width, height, depth))
 
 
-    val clamped = (x: Rep[Int], y: Rep[Int]) => {
+
+    val clampFunc = func[Float] {(x: Rep[Int], y: Rep[Int]) => {
       val p = in(x, y).map(repCharToRepFloat(_))
       //val gray = (0.3f * p.red + 0.59f * p.green + 0.11f * p.blue +0.5f) / 255.0f
       val gray = p.red / 255.0f
       //val gray = (p.red + p.green + p.blue) / 3.0f / 255.0f
       gray
-    }
+    }}
+    def clamped(x: Rep[Int], y: Rep[Int]) = clampFunc(x, y).red
 
     val constructGrid = func[Int]( (x: Rep[Int], y: Rep[Int]) => {
       for (ry <- 0 until s_sigma: Rep[Range]) { // q: until?
@@ -70,33 +77,41 @@ trait BilateralFilter2 extends TestPipeline {
       hist(c)(xBound, yBound, zBound+1) * 4 +
       hist(c)(xBound, yBound, zBound+2)
     }
-    val blurxz = toFunc((x: Rep[Int], y: Rep[Int]) => {
-     for(c <- 0 until 2: Range) {
-        for (z <- 0 until depth) {
-          val v = blurz(x-2, y, z, c) +
-                  blurz(x-1, y, z, c) * 4 +
-                  blurz(x,   y, z, c) * 6 +
-                  blurz(x+1, y, z, c) * 4 +
-                  blurz(x+2, y, z, c)
-          blurred_xz(c)(x, y, z) = v
+    val blurxz = new ListBuffer[Func[Int]]()
+    for (c <- 0 until 2: Range) {
+      val f = toFunc((x: Rep[Int], y: Rep[Int]) => {
+       for(c <- 0 until 2: Range) {
+          for (z <- 0 until depth) {
+            val v = blurz(x-2, y, z, c) +
+                    blurz(x-1, y, z, c) * 4 +
+                    blurz(x,   y, z, c) * 6 +
+                    blurz(x+1, y, z, c) * 4 +
+                    blurz(x+2, y, z, c)
+            blurred_xz(c)(x, y, z) = v
+          }
         }
-      }
-      unit(0)
-    }, ((0, width), (0, height)))
+        unit(0)
+      }, ((1, sw-1), (1, sh-1)))
+      blurxz += f
+    }
 
-    val blury = toFunc((x: Rep[Int], y: Rep[Int]) => {
-      for (c <- 0 until 2: Range) {
-        for (z <- 0 until depth) {
-          val v = blurred_xz(c)(x, y-2, z) +
-                  blurred_xz(c)(x, y-1, z) * 4 +
-                  blurred_xz(c)(x, y, z) * 6 +
-                  blurred_xz(c)(x, y+1, z) * 4 +
-                  blurred_xz(c)(x, y+2, z)
-          blurred(c)(x, y, z) = v
+    val blury = new ListBuffer[Func[Int]]()
+    for (c <- 0 until 2: Range) {
+      val f = toFunc((x: Rep[Int], y: Rep[Int]) => {
+        for (c <- 0 until 2: Range) {
+          for (z <- 0 until depth) {
+            val v = blurred_xz(c)(x, y-2, z) +
+                    blurred_xz(c)(x, y-1, z) * 4 +
+                    blurred_xz(c)(x, y, z) * 6 +
+                    blurred_xz(c)(x, y+1, z) * 4 +
+                    blurred_xz(c)(x, y+2, z)
+            blurred(c)(x, y, z) = v
+          }
         }
-      }
-      unit(0)
-    }, ((0, width), (0, height)))
+        unit(0)
+      }, ((1, sw-1), (1, sh-1)))
+      blury += f
+    }
 
     def lerp(a: Rep[Float], b: Rep[Float], c: Rep[Float]) = {
       a * (1-c) + b * c
@@ -130,16 +145,25 @@ trait BilateralFilter2 extends TestPipeline {
     }, ((0, width), (0, height)))
 
     val g = final_func[Float]((x: Rep[Int], y: Rep[Int]) => {
+      if (x == 0 && y == 0) {
+        blurred_xz.foreach(_.dealloc())
+        blurred.foreach(_.dealloc())
+        w.dealloc()
+        wi.dealloc()
+      }
       f(x, y)
     })
 
 
     interpolated(1).computeRoot()
     interpolated(0).computeRoot()
-    blury.computeRoot()
-    blurxz.computeRoot()
+    blury(1).computeRoot()
+    blury(0).computeRoot()
+    blurxz(1).computeRoot()
+    blurxz(0).computeRoot()
     constructGrid.computeRoot()
-    clamped.computeRoot()
+    clampFunc.computeRoot()
+    //clamped.computeRoot()
   }
 }
 

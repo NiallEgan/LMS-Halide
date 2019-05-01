@@ -29,10 +29,10 @@ int main(int argc, char *argv[]) {
   int max_iterations = atoi(argv[4]);
 
   input_buffer = (UCHAR *) malloc(sizeof(UCHAR) * input_width * input_height * 3);
-  output_buffer = (UCHAR *) malloc(sizeof(UCHAR) * (input_width - 2) * (input_height - 2) * 3);
+  output_buffer = (UCHAR *) malloc(sizeof(UCHAR) * (input_width - 26) * (input_height - 26) * 3);
   printf("size: %d %d\n", input_width, input_height);
   in8 = Buffer<uint8_t>(input_width, input_height, 3);
-  out8 = Buffer<uint8_t>(input_width-8, input_height-2, 3);
+  out8 = Buffer<uint8_t>(input_width-26, input_height-26, 3);
 
   for (int y = 0; y < input_height; y++) {
     for (int x = 0; x < input_width; x++) {
@@ -54,12 +54,50 @@ int main(int argc, char *argv[]) {
   double halide_time = benchmark(&test_halide, min_iterations, max_iterations, 0.01);
   printf("Halide's time is: %f\n", halide_time);
 
-  /*for (int y = 0; y < input_height - 2; y++) {
+
+  for (int y = 0; y < input_height; y++) {
+    for (int x = 0; x < input_width; x++) {
+      int base = x + input_width * y;
+      printf("%d ", input_buffer[3 * base]);
+    }
+
+    printf("\n");
+  }
+
+  printf("\n\n");
+
+  for (int y = 0; y < input_height; y++) {
+    for (int x = 0; x < input_width; x++) {
+      printf("%d ", in8(x, y));
+    }
+
+    printf("\n");
+  }
+
+  printf("\n\n");
+  for (int y = 0; y < input_height - 26; y++) {
+    for (int x = 0; x < input_width - 26; x++) {
+      int base = x + (input_width - 26) * (y);
+      printf("%d ", output_buffer[3 * base]);
+    }
+    printf("\n");
+  }
+
+  printf("\n\n");
+  for (int y = 0; y < input_height; y++) {
+    for (int x = 0; x < input_width; x++) {
+      printf("%d ", (unsigned char) (out8(x, y)));
+    }
+    printf("\n");
+  }
+
+  /*
+  for (int y = 0; y < input_height - 2; y++) {
     for (int x = 0; x < input_width - 2; x++) {
       int base = x + (input_width - 2) * y;
-      if (input_buffer[3 * base] != out(x, y)) {
+      if (input_buffer[3 * base] != out8(x, y)) {
         printf("Difference at (%d, %d)\n", x, y);
-        printf("%d, %d\n", input_buffer[3 * base], out(x, y));
+        printf("%d, %d\n", input_buffer[3 * base], out8(x, y));
       }
     }
   }*/

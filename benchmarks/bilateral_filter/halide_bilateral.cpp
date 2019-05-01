@@ -135,12 +135,14 @@ public:
             interpolated.compute_at(bilateral_grid, xi).vectorize(c);
         } else {
             // The CPU schedule.
-            blurz.compute_root().reorder(c, z, x, y);//.parallel(y).vectorize(x, 8).unroll(c);
+          //  blurz.compute_root();//.reorder(c, z, x, y);//.parallel(y).vectorize(x, 8).unroll(c);
             histogram.compute_at(blurz, y);
-            histogram.update().reorder(c, r.x, r.y, x, y).unroll(c);
-            blurx.compute_root().reorder(c, x, y, z);//.parallel(z).vectorize(x, 8).unroll(c);
-            blury.compute_root().reorder(c, x, y, z);//.parallel(z).vectorize(x, 8).unroll(c);
+            histogram.compute_root();
+            //histogram.update().reorder(c, r.x, r.y, x, y).unroll(c);
+            blurx.compute_root();//.reorder(c, x, y, z);//.parallel(z).vectorize(x, 8).unroll(c);
+            blury.compute_root();//.reorder(c, x, y, z);//.parallel(z).vectorize(x, 8).unroll(c);
             bilateral_grid.compute_root();//.parallel(y).vectorize(x, 8);
+
         }
 
         /* Optional tags to specify layout for HalideTraceViz */

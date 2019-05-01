@@ -1,6 +1,6 @@
 
 // MACHINE GENERATED -- DO NOT EDIT
-/*
+
 extern "C" {
 struct halide_filter_metadata_t;
 void halide_register_argv_and_metadata(
@@ -33,4 +33,4 @@ struct Registerer {
 static Registerer registerer;
 }  // namespace
 }  // halide_nsreg_halide_blur
-*/
+

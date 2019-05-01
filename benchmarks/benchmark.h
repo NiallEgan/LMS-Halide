@@ -6,6 +6,7 @@ double benchmark(void (*f)(), int min_iterations,
                  int max_iterations, double accuracy);
 extern int input_height;
 extern int input_width;
+extern float *input_bufferf, *output_bufferf;
 
 extern Halide::Runtime::Buffer<uint16_t> in;
 extern Halide::Runtime::Buffer<uint16_t> out;

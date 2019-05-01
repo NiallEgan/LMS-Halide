@@ -87,7 +87,7 @@ trait EdgeFilter extends TestPipeline {
 
     val edge_thin_stages = ListBuffer[Func[Short]]()
     edge_thin_stages += edge_thin_first
-    val NTHINS = 100
+    val NTHINS = 3
     for (i <- 0 until NTHINS: Range) {
       val prev = edge_thin_stages(i)
       val f = func {(x: Rep[Int], y: Rep[Int]) =>
@@ -122,12 +122,12 @@ trait EdgeFilter extends TestPipeline {
     blur_y.computeRoot()
     floatInput.computeRoot()
     //edge_detection.computeRoot()
-    blur_x.vectorize("x", 8)
+    /*blur_x.vectorize("x", 8)
     blur_y.vectorize("x", 8)
     fgyy.vectorize("x", 8)
     fgyx.vectorize("x", 8)
     fgxy.vectorize("x", 8)
-    fgxx.vectorize("x", 8)
+    fgxx.vectorize("x", 8)*/
     //back_to_rgb.vectorize("x", 8)
     //edge_detection.vectorize("x", 8)
     //blur_x.split("x", "x_outer", "x_inner", 8)

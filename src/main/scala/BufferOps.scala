@@ -20,6 +20,8 @@ trait ImageBufferOps extends RGBValOps {
   def bufferApply[T:Typ:Numeric:SepiaNum](b: Buffer[T], x: Rep[Int],
                                           y: Rep[Int]): RGBVal[T]
   def bufferFree[T:Typ:Numeric:SepiaNum](b: Buffer[T]): Rep[Unit]
+  def arrayFree[T:Typ](a: Rep[Array[T]]): Rep[Unit]
+  
 }
 
 trait CompilerImageOps extends ImageBufferOps {
@@ -52,18 +54,17 @@ trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
   case class IntToDoubleConversion(x: Exp[Int]) extends Def[Double]
   case class DoubleToIntConversion(x: Exp[Double]) extends Def[Int]
   case class ShortToDoubleConversion(x: Exp[Short]) extends Def[Double]
-  case class ArrayFree[T:Typ:Numeric:SepiaNum](b: Exp[Array[T]]) extends Def[Unit] {
+  case class ArrayFree[T:Typ](b: Exp[Array[T]]) extends Def[Unit] {
     val typEv = typ[T]
-    val numEv = implicitly[Numeric[T]]
-    val sepEv = implicitly[SepiaNum[T]]
+
   }
 
 
   override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] =
     (e match {
-      case af@ArrayFree(x) => arrayFree(x)(af.typEv, af.numEv, af.sepEv)
+      case af@ArrayFree(x) => arrayFree(x)(af.typEv)
       case Reflect(af@ArrayFree(x), u, es) => {
-        reflectMirrored(Reflect(ArrayFree(f(x))(af.typEv, af.numEv, af.sepEv), mapOver(f, u), f(es)))(mtyp1[A], pos)
+        reflectMirrored(Reflect(ArrayFree(f(x))(af.typEv), mapOver(f, u), f(es)))(mtyp1[A], pos)
       }
       case IntToDoubleConversion(x) => int2double(f(x))
       case DoubleToIntConversion(x) => double2int(f(x))
@@ -90,7 +91,7 @@ trait ImageBufferOpsExp extends ImageBufferOps with CompilerImageOps
   override def bufferFree[T:Typ:Numeric:SepiaNum](b: Buffer[T]) = {
     arrayFree(b.a)  // todo: Should we be marking some side effects here?
   }
-  def arrayFree[T:Typ:Numeric:SepiaNum](a: Rep[Array[T]]) = {
+  override def arrayFree[T:Typ](a: Rep[Array[T]]) = {
     ArrayFree(a)
   }
 
