@@ -3,7 +3,7 @@
 This repository contains the source code for a replica of [Halide](https://halide-lang.org/), a DSL for image processing, using the [*lightweight modular staging library*](https://scala-lms.github.io/).
 
 The DSL uses multi-stage programming to generate efficent, low-level C code from high-level Scala.
-Example DSL programs can be found in `/src/main/test/scala/TestPrograms.scala`, and the corresponding C code in  `/testOutput`.
+Example DSL programs can be found in `/src/test/scala/TestPrograms.scala`, and the corresponding C code in  `/testOutput`.
 In order to actually manipulate images, the output C code should be compiled with `/builder.c` - this requires that the `libpng` library is installed for PNG encoding / decoding.
 
 # Example
@@ -26,4 +26,4 @@ trait TwoStageBoxBlurFast extends TestPipeline {
   }
 }
 ```
-This example produces a 'schedule' where the `f` and `g` x-loops are vectorised, and `f` is stored globally but computed per y-coordinate of `g`.
+This example produces a 'schedule' where the `f` and `g` x-loops are vectorized, and `f` is stored globally but computed per y-coordinate of `g`.
