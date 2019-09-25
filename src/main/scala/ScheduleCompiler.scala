@@ -152,8 +152,8 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 
 				val relevantBounds: Map[String, Bound] =
 					for (((f, name), d) <- relevantEnclosingLoops)
-							yield name -> {
-								BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id, f.id, name).getOrElse(throw new Exception())
+							yield d.shadowingName -> {
+								BoundsAnalysis.boundsForProdInCon(boundsGraph, stage.id, f.id, d.shadowingName).getOrElse(throw new Exception())
 							}
 
 				if (relevantBounds.isEmpty) unit(true)
@@ -187,7 +187,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 
 						f.vars.map({case (k, v) => {
 							val bound = BoundsAnalysis
-									 .boundsForProdInCon(boundsGraph, -1, f.id, k)
+									 .boundsForProdInCon(boundsGraph, -1, f.id, v.shadowingName)
 									 .getOrElse(Bound(0, 0, 1, 1, 1, 1))
 							println(f"bound for offset: $bound")
 							(k, v.min)}}).toList
@@ -204,7 +204,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 
 						val computeAtFunc = f.computeAt.getOrElse(throw new InvalidSchedule("No compute at for non inlined function")).f
 						f.vars.map({case (name, v) =>
-							(name, if (enclosingLoops.keySet.contains((computeAtFunc, name))) getAdjustment(computeAtFunc, name) else v.min)
+							(name, if (enclosingLoops.keySet.contains((computeAtFunc, v.shadowingName))) getAdjustment(computeAtFunc, v.shadowingName) else v.min)
 						}).toList
 					}
 				}

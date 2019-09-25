@@ -80,7 +80,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 	}
 
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
-                 val outer: Dim, val inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
+                 var outer: Dim, var inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
       override def v: Rep[Int] = {
         val clampedOuter: Rep[Int] =
           if (outer.v * splitFactor + old.looplb > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor - old.looplb
@@ -174,11 +174,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def domHeight = y.max - y.min
 
     def split(v: String, outer: String, inner: String, splitFactor: Int) = {
-      val innerDim = new Dim(0, splitFactor, inner, this)
       // We floor the bottom and ceil at the top to make sure
       // that we hit every value
       val oldDim = vars(v)
-      val x = oldDim.max - splitFactor
+      val innerDim = new Dim(0, splitFactor, oldDim.shadowingName, this)
       val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
           outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor, oldDim, splitFactor)
       vars(v) = new SplitDim(oldDim.min, oldDim.max,
@@ -189,9 +188,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     }
 
     def fuse(v: String, outer: String, inner: String) = {
+      val oldOuter = vars(outer)
       val fusedMin = inner.min + (inner.max - inner.min) * outer.min
       val fuseMax = inner.max + (inner.max - inner.max) * outer.max
-      val fusedVariable = new FusedDim(fusedMin, fuseMax, v, this, vars(inner), vars(outer))
+      val fusedVariable = new FusedDim(fusedMin, fuseMax, oldOuter.shadowingName, this, vars(inner), vars(outer))
       vars(v) = fusedVariable
     }
   }
