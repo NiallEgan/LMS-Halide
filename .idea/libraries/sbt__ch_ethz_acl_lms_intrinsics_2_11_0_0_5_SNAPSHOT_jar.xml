@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="sbt: ch.ethz.acl:lms-intrinsics_2.11:0.0.5-SNAPSHOT:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/ch.ethz.acl/lms-intrinsics_2.11/jars/lms-intrinsics_2.11-0.0.5-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/ch.ethz.acl/lms-intrinsics_2.11/srcs/lms-intrinsics_2.11-0.0.5-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -16,19 +16,41 @@ trait CompilerInstance extends ScheduleCompiler
 	override var h: Rep[Int] = null
 	override var callGraph: CallGraph = null
 
+	def initialProducers(boundsGraph: CallGraph, consumer: Int): List[Int] = {
+		val producers = boundsGraph.producersOf(consumer)
+			.foldLeft(List[Int]()) { (acc, p) =>  acc ++ initialProducers(boundsGraph, p) }
+
+		if (producers.isEmpty)
+			List(consumer)
+		else
+			producers
+	}
+
 	def widthOutDiff(boundsGraph: CallGraph) = {
 		// todo: doesn't work for multistage pipelines with no in
-		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
-									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "x").getOrElse(Bound(0, 0, 1, 1, 1, 1)).width - 1
+		var bounds = initialProducers(boundsGraph, finalFunc
+			.getOrElse(throw new InvalidAlgorithm("No final func selected")).id)
+			.foldLeft(Bound(0, 0, 1, 1, 1, 1)) { (acc, id) => {
+				var b = BoundsAnalysis.boundsForProdInCon(boundsGraph, id,
+					finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id, "x")
+					.getOrElse(Bound(0, 0, 1, 1, 1, 1))
 
+				acc join b
+			}}
+		bounds.width - 1
 	}
 
 	def heightOutDiff(boundsGraph: CallGraph) = {
-		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
-									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "y").getOrElse(Bound(0, 0, 1, 1, 1, 1)).width - 1
+		var bounds = initialProducers(boundsGraph, finalFunc
+			.getOrElse(throw new InvalidAlgorithm("No final func selected")).id)
+			.foldLeft(Bound(0, 0, 1, 1, 1, 1)) { (acc, id) => {
+				var b = BoundsAnalysis.boundsForProdInCon(boundsGraph, id,
+					finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id, "y")
+					.getOrElse(Bound(0, 0, 1, 1, 1, 1))
 
+				acc join b
+			}}
+		bounds.width - 1
 	}
 
 	def getWidthOutMultiplier(boundsGraph: CallGraph) = {

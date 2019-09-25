@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="sbt: ch.ethz.acl:scala-unsigned_2.11:0.1-SNAPSHOT:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/ch.ethz.acl/scala-unsigned_2.11/jars/scala-unsigned_2.11-0.1-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/ch.ethz.acl/scala-unsigned_2.11/srcs/scala-unsigned_2.11-0.1-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
