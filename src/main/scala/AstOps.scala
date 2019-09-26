@@ -216,8 +216,8 @@ trait AstOps extends Ast {
     func.vars.foreach { case (name, d) => {
       if (d.isInstanceOf[SplitDim]) {
 				val split = d.asInstanceOf[SplitDim]
-				if (split.inner == d) split.inner = newDim
-				else if (split.outer == d) split.outer = newDim
+				if (split.inner == oldDim) split.inner = newDim
+				else if (split.outer == oldDim) split.outer = newDim
       }
     }}
   }

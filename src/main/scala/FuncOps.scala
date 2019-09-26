@@ -43,6 +43,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
 		def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f"))
 
+    def vSave: Rep[Int] = value.getOrElse(0)
+
     def shadowingUb_=(newVal: Rep[Int]) = shadowingUpperBound = Some(newVal)
 
     def shadowingUb(): Rep[Int] = {
@@ -83,12 +85,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
                  var outer: Dim, var inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
       override def v: Rep[Int] = {
         val clampedOuter: Rep[Int] =
-          if (outer.v * splitFactor + old.looplb > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor - old.looplb
-          else outer.v * splitFactor
-        //clampedOuter + inner.v
-        clampedOuter + inner.v + old.looplb
+          if (outer.v + old.looplb > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor - old.looplb
+          else outer.v
 
+        clampedOuter + inner.vSave + old.looplb
       }
+
       override def v_=(new_val: Rep[Int]) = {
         throw new Exception("Error: should not be directly assigning to a split variable")
       }
@@ -103,9 +105,14 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       // scale ratio is the ratio of this dimension to the original x or y
       override val scaleRatio = sRatio
       override val shadowingName = sName
+
+      override def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f")) * splitFactor
+
       def setOldLoopOffset(v: Rep[Int]) {
         old.loopub_=(v)
       }
+
+      override val pseudoLoops: Map[(Func[_], String), Dim] = Map((f, shadowingName) -> this)
   }
 
   class FusedDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
@@ -176,10 +183,22 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
     def split(v: String, outer: String, inner: String, splitFactor: Int) = {
       // We floor the bottom and ceil at the top to make sure
       // that we hit every value
+      def updateSplitDims(oldDim: Dim, newDim: Dim) = {
+        vars.foreach({ case (f, d) => {
+          if (d.isInstanceOf[SplitDim]) {
+            val splitDim = d.asInstanceOf[SplitDim]
+            if (splitDim.outer == oldDim) splitDim.outer = newDim
+            if (splitDim.inner == oldDim) splitDim.inner = newDim
+          }
+        }})
+      }
+
       val oldDim = vars(v)
       val innerDim = new Dim(0, splitFactor, oldDim.shadowingName, this)
       val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
           outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor, oldDim, splitFactor)
+      updateSplitDims(oldDim, outerDim)
+
       vars(v) = new SplitDim(oldDim.min, oldDim.max,
                              oldDim.name, oldDim.f,
                              outerDim, innerDim, splitFactor, oldDim)

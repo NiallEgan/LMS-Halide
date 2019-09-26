@@ -27,10 +27,10 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 			val a = normalBounds._1
 			val b = normalBounds._2
 			outerVariable.setOldLoopOffset(a)
-			val lowerBound = 0
+			val extent = outerVariable.splitFactor
 			// (x + y - 1) / y ceils
 			// maybe q = (x % y) ? x / y + 1 : x / y is better?
-			val extent = outerVariable.splitFactor
+			val lowerBound = 0
 			val upperBound = (b - a + extent - 1) / extent
 			variable.looplb_=(lowerBound)
 			variable.loopub_=(upperBound)
@@ -60,12 +60,13 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				(variable.min, variable.max)
 			}
 			else {
-				val baseVar = enclosingLoops((v.f, variable.shadowingName))
+				val baseVar = v.f.vars(variable.shadowingName)
 				val bound = BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
 			  val unadjLb = bound.mulLower * baseVar.v / bound.divLower + bound.lb
-				val unadjUb = bound.mulHigher * baseVar.v / bound.divHigher + bound.ub
+				val unadjUb = if (baseVar.isInstanceOf[SplitDim])  (bound.mulHigher * baseVar.v + baseVar.asInstanceOf[SplitDim].splitFactor - 1) / bound.divHigher + bound.ub
+											else bound.mulHigher * baseVar.v / bound.divHigher + bound.ub
 			  variable.looplb_=(unadjLb)
 				variable.shadowingUb_=(unadjUb + 1)
 				variable.loopub_=(unadjUb + 1)
@@ -88,7 +89,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				      BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, "x")
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-				     .width
+				     .width - 1 + enclosingLoops((v.f, "x")).scaleRatio
 			}
 
 			val shouldAdjustY = enclosingLoops.keySet contains (v.f, "y")
@@ -96,7 +97,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				      BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, "y")
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-				     .width
+				     .width  - 1 + enclosingLoops((v.f, "y")).scaleRatio
 			}
 
 			(xDim, yDim)
@@ -170,7 +171,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 						 v.v < v.min + w || v.v == ub - 1
 					 }
 					 relevantBounds.keys.toList.foldLeft(unit(false))({
-						 case (acc, n) => acc || p(n)
+						 case (acc, n) => true
 					 })
 				 }
 			 }
@@ -195,7 +196,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 						// if a loop node is above sn, offset = lb
 						// otherwise, offset = variable.min
 						def getAdjustment(consumer: Func[_], name: String) = {
-							val baseVar = enclosingLoops((consumer, name))
+							val baseVar = consumer.vars(name)
 							val bound = BoundsAnalysis
 									 .boundsForProdInCon(boundsGraph, f.id, consumer.id, name)
 									 .getOrElse(throw new InvalidSchedule(f"No bounds for ${name} found"))
