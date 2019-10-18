@@ -26,6 +26,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 			val normalBounds = computeSimpleLoopBounds(outerVariable.old, stage, boundsGraph, enclosingLoops)
 			val a = normalBounds._1
 			val b = normalBounds._2
+
 			outerVariable.setOldLoopOffset(a)
 			val extent = outerVariable.splitFactor
 			// (x + y - 1) / y ceils
@@ -64,9 +65,18 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				val bound = BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-			  val unadjLb = bound.mulLower * baseVar.v / bound.divLower + bound.lb
-				val unadjUb = if (baseVar.isInstanceOf[SplitDim])  (bound.mulHigher * baseVar.v + baseVar.asInstanceOf[SplitDim].splitFactor - 1) / bound.divHigher + bound.ub
-											else bound.mulHigher * baseVar.v / bound.divHigher + bound.ub
+
+				val extent = if (enclosingLoops.keySet contains (variable.f, variable.shadowingName))
+										 		enclosingLoops(variable.f, variable.shadowingName).scaleRatio
+										 else
+												enclosingLoops(v.f, variable.shadowingName).scaleRatio
+
+				//TODO: prettify (baseVar looplb (maybe shadowing) should return 0 for fully defined baseVars)
+				var unadjLb = if (baseVar.dimDefined) bound.mulLower * baseVar.v / bound.divLower + bound.lb
+											else bound.mulLower * (baseVar.v + baseVar.looplb) / bound.divLower + bound.lb
+				var unadjUb = if (baseVar.dimDefined) bound.mulHigher * baseVar.v / bound.divHigher + bound.ub + extent - 1
+											else bound.mulHigher * (baseVar.v + baseVar.looplb) / bound.divHigher + bound.ub + extent - 1
+
 			  variable.looplb_=(unadjLb)
 				variable.shadowingUb_=(unadjUb + 1)
 				variable.loopub_=(unadjUb + 1)
@@ -200,12 +210,16 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 							val bound = BoundsAnalysis
 									 .boundsForProdInCon(boundsGraph, f.id, consumer.id, name)
 									 .getOrElse(throw new InvalidSchedule(f"No bounds for ${name} found"))
-							baseVar.v + bound.lb * bound.mulLower / bound.divLower
+
+							if (baseVar.dimDefined)
+								(baseVar.v + bound.lb) * bound.mulLower / bound.divLower
+							else
+								(baseVar.v + baseVar.looplb + bound.lb) * bound.mulLower / bound.divLower
 						}
 
-						val computeAtFunc = f.computeAt.getOrElse(throw new InvalidSchedule("No compute at for non inlined function")).f
+						val storeAtFunc = f.storeAt.getOrElse(throw new InvalidSchedule("No compute at for non inlined function")).f
 						f.vars.map({case (name, v) =>
-							(name, if (enclosingLoops.keySet.contains((computeAtFunc, v.shadowingName))) getAdjustment(computeAtFunc, v.shadowingName) else v.min)
+							(name, if (enclosingLoops.keySet.contains((storeAtFunc, v.shadowingName))) getAdjustment(storeAtFunc, v.shadowingName) else v.min)
 						}).toList
 					}
 				}

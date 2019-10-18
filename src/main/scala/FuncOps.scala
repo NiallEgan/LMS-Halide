@@ -69,6 +69,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     def dimOffset_=(new_val: Rep[Int]) = offset = Some(new_val)
 
+    def dimDefined: Boolean = value.isDefined
+
     override def toString() = name
 
 		// TODO: Why is this not working with _= syntax?
@@ -83,21 +85,43 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
                  var outer: Dim, var inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
-      override def v: Rep[Int] = {
-        val clampedOuter: Rep[Int] =
-          if (outer.v + old.looplb > outer.shadowingUb - splitFactor) outer.shadowingUb - splitFactor - old.looplb
-          else outer.v
 
-        clampedOuter + inner.vSave + old.looplb
-      }
+    def clampedBound() = {
+      if (inner.isInstanceOf[SplitDim])
+        outer.v
+      else
+        outer.shadowingUb - splitFactor
+    }
 
-      override def v_=(new_val: Rep[Int]) = {
-        throw new Exception("Error: should not be directly assigning to a split variable")
-      }
+    override def v: Rep[Int] = {
+      val clampedOuter: Rep[Int] =
+        if (outer.v + old.looplb > outer.shadowingUb - splitFactor) clampedBound
+        else outer.v
 
-      override def dimOffset: Rep[Int] = {
-        super.dimOffset
-      }
+      clampedOuter + inner.vSave
+    }
+
+    override def vSave: Rep[Int] = {
+      val clampedOuter: Rep[Int] =
+        if (outer.v + old.looplb > outer.shadowingUb - splitFactor) clampedBound
+        else outer.v
+
+      clampedOuter + inner.vSave
+    }
+
+    override def v_=(new_val: Rep[Int]) = {
+      throw new Exception("Error: should not be directly assigning to a split variable")
+    }
+
+    override def looplb: Rep[Int] = {
+      old.looplb
+    }
+
+    override def dimOffset: Rep[Int] = {
+      super.dimOffset
+    }
+
+    override def dimDefined: Boolean = inner.dimDefined
   }
 
   class OuterDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
@@ -109,7 +133,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       override def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f")) * splitFactor
 
       def setOldLoopOffset(v: Rep[Int]) {
-        old.loopub_=(v)
+        old.looplb_=(v)
       }
 
       override val pseudoLoops: Map[(Func[_], String), Dim] = Map((f, shadowingName) -> this)
@@ -197,13 +221,14 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       val innerDim = new Dim(0, splitFactor, oldDim.shadowingName, this)
       val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
           outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor, oldDim, splitFactor)
-      updateSplitDims(oldDim, outerDim)
 
       vars(v) = new SplitDim(oldDim.min, oldDim.max,
                              oldDim.name, oldDim.f,
                              outerDim, innerDim, splitFactor, oldDim)
       vars(outer) = outerDim
       vars(inner) = innerDim
+
+      updateSplitDims(oldDim, vars(v))
     }
 
     def fuse(v: String, outer: String, inner: String) = {
