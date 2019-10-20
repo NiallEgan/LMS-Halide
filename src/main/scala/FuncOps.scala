@@ -34,7 +34,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     val shadowingName = name
 
-    println(f"$name has min values $min")
+    println(f"$f $name has min values $min")
 
     private var offset: Option[Rep[Int]] = None
     private var loopLowerBound: Option[Rep[Int]] = None
@@ -86,28 +86,9 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
   class SplitDim(min: Rep[Int], max: Rep[Int], name: String, f: Func[_],
                  var outer: Dim, var inner: Dim, val splitFactor: Int, val old: Dim) extends Dim(min, max, name, f) {
 
-    def clampedBound() = {
-      if (inner.isInstanceOf[SplitDim])
-        outer.v
-      else
-        outer.shadowingUb - splitFactor
-    }
+    override def v: Rep[Int] = outer.v + inner.vSave
 
-    override def v: Rep[Int] = {
-      val clampedOuter: Rep[Int] =
-        if (outer.v + old.looplb > outer.shadowingUb - splitFactor) clampedBound
-        else outer.v
-
-      clampedOuter + inner.vSave
-    }
-
-    override def vSave: Rep[Int] = {
-      val clampedOuter: Rep[Int] =
-        if (outer.v + old.looplb > outer.shadowingUb - splitFactor) clampedBound
-        else outer.v
-
-      clampedOuter + inner.vSave
-    }
+    override def vSave: Rep[Int] = outer.v + inner.vSave
 
     override def v_=(new_val: Rep[Int]) = {
       throw new Exception("Error: should not be directly assigning to a split variable")
@@ -119,6 +100,10 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     override def dimOffset: Rep[Int] = {
       super.dimOffset
+    }
+
+    override def shadowingUb(): Rep[Int] = {
+      old.shadowingUb
     }
 
     override def dimDefined: Boolean = inner.dimDefined
@@ -218,7 +203,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       }
 
       val oldDim = vars(v)
-      val innerDim = new Dim(0, splitFactor, oldDim.shadowingName, this)
+      val innerDim = new Dim(oldDim.min, oldDim.min + splitFactor, oldDim.shadowingName, this)
       val outerDim = new OuterDim(0, (oldDim.max - oldDim.min - splitFactor) / splitFactor,
           outer, this, oldDim.shadowingName, oldDim.scaleRatio * splitFactor, oldDim, splitFactor)
 

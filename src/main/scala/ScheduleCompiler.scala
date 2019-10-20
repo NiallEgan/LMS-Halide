@@ -43,12 +43,30 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 	def computeSimpleLoopBounds(variable: Dim, stage: Func[_],
 															boundsGraph: CallGraph,
 															enclosingLoops: Map[(Func[_], String), Dim]): (Rep[Int], Rep[Int]) = {
+
+		def clamp(extent: Rep[Int], baseVar: Dim): Rep[Int]= {
+
+				if (baseVar.v + baseVar.looplb > baseVar.shadowingUb() - extent)
+					baseVar.shadowingUb - baseVar.v
+				else
+					extent
+		}
+
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
 		else if (stage.computeRoot) {
-			variable.looplb_=(variable.min)
-			variable.loopub_=(variable.max)
+			val extent = variable.max - variable.min
+
+			val lb = variable.min
+			val ub =
+				if (enclosingLoops.keySet contains (variable.f, variable.shadowingName))
+					lb + clamp(extent, enclosingLoops(variable.f, variable.shadowingName))
+				else
+					variable.max
+
+			variable.looplb_=(lb)
+			variable.loopub_=(ub)
 			variable.shadowingUb_=(stage.vars(variable.shadowingName).max)
-			(variable.min, variable.max)
+			(lb, ub)
 		} else {
 			val v = stage.computeAt
 							.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
@@ -62,20 +80,25 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 			}
 			else {
 				val baseVar = v.f.vars(variable.shadowingName)
+				val enclosingVar =
+					if (enclosingLoops.keySet contains (variable.f, variable.shadowingName))
+						enclosingLoops(variable.f, variable.shadowingName)
+					else
+						enclosingLoops(v.f, variable.shadowingName)
+
 				val bound = BoundsAnalysis
 						 .boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
 						 .getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
 
-				val extent = if (enclosingLoops.keySet contains (variable.f, variable.shadowingName))
-										 		enclosingLoops(variable.f, variable.shadowingName).scaleRatio
-										 else
-												enclosingLoops(v.f, variable.shadowingName).scaleRatio
+				val extent = enclosingVar.scaleRatio
+
+				val clampedExtend = clamp(extent, enclosingVar)
 
 				//TODO: prettify (baseVar looplb (maybe shadowing) should return 0 for fully defined baseVars)
 				var unadjLb = if (baseVar.dimDefined) bound.mulLower * baseVar.v / bound.divLower + bound.lb
 											else bound.mulLower * (baseVar.v + baseVar.looplb) / bound.divLower + bound.lb
-				var unadjUb = if (baseVar.dimDefined) bound.mulHigher * baseVar.v / bound.divHigher + bound.ub + extent - 1
-											else bound.mulHigher * (baseVar.v + baseVar.looplb) / bound.divHigher + bound.ub + extent - 1
+				var unadjUb = if (baseVar.dimDefined) bound.mulHigher * baseVar.v / bound.divHigher + bound.ub + clampedExtend - 1
+											else bound.mulHigher * (baseVar.v + baseVar.looplb) / bound.divHigher + bound.ub + clampedExtend - 1
 
 			  variable.looplb_=(unadjLb)
 				variable.shadowingUb_=(unadjUb + 1)
@@ -210,6 +233,9 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 							val bound = BoundsAnalysis
 									 .boundsForProdInCon(boundsGraph, f.id, consumer.id, name)
 									 .getOrElse(throw new InvalidSchedule(f"No bounds for ${name} found"))
+
+							println(baseVar)
+							println(baseVar.looplb)
 
 							if (baseVar.dimDefined)
 								(baseVar.v + bound.lb) * bound.mulLower / bound.divLower
