@@ -10,7 +10,7 @@ trait SplitComputeAtInner extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x, y - 3) + g(x, y + 3)) / 2.toShort
     }
 
     i.split("y", "y_outer", "y_inner", 16)
@@ -29,7 +29,7 @@ trait SplitComputeAtOuter extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x + 2, y - 3) + g(x, y + 2)) / 2.toShort
     }
 
     i.split("x", "x_outer", "x_inner", 4)
@@ -46,7 +46,7 @@ trait SplitComputeAtInnerStoreAtOuter extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x - 1, y - 3) + g(x, y + 1)) / 2.toShort
     }
 
     i.split("y", "y_outer", "y_inner", 4)
@@ -64,7 +64,7 @@ trait SplitStoreAtOuterComputeAtInner extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x - 1, y - 3) + g(x, y + 1)) / 2.toShort
     }
 
     i.split("y", "y_outer", "y_inner", 4)
@@ -83,7 +83,7 @@ trait TileComputeAtOuter extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x - 1, y - 3) + g(x, y + 1)) / 2.toShort
     }
 
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 4, 4)
@@ -100,7 +100,7 @@ trait TileComputeAtYInnerStoreAtXOuter extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x - 1, y - 3) + g(x, y + 1)) / 2.toShort
     }
 
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 4, 4)
@@ -118,7 +118,7 @@ trait TiletoreAtYOuterComputeAtXInnerS extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x - 1, y - 3) + g(x, y + 1)) / 2.toShort
     }
 
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 4, 4)
@@ -136,7 +136,7 @@ trait TileStoreAtComputeAtSame extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => in(x, y) / 1.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => g(x, y)
+      (x: Rep[Int], y: Rep[Int]) => (g(x - 1, y - 3) + g(x, y + 1)) / 2.toShort
     }
 
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 4, 4)
@@ -156,10 +156,10 @@ trait TileStoreAtXOuterComputeAtYInnerComputeAtY extends TestPipeline {
       (x: Rep[Int], y: Rep[Int]) => x + y
     }
     val h = func[Int] {
-      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x+1, y) + g(x-1, y)) / 3.toInt
+      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y + 1) + g(x, y - 1)) / 3.toInt
     }
     val i = final_func[Int] {
-      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y+1) + h(x, y-1)) / 3.toInt
+      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y) + h(x, y)) / 3.toInt
     }
 
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 16, 16)
@@ -177,22 +177,34 @@ trait TileStoreAtXOuterComputeAtYInnerComputeAtY extends TestPipeline {
 trait TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner extends TestPipeline {
   override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
 
-    val g = func[Int] {
-      (x: Rep[Int], y: Rep[Int]) => x + y
+    val g = func[Short] {
+      (x: Rep[Int], y: Rep[Int]) => in(x,y) / 1.toShort
     }
-    val h = func[Int] {
-      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x+1, y) + g(x-1, y)) / 3.toInt
+    val h = func[Short] {
+      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x+1, y) + g(x-1, y)) / 3.toShort
     }
-    val i = final_func[Int] {
-      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y+1) + h(x, y-1)) / 3.toInt
+    val i = final_func[Short] {
+      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y+1) + h(x, y-1)) / 3.toShort
     }
 
-    i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 16, 16)
-    h.computeAt(i, "y_outer")
+//    i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 32, 32)
+//    //i.split("y_inner", "y_outer2", "y_inner2", 16)
+//    h.computeAt(i, "y_outer")
+//    h.storeAt(i, "y_outer")
+//    h.split("y", "y_outer", "y_inner", 8)
+////    g.storeAt(h, "y_outer")
+////    g.computeAt(h, "y_outer")
+////    g.split("y", "y_outer", "y_inner", 4)
+
+
+    i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 32, 32)
+    //i.split("y_inner", "y_outer2", "y_inner2", 16)
+    h.computeAt(i, "x_outer")
     h.storeAt(i, "y_outer")
     h.split("y", "y_outer", "y_inner", 8)
     g.storeAt(h, "y_outer")
     g.computeAt(h, "y_inner")
+    g.split("y", "y_outer", "y_inner", 4)
 
     registerFunction("g", g)
     registerFunction("h", h)

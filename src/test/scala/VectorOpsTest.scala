@@ -61,7 +61,7 @@ class VectorOpsSpec extends FlatSpec {
 						TStorageNode("g",List(
 							TLoopNode("y","g",Sequential(),List(
 								TLoopNode("x_outer", "g", Sequential(),List(
-									TLoopNode("x_inner", "g", Vectorized(16),List(
+									TLoopNode("x", "g", Vectorized(16),List(
 										TComputeNode("g",List())
                   ))
                 ))
