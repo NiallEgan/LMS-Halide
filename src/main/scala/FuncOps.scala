@@ -46,17 +46,9 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     def vSave: Rep[Int] = value.getOrElse(0)
 
-    def shadowingLb_=(newVal: Rep[Int]) = shadowingLowerBound = Some(newVal)
+    def shadowingLb(): Rep[Int] = looplb
 
-    def shadowingLb(): Rep[Int] = {
-      shadowingLowerBound.getOrElse(throw new InvalidSchedule(f"Unbound looplb for $name"))
-    }
-
-    def shadowingUb_=(newVal: Rep[Int]) = shadowingUpperBound = Some(newVal)
-
-    def shadowingUb(): Rep[Int] = {
-      shadowingUpperBound.getOrElse(throw new InvalidSchedule(f"Unbound loopub for $name"))
-    }
+    def shadowingUb(): Rep[Int] = loopub
 
     def looplb: Rep[Int] = {
       loopLowerBound.getOrElse(throw new InvalidSchedule(f"Unbound looplb for $name"))
@@ -103,14 +95,6 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       throw new Exception("Error: should not be directly assigning to a split variable")
     }
 
-    override def looplb: Rep[Int] = {
-      old.looplb
-    }
-
-    override def dimOffset: Rep[Int] = {
-      super.dimOffset
-    }
-
     override def shadowingLb(): Rep[Int] = {
       old.shadowingLb
     }
@@ -130,21 +114,12 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
       override def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f")) * splitFactor
 
-      def setOldLoopOffset(v: Rep[Int]) {
-        old.looplb_=(v)
-      }
-
       override def shadowingLb(): Rep[Int] = {
         old.shadowingLb
       }
 
-
       override def shadowingUb(): Rep[Int] = {
-          old.shadowingUb
-        }
-
-      override def looplb: Rep[Int] = {
-        old.looplb
+        old.shadowingUb
       }
 
       override def dimDefined: Boolean = false
