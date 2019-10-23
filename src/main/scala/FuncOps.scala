@@ -89,7 +89,7 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
 
     override def v: Rep[Int] = outer.v + inner.vSave
 
-    override def vSave: Rep[Int] = outer.v + inner.vSave
+    override def vSave: Rep[Int] = outer.vSave + inner.vSave
 
     override def v_=(new_val: Rep[Int]) = {
       throw new Exception("Error: should not be directly assigning to a split variable")
@@ -113,6 +113,8 @@ trait CompilerFuncOps extends SimpleFuncOps with CompilerImageOps {
       override val shadowingName = sName
 
       override def v: Rep[Int] = value.getOrElse(throw new InvalidSchedule(f"Unbound variable at $name for $f")) * splitFactor
+
+      override def vSave: Rep[Int] = value.getOrElse(unit(0)) * splitFactor
 
       override def shadowingLb(): Rep[Int] = {
         old.shadowingLb
