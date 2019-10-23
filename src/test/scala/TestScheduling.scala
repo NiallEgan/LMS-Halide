@@ -181,25 +181,15 @@ trait TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner extends Test
       (x: Rep[Int], y: Rep[Int]) => in(x,y) / 1.toShort
     }
     val h = func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x+1, y) + g(x-1, y)) / 3.toShort
+      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x+1, y) + g(x-1, y-3)) / 3.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y+1) + h(x, y-1)) / 3.toShort
+      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y+3) + h(x+1, y-1)) / 3.toShort
     }
 
-//    i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 32, 32)
-//    //i.split("y_inner", "y_outer2", "y_inner2", 16)
-//    h.computeAt(i, "y_outer")
-//    h.storeAt(i, "y_outer")
-//    h.split("y", "y_outer", "y_inner", 8)
-////    g.storeAt(h, "y_outer")
-////    g.computeAt(h, "y_outer")
-////    g.split("y", "y_outer", "y_inner", 4)
-
-
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 32, 32)
-    //i.split("y_inner", "y_outer2", "y_inner2", 16)
-    h.computeAt(i, "x_outer")
+    i.split("y_inner", "y_outer2", "y_inner2", 16)
+    h.computeAt(i, "y_outer2")
     h.storeAt(i, "y_outer")
     h.split("y", "y_outer", "y_inner", 8)
     g.storeAt(h, "y_outer")
