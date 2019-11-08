@@ -16,19 +16,40 @@ trait CompilerInstance extends ScheduleCompiler
 	override var h: Rep[Int] = null
 	override var callGraph: CallGraph = null
 
-	def widthOutDiff(boundsGraph: CallGraph) = {
-		// todo: doesn't work for multistage pipelines with no in
-		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
-									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "x").getOrElse(Bound(0, 0, 1, 1, 1, 1)).width - 1
+	def initialProducers(boundsGraph: CallGraph, consumer: Int): List[Int] = {
+		val producers = boundsGraph.producersOf(consumer)
+			.foldLeft(List[Int]()) { (acc, p) =>  acc ++ initialProducers(boundsGraph, p) }
 
+		if (producers.isEmpty)
+			List(consumer)
+		else
+			producers
+	}
+
+	def widthOutDiff(boundsGraph: CallGraph) = {
+		var bounds = initialProducers(boundsGraph, finalFunc
+			.getOrElse(throw new InvalidAlgorithm("No final func selected")).id)
+			.foldLeft(Bound(0, 0, 1, 1, 1, 1)) { (acc, id) => {
+				var b = BoundsAnalysis.boundsForProdInCon(boundsGraph, id,
+					finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id, "x")
+					.getOrElse(Bound(0, 0, 1, 1, 1, 1))
+
+				acc join b
+			}}
+		bounds.width - 1
 	}
 
 	def heightOutDiff(boundsGraph: CallGraph) = {
-		BoundsAnalysis.boundsForProdInCon(boundsGraph, -1,
-									 finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id,
-									 "y").getOrElse(Bound(0, 0, 1, 1, 1, 1)).width - 1
+		var bounds = initialProducers(boundsGraph, finalFunc
+			.getOrElse(throw new InvalidAlgorithm("No final func selected")).id)
+			.foldLeft(Bound(0, 0, 1, 1, 1, 1)) { (acc, id) => {
+				var b = BoundsAnalysis.boundsForProdInCon(boundsGraph, id,
+					finalFunc.getOrElse(throw new InvalidAlgorithm("No final func selected")).id, "y")
+					.getOrElse(Bound(0, 0, 1, 1, 1, 1))
 
+				acc join b
+			}}
+		bounds.width - 1
 	}
 
 	def getWidthOutMultiplier(boundsGraph: CallGraph) = {
@@ -351,7 +372,7 @@ class CompilerSpec extends FlatSpec {
 			new TStorageNode("f", List(
 				new TLoopNode("y", "f", Sequential(), List(
 					new TLoopNode("x_outer", "f", Sequential(), List(
-						new TLoopNode("x_inner", "f", Sequential(), List(
+						new TLoopNode("x", "f", Sequential(), List(
 							new TComputeNode("f", List())
 						))
 					))
@@ -370,9 +391,9 @@ class CompilerSpec extends FlatSpec {
 		val correctAst: TNode = new TRootNode(List(
 			new TStorageNode("f", List(
 				new TLoopNode("y_outer", "f", Sequential(), List(
-					new TLoopNode("y_inner", "f", Sequential(), List(
+					new TLoopNode("y", "f", Sequential(), List(
 						new TLoopNode("x_outer", "f", Sequential(), List(
-							new TLoopNode("x_inner", "f", Sequential(), List(
+							new TLoopNode("x", "f", Sequential(), List(
 								new TComputeNode("f", List())
 							))
 						))
@@ -394,7 +415,7 @@ class CompilerSpec extends FlatSpec {
 				new TLoopNode("y", "i", Sequential(), List(
 					new TStorageNode("g", List(
 						new TLoopNode("y_outer", "g", Sequential(), List(
-							new TLoopNode("y_inner", "g", Sequential(), List(
+							new TLoopNode("y", "g", Sequential(), List(
 								new TLoopNode("x", "g", Sequential(), List(
 									new TComputeNode("g", List())
 								))
@@ -421,7 +442,7 @@ class CompilerSpec extends FlatSpec {
 				new TStorageNode("g", List(
 					new TLoopNode("y", "g", Sequential(), List(
 						new TLoopNode("y_outer", "f", Sequential(), List(
-							new TLoopNode("y_inner", "f", Sequential(), List(
+							new TLoopNode("y", "f", Sequential(), List(
 								new TLoopNode("x", "f", Sequential(), List(
 									new TComputeNode("f", List())
 								))
@@ -471,8 +492,8 @@ class CompilerSpec extends FlatSpec {
 			new TStorageNode("f", List(
 				new TLoopNode("y_outer", "f", Sequential(), List(
 					new TLoopNode("x_outer", "f", Sequential(), List(
-						new TLoopNode("y_inner", "f", Sequential(), List(
-							new TLoopNode("x_inner", "f", Sequential(), List(
+						new TLoopNode("y", "f", Sequential(), List(
+							new TLoopNode("x", "f", Sequential(), List(
 								new TComputeNode("f", List())
 							))
 						))
@@ -493,7 +514,7 @@ class CompilerSpec extends FlatSpec {
 
 		val correctAst: TNode = new TRootNode(List(
 			new TStorageNode("i", List(
-				new TLoopNode("xy", "i", Sequential(), List(
+				new TLoopNode("y", "i", Sequential(), List(
 					new TComputeNode("i", List())
 				))
 			))
@@ -513,7 +534,7 @@ class CompilerSpec extends FlatSpec {
 			new TStorageNode("g", List(
 				new TLoopNode("y", "g", Sequential(), List(
 					new TStorageNode("f", List(
-						new TLoopNode("xy", "f", Sequential(), List(
+						new TLoopNode("y", "f", Sequential(), List(
 							new TComputeNode("f", List())
 						)),
 						new TLoopNode("x", "g", Sequential(), List(

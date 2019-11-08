@@ -44,7 +44,7 @@ trait Pipeline extends SimpleFuncOps {
 						 xOuter: String, yOuter: String, xInner: String,
 					 	 yInner: String, xSplit: Int, ySplit: Int) = {
 			split(x, xOuter, xInner, xSplit)
-			split(y, yOuter, yInner, xSplit)
+			split(y, yOuter, yInner, ySplit)
 			reorder(yInner, xOuter)
 		}
 
