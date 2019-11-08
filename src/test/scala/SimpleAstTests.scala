@@ -27,7 +27,6 @@ trait CompilerInstance extends ScheduleCompiler
 	}
 
 	def widthOutDiff(boundsGraph: CallGraph) = {
-		// todo: doesn't work for multistage pipelines with no in
 		var bounds = initialProducers(boundsGraph, finalFunc
 			.getOrElse(throw new InvalidAlgorithm("No final func selected")).id)
 			.foldLeft(Bound(0, 0, 1, 1, 1, 1)) { (acc, id) => {

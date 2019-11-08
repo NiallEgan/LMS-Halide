@@ -14,3 +14,4 @@ callgrind.*
 test/bm
 test/halide_prog
 test/pipe
+.DS_Store

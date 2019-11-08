@@ -181,10 +181,10 @@ trait TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner extends Test
       (x: Rep[Int], y: Rep[Int]) => in(x,y) / 1.toShort
     }
     val h = func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x+1, y) + g(x-1, y-3)) / 3.toShort
+      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x, y-2) + g(x, y+2)) / 3.toShort
     }
     val i = final_func[Short] {
-      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y+3) + h(x+1, y-1)) / 3.toShort
+      (x: Rep[Int], y: Rep[Int]) => (h(x, y) + h(x, y) + h(x, y)) / 3.toShort
     }
 
     i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 32, 32)
@@ -194,6 +194,35 @@ trait TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner extends Test
     h.split("y", "y_outer", "y_inner", 8)
     g.storeAt(h, "y_outer")
     g.computeAt(h, "y_inner")
+    g.split("y", "y_outer", "y_inner", 4)
+
+    registerFunction("g", g)
+    registerFunction("h", h)
+    registerFunction("i", i)
+  }
+}
+
+
+trait TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner2 extends TestPipeline {
+  override def prog(in: Input, w: Rep[Int], h: Rep[Int]): Rep[Unit] = {
+
+    val g = func[Short] {
+      (x: Rep[Int], y: Rep[Int]) => in(x+1,y-2) / 1.toShort
+    }
+    val h = func[Short] {
+      (x: Rep[Int], y: Rep[Int]) => (g(x, y) + g(x-4, y-2) + g(x+2, y+2)) / 3.toShort
+    }
+    val i = final_func[Short] {
+      (x: Rep[Int], y: Rep[Int]) => (h(x-1, y+3) + h(x+3, y) + h(x, y-5)) / 3.toShort
+    }
+
+    i.tile("x", "y", "x_outer", "y_outer", "x_inner", "y_inner", 32, 32)
+    i.split("y_inner", "y_outer2", "y_inner2", 16)
+    h.computeAt(i, "y_outer2")
+    h.storeAt(i, "y_outer")
+    h.split("y", "y_outer", "y_inner", 8)
+    g.storeAt(i, "y_outer2")
+    g.computeAt(h, "y_outer")
     g.split("y", "y_outer", "y_inner", 4)
 
     registerFunction("g", g)
@@ -215,7 +244,7 @@ class TestScheduling extends FlatSpec {
     val first = new SplitComputeAtInner with CompilerInstance with TestAstOps
     val firstA = new SplitComputeAtInner with TestPipelineAnalysis
 
-    first.compile(firstA.getBoundsGraph, "splitCompute_simple")
+    first.compile(firstA.getBoundsGraph, "sched_simple")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -245,7 +274,7 @@ class TestScheduling extends FlatSpec {
     val second = new SplitComputeAtOuter with CompilerInstance with TestAstOps
     val secondA = new SplitComputeAtOuter with TestPipelineAnalysis
 
-    second.compile(secondA.getBoundsGraph, "splitCompute_simple2")
+    second.compile(secondA.getBoundsGraph, "sched_simple2")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -275,7 +304,7 @@ class TestScheduling extends FlatSpec {
     val third = new SplitComputeAtInnerStoreAtOuter with CompilerInstance with TestAstOps
     val thirdA = new SplitComputeAtInnerStoreAtOuter with TestPipelineAnalysis
 
-    third.compile(thirdA.getBoundsGraph, "splitComputeStore")
+    third.compile(thirdA.getBoundsGraph, "sched_compute_store")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -304,7 +333,7 @@ class TestScheduling extends FlatSpec {
     val fourth = new SplitStoreAtOuterComputeAtInner with CompilerInstance with TestAstOps
     val fourthA = new SplitStoreAtOuterComputeAtInner with TestPipelineAnalysis
 
-    fourth.compile(fourthA.getBoundsGraph, "splitComputeStore2")
+    fourth.compile(fourthA.getBoundsGraph, "sched_compute_store2")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -333,7 +362,7 @@ class TestScheduling extends FlatSpec {
     val fifth = new TileComputeAtOuter with CompilerInstance with TestAstOps
     val fifthA = new TileComputeAtOuter with TestPipelineAnalysis
 
-    fifth.compile(fifthA.getBoundsGraph, "tileCompute_simple")
+    fifth.compile(fifthA.getBoundsGraph, "sched_tile")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -365,7 +394,7 @@ class TestScheduling extends FlatSpec {
     val sixth = new TileComputeAtYInnerStoreAtXOuter with CompilerInstance with TestAstOps
     val sixthA = new TileComputeAtYInnerStoreAtXOuter with TestPipelineAnalysis
 
-    sixth.compile(sixthA.getBoundsGraph, "tileComputeStore")
+    sixth.compile(sixthA.getBoundsGraph, "sched_tile_compute_store")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -397,7 +426,7 @@ class TestScheduling extends FlatSpec {
     val seventh = new TiletoreAtYOuterComputeAtXInnerS with CompilerInstance with TestAstOps
     val seventhA = new TiletoreAtYOuterComputeAtXInnerS with TestPipelineAnalysis
 
-    seventh.compile(seventhA.getBoundsGraph, "tileComputeStore2")
+    seventh.compile(seventhA.getBoundsGraph, "sched_tile_compute_store2")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -429,7 +458,7 @@ class TestScheduling extends FlatSpec {
     val eighth = new TileStoreAtComputeAtSame with CompilerInstance with TestAstOps
     val eighthA = new TileStoreAtComputeAtSame with TestPipelineAnalysis
 
-    eighth.compile(eighthA.getBoundsGraph, "tileComputeStoreSame")
+    eighth.compile(eighthA.getBoundsGraph, "sched_tile_compute_store3")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -462,7 +491,7 @@ class TestScheduling extends FlatSpec {
     val ninth = new TileStoreAtXOuterComputeAtYInnerComputeAtY with CompilerInstance with TestAstOps
     val ninthA = new TileStoreAtXOuterComputeAtYInnerComputeAtY with TestPipelineAnalysis
 
-    ninth.compile(ninthA.getBoundsGraph, "tileComputeStoreSplit")
+    ninth.compile(ninthA.getBoundsGraph, "sched_tile_split")
     val correctAst: TNode =
       new TRootNode(List(
         new TStorageNode("i", List(
@@ -502,37 +531,16 @@ class TestScheduling extends FlatSpec {
     val tenth = new TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner with CompilerInstance with TestAstOps
     val tenthA = new TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner with TestPipelineAnalysis
 
-    tenth.compile(tenthA.getBoundsGraph, "tileComputeStoreSplit2")
-    val correctAst: TNode =
-      new TRootNode(List(
-        new TStorageNode("i", List(
-          new TLoopNode("y_outer", "i", Sequential(), List(
-            new TStorageNode("h", List(
-              new TLoopNode("x_outer", "i", Sequential(), List(
-                new TLoopNode("y_outer", "h", Sequential(), List(
-                  new TStorageNode("g", List(
-                    new TLoopNode("y", "h", Sequential(), List(
-                      new TLoopNode("y", "g", Sequential(), List(
-                        new TLoopNode("x", "g", Sequential(), List(
-                          new TComputeNode("g", List())
-                        ))
-                      )),
-                      new TLoopNode("x", "h", Sequential(), List(
-                        new TComputeNode("h", List())
-                      ))
-                    ))
-                  ))
-                )),
-                new TLoopNode("y", "i", Sequential(), List(
-                  new TLoopNode("x", "i", Sequential(), List(
-                    new TComputeNode("i", List())
-                  ))
-                ))
-              ))
-            ))
-          ))
-        ))
-      ))
-    //assertResult(correctAst)(tenth.scheduleRep)
+    tenth.compile(tenthA.getBoundsGraph, "sched_tile_split2")
+
+  }
+
+  "The tile, split store and compute mixed 3 stage program" should "...I'll check later" in {
+    println("TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner2 prog")
+
+    val eleventh = new TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner2 with CompilerInstance with TestAstOps
+    val eleventhA = new TileComputeAtOuterStoreAtInnerSplitStoreAtOuterComputeAtInner2 with TestPipelineAnalysis
+
+    eleventh.compile(eleventhA.getBoundsGraph, "sched_tile_split3")
   }
 }

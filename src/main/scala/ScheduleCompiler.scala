@@ -51,113 +51,50 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 				unit(extent)
 		}
 
+    def innermostEnclosingVar(f: Func[_]): Option[Dim] = {
+      if (enclosingLoops.keySet.contains(f, variable.shadowingName))
+        Some(enclosingLoops(f, variable.shadowingName))
+      else if (f.computeAt.isDefined)
+        innermostEnclosingVar(f.computeAt.get.f)
+      else
+        None
+    }
+
 		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
 		else {
-			val v = if (stage.computeRoot) variable
-							else stage.computeAt.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
+			//val v = if (stage.computeRoot) variable
+			//				else stage.computeAt.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
 
-			val shouldAdjust = enclosingLoops.keySet.contains(stage, variable.shadowingName) ||
-												 enclosingLoops.keySet.contains(v.f, variable.shadowingName)
+			// do we use enclosingVar instead of computeAt var? (in case of computeAtVar of computeAtVar of .... of stage)
+      val enclosingVar = innermostEnclosingVar(stage).getOrElse(variable)
 
-			// base cases that are not enclosed (including root)
-			if (!shouldAdjust) {
+			// dims that are not enclosed (including root)
+			if (enclosingVar == variable) {
 				variable.looplb_=(variable.min)
 				variable.loopub_=(variable.max)
 				(variable.min, variable.max)
 			} else {
 				var adjLb: Rep[Int] = 0
 				var adjUb: Rep[Int] = 0
-				// inner dim
-				if (enclosingLoops.keySet contains (stage, variable.shadowingName)) {
-					val enclosingVar = enclosingLoops(stage, variable.shadowingName)
 
-					adjLb = enclosingVar.shadowingLb
-					adjUb = adjLb + clampExtentFor(enclosingVar)
+				// inner dims (enclosed in loop of same function)
+        if (enclosingVar.f == stage) {
+          adjLb = enclosingVar.shadowingLb
+          adjUb = adjLb + clampExtentFor(enclosingVar)
 
-				// outermost dim
-				} else if (enclosingLoops.keySet contains (v.f, variable.shadowingName)) {
-					val baseVar = v.f.vars(variable.shadowingName)
-					val enclosingVar = enclosingLoops(v.f, variable.shadowingName)
-					val bound = BoundsAnalysis
-						.boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
-						.getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
+        // outermost dims (enclosed in loop of different function)
+        } else {
+          val baseVar = enclosingVar.f.vars(variable.shadowingName)
+          val bound = BoundsAnalysis
+            .boundsForProdInCon(boundsGraph, stage.id, enclosingVar.f.id, variable.shadowingName)
+            .getOrElse(throw new InvalidSchedule(f"No bounds for ${enclosingVar.name} found"))
 
 					val clampedExtent = clampExtentFor(enclosingVar)
 
-					adjLb = if (baseVar.dimDefined) bound.mulLower * baseVar.v / bound.divLower + bound.lb
+          adjLb = if (baseVar.dimDefined) bound.mulLower * baseVar.v / bound.divLower + bound.lb
 						else bound.mulLower * (baseVar.v + baseVar.shadowingLb) / bound.divLower + bound.lb
 					adjUb = if (baseVar.dimDefined) bound.mulHigher * (baseVar.v + clampedExtent) / bound.divHigher + bound.ub
 						else bound.mulHigher * (baseVar.v + clampedExtent + baseVar.shadowingLb) / bound.divHigher + bound.ub
-				}
-
-				variable.looplb_=(adjLb)
-				variable.loopub_=(adjUb)
-				(adjLb, adjUb)
-			}
-		}
-	}
-
-	def computeSimpleLoopBounds2(variable: Dim, stage: Func[_],
-															boundsGraph: CallGraph,
-															enclosingLoops: Map[(Func[_], String), Dim]): (Rep[Int], Rep[Int]) = {
-
-		def clampExtentFor(enclosingVar: Dim): Rep[Int] = {
-			val extent = enclosingVar.splitFactor
-			val lb: Rep[Int] = if (enclosingVar.dimDefined) 0
-												 else enclosingVar.shadowingLb
-
-			if (enclosingVar.v + lb > enclosingVar.shadowingUb - extent)
-				enclosingVar.shadowingUb - (enclosingVar.v + lb)
-			else
-				unit(extent)
-		}
-
-
-		if (stage.inlined) throw new InvalidSchedule(f"Inlined function $stage should have no loops")
-		else if (stage.computeRoot) {
-			val lb = variable.min
-			val ub =
-				if (enclosingLoops.keySet contains (stage, variable.shadowingName)) {
-					lb + clampExtentFor(enclosingLoops(stage, variable.shadowingName))
-				} else
-				variable.max
-
-			variable.looplb_=(lb)
-			variable.loopub_=(ub)
-			(lb, ub)
-		} else {
-			val v = stage.computeAt
-				.getOrElse(throw new InvalidSchedule(f"Non-inlined function $stage has no computeAt variable"))
-			val shouldAdjust = enclosingLoops.keySet contains (v.f, variable.shadowingName)
-
-			if (!shouldAdjust) {
-				variable.looplb_=(variable.min)
-				variable.loopub_=(variable.max)
-				(variable.min, variable.max)
-			}
-			else {
-				var adjLb: Rep[Int] = 0
-				var adjUb: Rep[Int] = 0
-				if (enclosingLoops.keySet contains (stage, variable.shadowingName)) {
-					val enclosingVar = enclosingLoops(variable.f, variable.shadowingName)
-					val clamped = clampExtentFor(enclosingVar)
-
-					adjLb = enclosingVar.shadowingLb
-					adjUb = adjLb + clamped
-
-				} else {
-					val baseVar = v.f.vars(variable.shadowingName)
-					val enclosingVar = enclosingLoops(v.f, variable.shadowingName)
-					val bound = BoundsAnalysis
-						.boundsForProdInCon(boundsGraph, stage.id, v.f.id, variable.shadowingName)
-						.getOrElse(throw new InvalidSchedule(f"No bounds for ${v.name} found"))
-
-					val clampedExtent = clampExtentFor(enclosingVar)
-
-					adjLb = if (baseVar.dimDefined) bound.mulLower * baseVar.v / bound.divLower + bound.lb
-									else bound.mulLower * (baseVar.v + baseVar.shadowingLb) / bound.divLower + bound.lb
-					adjUb = if (baseVar.dimDefined) bound.mulHigher * (baseVar.v + clampedExtent) / bound.divHigher + bound.ub
-									else bound.mulHigher * (baseVar.v + clampedExtent + baseVar.shadowingLb) / bound.divHigher + bound.ub
 				}
 
 				variable.looplb_=(adjLb)
@@ -301,7 +238,7 @@ trait ScheduleCompiler extends CompilerFuncOps with AstOps {
 								(baseVar.v + baseVar.shadowingLb + bound.lb) * bound.mulLower / bound.divLower
 						}
 
-						val storeAtFunc = f.storeAt.getOrElse(throw new InvalidSchedule("No compute at for non inlined function")).f
+						val storeAtFunc = f.storeAt.getOrElse(throw new InvalidSchedule("No storeAt for non inlined function")).f
 						f.vars.map({case (name, v) =>
 							(name, if (enclosingLoops.keySet.contains((storeAtFunc, v.shadowingName))) getAdjustment(storeAtFunc, v.shadowingName) else v.min)
 						}).toList
